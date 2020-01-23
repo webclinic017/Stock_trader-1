@@ -1,2 +1,7 @@
 **/*.code-workspace
 **/*.iml
+redis_services/hiredis
+**/hiredis
+**.o
+**.vscode
+**redis-stable
