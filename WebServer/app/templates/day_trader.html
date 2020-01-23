@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <title>Day trader</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script type="text/javascript">
+
+        const max_stock_chars = 3;
+
+        function add() {
+            let add_field = document.getElementById("addFunds");
+            $.post("addFunds", {amount: add_field.value}, function (data) {
+                    console.log(data);
+                },
+                "json");
+            add_field.value = "";
+        }
+
+        function buy_stock() {
+            let stock_symbol = document.getElementById("symbol_buy");
+            let buy_amount = document.getElementById("buy_amount");
+            if (stock_symbol.value.length === 0) {
+                alert("Stock symbol required");
+                return false;
+            }
+            if (buy_amount.value.length === 0) {
+                alert("Purchase amount required");
+                return false;
+            }
+            $.post("buyStock", {symbol: stock_symbol.value, amount: buy_amount.value}, function (data) {
+                    console.log(data);
+                },
+                "json");
+            stock_symbol.value = "";
+            buy_amount.value = "";
+        }
+
+        function sell_stock() {
+            let stock_symbol = document.getElementById("symbol_sell");
+            let sell_amount = document.getElementById("sell_amount");
+            if (stock_symbol.value.length === 0) {
+                alert("Stock symbol required");
+                return false;
+            }
+            if (sell_amount.value.length === 0) {
+                alert("Sell amount required");
+                return false;
+            }
+            $.post("sellStock", {symbol: stock_symbol.value, amount: sell_amount.value}, function (data) {
+                    console.log(data);
+                },
+                "json");
+            stock_symbol.value = "";
+            sell_amount.value = "";
+        }
+
+        function get_quote() {
+            let stock_symbol = document.getElementById("getQuote");
+            $.post("getQuote", {symbol: stock_symbol.value}, function (data) {
+                    console.log(data);
+                },
+                "json");
+            stock_symbol.value = "";
+        }
+
+        function buy_trigger() {
+            let stock_symbol = document.getElementById("symbol_buy_trigger");
+            let target_price = document.getElementById("targetPrice_buy");
+            if (stock_symbol.value.length === 0) {
+                alert("Stock symbol required");
+                return false;
+            }
+            if (target_price.value.length === 0) {
+                alert("Purchase amount required");
+                return false;
+            }
+            $.post("buyTrigger", {symbol: stock_symbol.value, price: target_price.value}, function (data) {
+                    console.log(data);
+                },
+                "json");
+            stock_symbol.value = "";
+            target_price.value = "";
+        }
+
+        function sell_trigger() {
+            let stock_symbol = document.getElementById("symbol_sell_trigger");
+            let target_price = document.getElementById("targetPrice_sell");
+            if (stock_symbol.value.length === 0) {
+                alert("Stock symbol required");
+                return false;
+            }
+            if (target_price.value.length === 0) {
+                alert("Purchase amount required");
+                return false;
+            }
+            $.post("sellTrigger", {symbol: stock_symbol.value, price: target_price.value}, function (data) {
+                    console.log(data);
+                },
+                "json");
+            stock_symbol.value = "";
+            target_price.value = "";
+        }
+
+        function get_logs() {
+            $.post("getLogFile", {}, function (data) {
+                    console.log(data);
+                },
+                "json");
+        }
+
+    </script>
+<style>
+    body {background-color: lightskyblue;}
+    table {  
+        color: #333; /* Lighten up font color */
+        font-family: Helvetica, Arial, sans-serif; /* Nicer font */
+        width: 740px; 
+        border-collapse: collapse; 
+        border-spacing: 2px;
+    }
+    
+    tr {
+        color: #333; /* Lighten up font color */
+        border: 2px solid black;
+        border-spacing: 2px;
+    }
+    th {
+        border: 2px solid black;
+    }
+</style>   
+</head>
+<body>
+    <h1>Day trader</h1>
+    <h2>Amount:</h2>
+    Current balance :
+    <br>
+        <p id="balance"></p>
+    <br>
+    <table>
+        <tr>
+            <th>
+                <h2>Add</h2>
+            </th>
+            <th>
+                <h2>Buy</h2>
+            </th>
+            <th>
+                <h2>Sell</h2>
+            </th>
+        </tr>
+        <tr>
+            <th>
+                <form>
+                    Amount:
+                    <br>
+                        <input type="number" min="0.01" step="0.01" id="addFunds">
+                    <br>
+                </form>
+                <input type="button" onclick="add()" value="add">
+            </th>
+            <th>
+                <form>
+                    Stock:<br>
+                    <input type="text" id="symbol_buy" maxlength="3"><br>
+                    Price:<br>
+                    <input type="number" min="0.01" step="0.01" id="buy_amount">
+                </form>
+                <input type="button" onclick="buy_stock()" value="buy">
+            </th>   
+            <th>
+                <form>
+                    Stock:<br>
+                    <input type="text" id="symbol_sell" maxlength="3"><br>
+                    Price:<br>
+                    <input type="number" min="0.01" step="0.01" id="sell_amount">
+                </form>
+                <input type="button" onclick="sell_stock()" value="sell">
+            </th>
+        </tr>
+        <tr>
+            <th>
+                <h2>Quote</h2>
+            </th>
+            <th>
+                <h2>Set buy trigger</h2>
+            </th>
+            <th>
+                <h2>Set sell trigger</h2>
+            </th>
+        </tr>
+        <tr>
+            <th>
+                <form>
+        Stock:<br>
+        <input type="text" id="getQuote" maxlength="3"><br>
+    </form>
+    <input type="button" onclick="get_quote()" value="Get quote">
+    
+            </th>
+            <th>
+            <form>
+        Stock:<br>
+        <input type="text" id="symbol_buy_trigger" maxlength="3"><br>
+        Price:<br>
+        <input type="number" min="0.01" step="0.01" id="targetPrice_buy">
+    </form>
+    <input type="button" onclick="buy_trigger()" value="Set buy trigger">
+            </th>
+            <th>
+                <form>
+        Stock:<br>
+        <input type="text" id="symbol_sell_trigger" maxlength="3"><br>
+        Price:<br>
+        <input type="number" min="0.01" step="0.01" id="targetPrice_sell">
+    </form>
+    <input type="button" onclick="sell_trigger()" value="Set sell trigger">
+            </th>
+         </tr>
+    </table>
+    
+    
+    <h2>Log file:</h2>
+<form>
+    <input type="button" onclick="get_logs()" value="Download Logs">
+{#    or#}
+{#    <a href="path_to_file" download="proposed_file_name">Download</a>#}
+</form>
+    
+</body>
+</html>

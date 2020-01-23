@@ -1,2 +1,5 @@
 **/*.code-workspace
 **/*.iml
+
+#PyCharm project Configs:
+/.idea
