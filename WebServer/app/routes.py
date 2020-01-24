@@ -1,6 +1,11 @@
-from flask import render_template, request
+from flask import render_template, request, jsonify
 from app import app
 import json
+import socket
+import sys
+
+# Create the socket
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 
 @app.route('/')
@@ -71,3 +76,11 @@ def getLogFile():
     # return render_template('log_download.html')
 
     return {"code": "200"}
+
+
+# {
+# 	"Command":		"BUY",
+# 	"userid":		"jdoe",
+# 	"StockSymbol":	"ABC",
+# 	"amount":		256.00
+# }

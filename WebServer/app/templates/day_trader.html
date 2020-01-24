@@ -4,112 +4,7 @@
 <head>
     <title>Day trader</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-    <script type="text/javascript">
-
-        const max_stock_chars = 3;
-
-        function add() {
-            let add_field = document.getElementById("addFunds");
-            $.post("addFunds", {amount: add_field.value}, function (data) {
-                    console.log(data);
-                },
-                "json");
-            add_field.value = "";
-        }
-
-        function buy_stock() {
-            let stock_symbol = document.getElementById("symbol_buy");
-            let buy_amount = document.getElementById("buy_amount");
-            if (stock_symbol.value.length === 0) {
-                alert("Stock symbol required");
-                return false;
-            }
-            if (buy_amount.value.length === 0) {
-                alert("Purchase amount required");
-                return false;
-            }
-            $.post("buyStock", {symbol: stock_symbol.value, amount: buy_amount.value}, function (data) {
-                    console.log(data);
-                },
-                "json");
-            stock_symbol.value = "";
-            buy_amount.value = "";
-        }
-
-        function sell_stock() {
-            let stock_symbol = document.getElementById("symbol_sell");
-            let sell_amount = document.getElementById("sell_amount");
-            if (stock_symbol.value.length === 0) {
-                alert("Stock symbol required");
-                return false;
-            }
-            if (sell_amount.value.length === 0) {
-                alert("Sell amount required");
-                return false;
-            }
-            $.post("sellStock", {symbol: stock_symbol.value, amount: sell_amount.value}, function (data) {
-                    console.log(data);
-                },
-                "json");
-            stock_symbol.value = "";
-            sell_amount.value = "";
-        }
-
-        function get_quote() {
-            let stock_symbol = document.getElementById("getQuote");
-            $.post("getQuote", {symbol: stock_symbol.value}, function (data) {
-                    console.log(data);
-                },
-                "json");
-            stock_symbol.value = "";
-        }
-
-        function buy_trigger() {
-            let stock_symbol = document.getElementById("symbol_buy_trigger");
-            let target_price = document.getElementById("targetPrice_buy");
-            if (stock_symbol.value.length === 0) {
-                alert("Stock symbol required");
-                return false;
-            }
-            if (target_price.value.length === 0) {
-                alert("Purchase amount required");
-                return false;
-            }
-            $.post("buyTrigger", {symbol: stock_symbol.value, price: target_price.value}, function (data) {
-                    console.log(data);
-                },
-                "json");
-            stock_symbol.value = "";
-            target_price.value = "";
-        }
-
-        function sell_trigger() {
-            let stock_symbol = document.getElementById("symbol_sell_trigger");
-            let target_price = document.getElementById("targetPrice_sell");
-            if (stock_symbol.value.length === 0) {
-                alert("Stock symbol required");
-                return false;
-            }
-            if (target_price.value.length === 0) {
-                alert("Purchase amount required");
-                return false;
-            }
-            $.post("sellTrigger", {symbol: stock_symbol.value, price: target_price.value}, function (data) {
-                    console.log(data);
-                },
-                "json");
-            stock_symbol.value = "";
-            target_price.value = "";
-        }
-
-        function get_logs() {
-            $.post("getLogFile", {}, function (data) {
-                    console.log(data);
-                },
-                "json");
-        }
-
-    </script>
+    <script type="text/javascript" src="../static/js/day_trader.js"></script>
 <style>
     body {background-color: lightskyblue;}
     table {  
@@ -132,11 +27,13 @@
 </head>
 <body>
     <h1>Day trader</h1>
-    <h2>Amount:</h2>
-    Current balance :
-    <br>
-        <p id="balance"></p>
-    <br>
+    Current User:
+    <input type="text" value="John Doe" class="field left" readonly id="username">
+    <br />
+    <div style="display: inline-block">Account balance: $</div>
+    <div id="accountBalance" style="display: inline-block">0.00</div>
+    <br />
+    <br />
     <table>
         <tr>
             <th>
