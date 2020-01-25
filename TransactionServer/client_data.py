@@ -104,8 +104,9 @@ class ClientData:
 	##### Buy and Sell Commands #####
 	def clear_old(self, user, key, curr):
 		filtered = []
+		command_stack = self.cli_data[user][key]
 		
-		for cmd in self.cli_data[user][key]:
+		for cmd in command_stack:
 			if curr - cmd[2] >= 60:
 				if key == "buy":
 					self.add_money(user, cmd[1])

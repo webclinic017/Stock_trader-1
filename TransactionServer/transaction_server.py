@@ -26,24 +26,26 @@ class TransactionServer:
 		succeeded = False
 		user = data["userid"]
 		amount = data["amount"]
+		cli_data = self.cli_data
 
-		if self.cli_data.rem_money(user, amount):
-			self.cli_data.push(user, data["StockSymbol"], float(amount), "buy")
+		if cli_data.rem_money(user, amount):
+			cli_data.push(user, data["StockSymbol"], float(amount), "buy")
 			succeeded = True
 		return succeeded
 
 	def commit_buy(self, data):
 		succeeded = False
 		user = data["userid"]
+		cli_data = self.cli_data
 
 		try:
-			buy_data = self.cli_data.pop(user, "buy")
+			buy_data = cli_data.pop(user, "buy")
 			price = self.cache.quote(buy_data[0], user)[0]
 			count = int(buy_data[1] / price)
 			# Return the delta of the transaction to user's account
-			self.cli_data.add_money(user, buy_data[1] - (count * price))
+			cli_data.add_money(user, buy_data[1] - (count * price))
 			# Update stock ownership records
-			self.cli_data.add_stock(user, buy_data[0], count)
+			cli_data.add_stock(user, buy_data[0], count)
 			succeeded = True
 		except Exception:
 			pass
@@ -52,9 +54,10 @@ class TransactionServer:
 	def cancel_buy(self, data):
 		succeeded = False
 		user = data["userid"]
+		cli_data = self.cli_data
 
 		try:			
-			self.cli_data.add_money(user, self.cli_data.pop(user, "buy")[1])
+			cli_data.add_money(user, cli_data.pop(user, "buy")[1])
 			succeeded = True
 		except Exception:
 			pass
@@ -66,12 +69,13 @@ class TransactionServer:
 		user = data["userid"]
 		amount = float(data["amount"])
 		symbol = data["StockSymbol"]
+		cli_data = self.cli_data
 
 		try:
 			price = self.cache.quote(symbol, user)[0]
 			count = int(amount / price)
-			if self.cli_data.rem_stock(user, symbol, count):
-				self.cli_data.push(user, symbol, (amount, count), "sel")
+			if cli_data.rem_stock(user, symbol, count):
+				cli_data.push(user, symbol, (amount, count), "sel")
 				succeeded = True
 		except Exception:
 			pass
@@ -80,21 +84,22 @@ class TransactionServer:
 	def commit_sell(self, data):
 		succeeded = False
 		user = data["userid"]
+		cli_data = self.cli_data
 
 		try:
-			sell_data = self.cli_data.pop(user, "sel")
+			sell_data = cli_data.pop(user, "sel")
 			stocks = sell_data[1][1]
 			symbol = sell_data[0]
 			price = self.cache.quote(symbol, user)[0]
 			count = int(sell_data[1][0] / price)
 			if count < stocks:
 				# Add back remaining stock
-				self.cli_data.add_stock(user, symbol, stocks - count)
+				cli_data.add_stock(user, symbol, stocks - count)
 			elif count > stocks:
 				# Try to sell more stock
-				if not self.cli_data.rem_stock(user, symbol, count - stocks):
+				if not cli_data.rem_stock(user, symbol, count - stocks):
 					raise Exception
-			self.cli_data.add_money(user, count * price)
+			cli_data.add_money(user, count * price)
 			succeeded = True
 		except Exception:
 			pass
@@ -103,10 +108,11 @@ class TransactionServer:
 	def cancel_sell(self, data):
 		succeeded = False
 		user = data["userid"]
+		cli_data = self.cli_data
 
 		try:
-			sell_data = self.cli_data.pop(user, "sel")
-			self.cli_data.add_stock(user, sell_data[0], sell_data[1][1])
+			sell_data = cli_data.pop(user, "sel")
+			cli_data.add_stock(user, sell_data[0], sell_data[1][1])
 			succeeded = True
 		except Exception:
 			pass
@@ -118,12 +124,13 @@ class TransactionServer:
 		user = data["userid"]
 		symbol = data["StockSymbol"]
 		amount = float(data["amount"])
+		cli_data = self.cli_data
 		
-		if self.cli_data.rem_money(user, amount):
+		if cli_data.rem_money(user, amount):
 			if self.events.register("buy", user, symbol, amount):
 				succeeded = True
 			else:
-				self.cli_data.add_money(user, amount)
+				cli_data.add_money(user, amount)
 		return succeeded
 	
 	def cancel_set_buy(self, data):
@@ -151,12 +158,13 @@ class TransactionServer:
 		user = data["userid"]
 		symbol = data["StockSymbol"]
 		amount = int(data["amount"])
+		cli_data = self.cli_data
 		
-		if self.cli_data.rem_stock(user, symbol, amount):
+		if cli_data.rem_stock(user, symbol, amount):
 			if self.events.register("sel", user, symbol, amount):
 				succeeded = True
 			else:
-				self.cli_data.add_stock(user, symbol, amount)
+				cli_data.add_stock(user, symbol, amount)
 		return succeeded
 
 	def cancel_set_sell(self, data):

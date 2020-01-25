@@ -50,10 +50,11 @@ class EventServer:
 		try:
 			curr = self.timers[ver][user]
 			try:
+				event = curr[symbol]
 				# Buy trigger already running, must cancel before setting buy again
-				if (curr[symbol][0] is None and curr[symbol][1] == 0) or (not curr[symbol][0].is_alive()):
-					curr[symbol][0] = None
-					curr[symbol][1] = amount
+				if (event[0] is None and event[1] == 0) or (not event[0].is_alive()):
+					event[0] = None
+					event[1] = amount
 					succeeded = True
 			except Exception:
 				curr[symbol] = [None, amount, 0]
@@ -69,18 +70,19 @@ class EventServer:
 		try:
 			curr = self.timers[ver][user]
 			try:
-				if not curr[symbol][0] is None:
-					if curr[symbol][0].is_alive():
+				event = curr[symbol]
+				if not event[0] is None:
+					if event[0].is_alive():
 						# Kill QuoteThread if running
-						curr[symbol][0].join()
-						curr[symbol][0] = None
+						event[0].join()
+						event[0] = None
 					else:
-						curr[symbol][0] = None
-						curr[symbol][1] = 0			
-					amount = curr[symbol][1]	
-				elif curr[symbol][1] > 0:			
-					amount = curr[symbol][1]
-				curr[symbol][1] = 0
+						event[0] = None
+						event[1] = 0			
+					amount = event[1]	
+				elif event[1] > 0:			
+					amount = event[1]
+				event[1] = 0
 			except KeyError:
 				curr[symbol] = [None, 0, 0]
 		except KeyError:
@@ -92,11 +94,12 @@ class EventServer:
 		try:
 			curr = self.timers[ver][user]
 			try:
+				event = curr[symbol]
 				# Can only trigger if amount > 0, and present thread DNE or is dead
-				if (curr[symbol][0] is None or not curr[symbol][0].is_alive()) and curr[symbol][1] > 0:
-					curr[symbol][2] = price
-					curr[symbol][0] = QuoteThread(self.cli_data, self.cache, ver, user, symbol, curr[symbol][1], price)
-					curr[symbol][0].start()
+				if (event[0] is None or not event[0].is_alive()) and event[1] > 0:
+					event[2] = price
+					event[0] = QuoteThread(self.cli_data, self.cache, ver, user, symbol, event[1], price)
+					event[0].start()
 					succeeded = True
 			except Exception:
 				curr[symbol] = [None, 0, 0]
