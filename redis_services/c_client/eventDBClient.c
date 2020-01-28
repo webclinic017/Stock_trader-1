@@ -18,8 +18,10 @@ eventObject * buildEventObject(redisReply * reply, uuid_t eventId) {
     int type = reply -> element[5] -> integer;
     char * username = reply -> element[7] -> str;
     enum eventStatus status = atoi(reply -> element[9] -> str);
-    e -> eventId = (unsigned char *) malloc(sizeof(uuid_t));
-    for (int i = 0; i < 16; ++i) {
+    int sizeUuid = sizeof(uuid_t);
+    e -> eventId = (unsigned char *) malloc(sizeUuid);
+    memset(e -> eventId, 0, sizeUuid);
+    for (int i = 0; i < sizeUuid; ++i) {
         (e -> eventId)[i] = (unsigned char) eventId[i];
     }
     e -> stockSymbol = malloc(sizeof(stockSymbol));
@@ -38,14 +40,14 @@ eventObject * buildEmptyEventObject() {
     return e;
 }
 
-int setEvent(redisContext * c, uuid_t eventId, char * stockSymbol, int targetAmount, enum eventType type, char * username) {
+int setEvent(redisContext * c, uuid_t eventId, char * stockSymbol, int targetAmount, enum commandType type, char * username) {
     if (c == NULL) {
         printf("Error: must open client connection to redis server before invoking cacheQuote()\n");
         return 0;
     }
 
     enum eventStatus status = PENDING;
-    redisReply *reply  = redisCommand(c, "HSET %s stockSymbol %s targetAmount %d eventType %d username %s status %d", eventId, stockSymbol, targetAmount, type, username, status);
+    redisReply *reply  = redisCommand(c, "HSET %s stockSymbol %s targetAmount %d commandType %d username %s status %d", eventId, stockSymbol, targetAmount, type, username, status);
 
     int result = reply -> integer == numFieldsInEventObject;
     freeReplyObject(reply);

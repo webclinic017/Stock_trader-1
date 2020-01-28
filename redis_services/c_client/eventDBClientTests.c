@@ -9,7 +9,7 @@
 uuid_t eventId;
 int targetAmount = 100;
 char * stockSymbol = "someStock";
-enum eventType type = BUY;
+enum commandType type = BUY;
 
 void setEvent_shouldSetEvent() {
     char * username = "someUser";
