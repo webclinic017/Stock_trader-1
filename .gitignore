@@ -4,3 +4,4 @@
 #PyCharm project Configs:
 /.idea
 __pycache__
+/workload_generator/workload_files/

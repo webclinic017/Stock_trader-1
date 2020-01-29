@@ -26,8 +26,8 @@ function buy_stock() {
     let currentUser = document.getElementById("userId");
     let stock_symbol = document.getElementById("symbol_buy");
     let buy_amount = document.getElementById("buy_amount");
-    if (stock_symbol.value.length !== 3) {
-        alert("3 character stock symbol required");
+    if (stock_symbol.value.length < 1 || stock_symbol.value.length > 3) {
+        alert("1-3 character stock symbol required");
         return false;
     }
     if (buy_amount.value.length === 0 || parseFloat(buy_amount.value) <= 0) {
@@ -53,8 +53,8 @@ function sell_stock() {
     let currentUser = document.getElementById("userId");
     let stock_symbol = document.getElementById("symbol_sell");
     let sell_amount = document.getElementById("sell_amount");
-    if (stock_symbol.value.length !== 3) {
-        alert("3 character stock symbol required");
+    if (stock_symbol.value.length < 1 || stock_symbol.value.length > 3) {
+        alert("1-3 character stock symbol required");
         return false;
     }
     if (sell_amount.value.length === 0 || parseFloat(sell_amount.value) <= 0) {
@@ -79,8 +79,8 @@ function get_quote() {
     event.preventDefault(); //stops page from resetting/reloading
     let currentUser = document.getElementById("userId");
     let stock_symbol = document.getElementById("getQuote");
-    if (stock_symbol.value.length !== 3) {
-        alert("3 character stock symbol required");
+    if (stock_symbol.value.length < 1 || stock_symbol.value.length > 3) {
+        alert("1-3 character stock symbol required");
         return false;
     }
     let parcel = {
@@ -97,8 +97,8 @@ function buy_trigger() {
     let currentUser = document.getElementById("userId");
     let stock_symbol = document.getElementById("symbol_buy_trigger");
     let target_price = document.getElementById("targetPrice_buy");
-    if (stock_symbol.value.length !== 3) {
-        alert("3 character stock symbol required");
+    if (stock_symbol.value.length < 1 || stock_symbol.value.length > 3) {
+        alert("1-3 character stock symbol required");
         return false;
     }
     if (target_price.value.length === 0 || parseFloat(target_price.value) <= 0) {
@@ -124,8 +124,8 @@ function sell_trigger() {
     let currentUser = document.getElementById("userId");
     let stock_symbol = document.getElementById("symbol_sell_trigger");
     let target_price = document.getElementById("targetPrice_sell");
-    if (stock_symbol.value.length !== 3) {
-        alert("3 character stock symbol required");
+    if (stock_symbol.value.length < 1 || stock_symbol.value.length > 3) {
+        alert("1-3 character stock symbol required");
         return false;
     }
     if (target_price.value.length === 0 || parseFloat(target_price.value) <= 0) {

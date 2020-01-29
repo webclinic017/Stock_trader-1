@@ -60,7 +60,7 @@
             <th>
                 <form>
                     Stock:<br>
-                    <input type="text" id="symbol_buy" maxlength="3"><br>
+                    <input type="text" id="symbol_buy" minlength="1" maxlength="3"><br>
                     Price:<br>
                     <input type="number" id="buy_amount">
                     <button type="submit" onclick="buy_stock();">buy</button>
@@ -70,7 +70,7 @@
             <th>
                 <form>
                     Stock:<br>
-                    <input type="text" id="symbol_sell" maxlength="3"><br>
+                    <input type="text" id="symbol_sell" minlength="1" maxlength="3"><br>
                     Price:<br>
                     <input type="number" id="sell_amount">
                     <button type="submit" onclick="sell_stock();">sell</button>
@@ -93,7 +93,7 @@
             <th>
     <form>
         Stock:<br>
-        <input type="text" id="getQuote" maxlength="3"><br>
+        <input type="text" id="getQuote" minlength="1" maxlength="3"><br>
         <button type="submit" onclick="get_quote();">Get quote</button><br><br>
         <div style="display: inline-block">Quote: $</div>
         <div style="display: inline-block" id="qt_amt" >---</div>
@@ -106,7 +106,7 @@
             <th>
             <form>
         Stock:<br>
-        <input type="text" id="symbol_buy_trigger" maxlength="3"><br>
+        <input type="text" id="symbol_buy_trigger" minlength="1" maxlength="3"><br>
         Price:<br>
         <input type="number" id="targetPrice_buy">
     </form>
@@ -115,7 +115,7 @@
             <th>
                 <form>
         Stock:<br>
-        <input type="text" id="symbol_sell_trigger" maxlength="3"><br>
+        <input type="text" id="symbol_sell_trigger" minlength="1" maxlength="3"><br>
         Price:<br>
         <input type="number" id="targetPrice_sell">
     </form>
