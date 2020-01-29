@@ -1,14 +1,10 @@
 **/*.code-workspace
 **/*.iml
-<<<<<<< HEAD
 redis_services/hiredis
 **/hiredis
 **.o
 **.vscode
 **redis-stable
-=======
 
-#PyCharm project Configs:
 /.idea
 __pycache__
->>>>>>> de1fead20d8dbaf23149162746842e31cb917e5d
