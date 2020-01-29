@@ -4,6 +4,7 @@ enum recordExists {
 };
 
 enum commandType {
+    NONE,
     BUY,
     SELL,
     COMMIT,

@@ -3,6 +3,7 @@
 #include "quoteCacheTests.h"
 #include "userDBTests.h"
 #include "eventDBClientTests.h"
+#include "transactionDBClientTests.h"
 
 redisContext *c = NULL;
 
@@ -34,4 +35,5 @@ int main(int argc, char **argv) {
     runQuoteCacheTests();
     runUserDBTests();
     runEventDBTests();
+    runTransactionDBTests();
 }

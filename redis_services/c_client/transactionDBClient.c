@@ -22,34 +22,38 @@ void freeTransactionObject(transactionObject * transObj) {
 }
 
 void addFieldToTransactionObject(transactionObject * transObj, char * field, char * value) {
-        int val;
-    if (strcmp(field, "username_transactionId") == 0) {
-        int valueLen = sizeof(value);
-        char * buffer = malloc(valueLen);
-        strtok(buffer, "_");
-        transObj -> username = strtok(NULL, "_");
-        transObj -> transactionId = strtok(NULL, "_");
-        free(buffer);
-    } else if (strcmp(field, "cryptokey") == 0) {
+    if (strcmp(field, "cryptokey") == 0) {
         transObj -> cryptokey = value;
     } else if (strcmp(field, "stockSymbol") == 0) {
         transObj -> stockSymbol = value;
     } else if (strcmp(field, "amount") == 0) {
-        val = atoi(value);
-        transObj -> amount = &val;
+        transObj -> amount = atoi(value);
     } else if (strcmp(field, "command") == 0) {
-        val = atoi(value);
-        transObj -> command = (enum commandType *) &val;
+        transObj -> command = atoi(value);
     }
     else {
         // do nothing: field is not defined by transactionObject data type
     }
 }
 
+transactionArgs * buildEmptyArgsObject() {
+    transactionArgs * args = malloc(sizeof(transactionArgs));
+    enum transactionArgsType type;
+    redisReply * reply = NULL;
+    args -> transactionId = NULL;
+    args -> username = NULL;
+    args -> username_transactionId = NULL;
+    args -> cryptokey = NULL;
+    args -> stockSymbol = NULL;
+    args -> command = NONE;
+    args -> amount = 0;
+    return args;
+}
+
 void freeArgsObject(transactionArgs * args) {
     if (args != NULL) {
         if (args -> reply != NULL) {
-            free(args -> reply);
+            freeReplyObject(args -> reply);
         }
         if (args -> transactionId != NULL) {
             free(args -> transactionId);
@@ -60,14 +64,8 @@ void freeArgsObject(transactionArgs * args) {
         if (args -> cryptokey != NULL) {
             free(args -> cryptokey);
         }
-        if (args -> command != NULL) {
-            free(args -> command);
-        }
         if (args -> stockSymbol != NULL) {
             free(args -> stockSymbol);
-        }
-        if (args -> amount != NULL) {
-            free(args -> amount);
         }
         free(args);
     }
@@ -77,24 +75,50 @@ transactionObject * buildTransactionObject(transactionArgs * args) {
     transactionObject * transObj = malloc(sizeof(transactionObject));
     transObj -> transactionId = NULL;
     transObj -> username = NULL;
+    transObj -> command = NONE;
+    transObj -> cryptokey = NULL;
+    transObj -> stockSymbol = NULL;
+    transObj -> amount = 0;
     if (args != NULL) {
         if (args -> type == REDIS_REPLY && args -> reply != NULL) {
+            int lenUsernameTransactionId = sizeof(args -> username_transactionId);
+            char * buffer = malloc(lenUsernameTransactionId);
+            memset(buffer, 0, lenUsernameTransactionId);
+            strcpy(buffer, args -> username_transactionId);
+
+            char * username = strtok(buffer, "_");
+            transObj -> username = malloc(sizeof(username));
+            strcpy(transObj -> username, username);
+            free(buffer);
+            buffer = malloc(lenUsernameTransactionId);
+            memset(buffer, 0, lenUsernameTransactionId);
+
+            strcpy(buffer, args -> username_transactionId);
+            strtok(buffer, "_");
+            char * transactionId = strtok(NULL, "_");
+            transObj -> transactionId = malloc(sizeof(transactionId));
+            strcpy(transObj -> transactionId, transactionId);
+
             redisReply * reply = args -> reply;
             int numReplyElements = reply -> elements;
             char * field;
             char * value;
+
             for (int i = 1; i < numReplyElements; i += 2) {
                 field = (reply -> element)[i - 1] -> str;
                 value = (reply -> element)[i] -> str;
                 addFieldToTransactionObject(transObj, field, value);
             }
-            return transObj;
         } else if (args -> type == FINE_GRAINED_ARGS) {
-            transObj -> transactionId = args -> transactionId;
-            transObj -> username = args -> username;
+            transObj -> transactionId = malloc(sizeof(args -> transactionId));
+            strcpy(transObj -> transactionId, args -> transactionId);
+            transObj -> username = malloc(sizeof(args -> username));
+            strcpy(transObj -> username,  args -> username);
             transObj -> command = args -> command;
-            transObj -> cryptokey = args -> cryptokey;
-            transObj -> stockSymbol = args -> stockSymbol;
+            transObj -> cryptokey = malloc(sizeof(args -> cryptokey));
+            strcpy(transObj -> cryptokey, args -> cryptokey);
+            transObj -> stockSymbol = malloc(sizeof(args -> stockSymbol));
+            strcpy(transObj -> stockSymbol, args -> stockSymbol);
             transObj -> amount = args -> amount;
         }
         freeArgsObject(args);
@@ -149,7 +173,6 @@ void addTransactionToList(transactionList * list, transactionObject * transObj) 
         list -> tail = node;
     }
     list -> size = (list -> size)++;
-    freeTransactionObject(transObj);
 }
 
 char * addFieldToSetCommand(char * commandStr, char * fieldname, char * value) {
@@ -177,26 +200,30 @@ char * addFieldToSetCommand(char * commandStr, char * fieldname, char * value) {
     return newCommandStr;
 }
 
-char * newTransactionLog(redisContext * c, transactionObject * transaction) {
-    if (transaction -> transactionId == NULL || transaction -> username == NULL) {
-        printf("Error: invalid transaction object (transactionId or username fields are NULL)\n");
-        return NULL;
-    }
-    int sizeUsername = sizeof(transaction -> username);
-    int sizeTransactionId = sizeof(transaction -> transactionId);
+char * coallesceUsernameAndTransactionId(char * username, char * transactionId) {
+    int sizeUsername = sizeof(username);
+    int sizeTransactionId = sizeof(transactionId);
     int sizeUsername_transactionId = sizeUsername + 1 + sizeTransactionId;
     char * username_transactionId = malloc(sizeUsername_transactionId);
     memset(username_transactionId, 0, sizeUsername_transactionId);
     int i, k = 0;
     for (k = 0; k < sizeUsername; ++k) {
-        username_transactionId[i] = transaction -> username[k];
+        username_transactionId[i] = username[k];
         i++;
     }
     for (k = 0; k < sizeTransactionId; ++k) {
-        username_transactionId[i] = transaction -> transactionId[k];
+        username_transactionId[i] = transactionId[k];
         i++;
     }
-    
+    return username_transactionId;
+}
+
+char * newTransactionLog(redisContext * c, transactionObject * transaction) {
+    if (transaction -> transactionId == NULL || transaction -> username == NULL) {
+        printf("Error: invalid transaction object (transactionId or username fields are NULL)\n");
+        return NULL;
+    }
+    char * username_transactionId = coallesceUsernameAndTransactionId(transaction -> username, transaction -> transactionId);
     char * commandRedis = "HSET";
     char * keyname = "username_transactionId";
     int commandStrLen = sizeof(commandRedis) + 1 + sizeof(keyname) + 1 + sizeof(username_transactionId) + 1;
@@ -204,14 +231,9 @@ char * newTransactionLog(redisContext * c, transactionObject * transaction) {
     memset(commandStr, 0, commandStrLen);
     sprintf(commandStr, "%s %s %s ", commandRedis, keyname, username_transactionId);
 
-    char * dtsCommand;
-    if (transaction -> command == NULL) {
-        dtsCommand = "null";
-    } else {
-        dtsCommand = malloc(2);
-        memset(dtsCommand, 0, 2);
-        sprintf(dtsCommand, "%d", *(transaction -> command));
-    }
+    char * dtsCommand = malloc(2);
+    memset(dtsCommand, 0, 2);
+    sprintf(dtsCommand, "%d", transaction -> command);
     commandStr = addFieldToSetCommand(commandStr, "command", dtsCommand);
     free(dtsCommand);
 
@@ -219,15 +241,10 @@ char * newTransactionLog(redisContext * c, transactionObject * transaction) {
     commandStr = addFieldToSetCommand(commandStr, "stockSymbol", transaction -> stockSymbol);
 
     char * amountStr;
-    if (transaction -> amount == NULL) {
-        amountStr = "null";
-    }
-    else {
-        int amountStrLen = 20;
-        amountStr = malloc(amountStrLen);
-        memset(amountStr, 0, amountStrLen);
-        sprintf(amountStr, "%d", *(transaction -> amount));
-    }
+    int amountStrLen = 20;
+    amountStr = malloc(amountStrLen);
+    memset(amountStr, 0, amountStrLen);
+    sprintf(amountStr, "%d", transaction -> amount);
     commandStr = addFieldToSetCommand(commandStr, "amount", amountStr);
     free(amountStr);
 
@@ -237,6 +254,9 @@ char * newTransactionLog(redisContext * c, transactionObject * transaction) {
 }
 
 transactionList * redisScan(redisContext * c, char * scanCommand, char * username) {
+
+    // TODO: revisit what this function is doing, based on new understanding of redis' SCAN command
+
     int cursor = 0;
     int failSafe = 1000000;
     transactionObject * transObj;
@@ -246,31 +266,45 @@ transactionList * redisScan(redisContext * c, char * scanCommand, char * usernam
     } else {
         reply = redisCommand(c, scanCommand, cursor);
     }
-    transactionArgs * args = malloc(sizeof(transactionArgs));
+    transactionArgs * args = buildEmptyArgsObject();
+    args -> type = REDIS_REPLY;
     args -> reply = reply;
     transObj = buildTransactionObject(args);
+
     transactionList * transactions = newTransactionList();
     addTransactionToList(transactions, transObj);
     
     while (reply -> integer > 0 && (failSafe--) > 0) {
-        args = malloc(sizeof(transactionArgs));
+        args = buildEmptyArgsObject();
         if (username != NULL) {
             args -> reply = redisCommand(c, scanCommand, cursor, username);
         } else {
             args -> reply = redisCommand(c, scanCommand, cursor);
         }
         transObj = buildTransactionObject(args);
+        char * username_transactionId = reply -> element[1] -> str;
+        args -> username_transactionId = malloc(sizeof(username_transactionId));
+        strcpy(args -> username_transactionId, username_transactionId);
+        transactionArgs * args = buildEmptyArgsObject();
         addTransactionToList(transactions, transObj);
-        freeReplyObject(reply);
     }
     return transactions;
 }
 
-transactionList * getTransactionLog(redisContext * c, char * username) {
-    char * scanCommand = "HSCAN %d MATCH %s_**";
-    return redisScan(c, scanCommand, username);
+transactionObject * getTransactionLog(redisContext * c, char * username, char * transactionId) {
+    transactionArgs * args = buildEmptyArgsObject();
+    args -> type = REDIS_REPLY;
+    char * username_transactionId = coallesceUsernameAndTransactionId(username, transactionId);
+    args -> reply = redisCommand(c, "HGETALL %s", username_transactionId);
+    args -> username_transactionId = malloc(sizeof(username_transactionId));
+    strcpy(args -> username_transactionId, username_transactionId);
+    return buildTransactionObject(args);
+}
+
+transactionList * getAllUserTransactionLogs(redisContext * c, char * username) {
+    return redisScan(c, "SCAN %d MATCH %s_**", username);
 };
 
 transactionList * getAllTransactionLogs(redisContext * c) {
-    return redisScan(c, "HSCAN %d", NULL);
+    return redisScan(c, "SCAN %d MATCH **_**", NULL);
 };

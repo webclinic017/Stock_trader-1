@@ -11,10 +11,11 @@ typedef struct transactionArgs {
     redisReply * reply;
     char * transactionId;
     char * username;
-    enum commandType * command;
+    char * username_transactionId;
+    enum commandType command;
     char * cryptokey;
     char * stockSymbol;
-    int * amount;
+    int amount;
 } transactionArgs;
 
 typedef struct transactionListNode {
@@ -31,13 +32,14 @@ typedef struct transactionList {
 
 typedef struct transactionObject {
     char * transactionId;
-    enum commandType * command;
-    char * cryptokey;
     char * username;
+    enum commandType command;
+    char * cryptokey;
     char * stockSymbol;
-    int * amount;
+    int amount;
 } transactionObject;
 
+transactionArgs * buildEmptyArgsObject();
 void freeArgsObject(transactionArgs * args);
 void freeTransactionObject(transactionObject * transObj);
 void freeTransactionList(transactionList * list);
@@ -48,5 +50,7 @@ void addTransactionToList(transactionList * list, transactionObject * transObj);
 char * addFieldToSetCommand(char * commandStr, char * fieldname, char * value);
 char * newTransactionLog(redisContext * c, transactionObject * transaction);
 transactionList * redisScan(redisContext * c, char * scanCommand, char * username);
-transactionList * getTransactionLog(redisContext * c, char * username);
+transactionObject * getTransactionLog(redisContext * c, char * username, char * transactionId);
+transactionList * getAllUserTransactionLogs(redisContext * c, char * username);
 transactionList * getAllTransactionLogs(redisContext * c);
+char * coallesceUsernameAndTransactionId(char * username, char * transactionId);
