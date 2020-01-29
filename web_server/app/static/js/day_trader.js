@@ -1,10 +1,4 @@
 
-function checkSubmit(e) {
-   if(e && e.keyCode == 13) {
-      document.forms[0].submit();
-   }
-}
-
 function add() {
     event.preventDefault(); //stops page from resetting/reloading
     let currentUser = document.getElementById("userId");
@@ -23,8 +17,7 @@ function add() {
         userid: currentUser.value,
         amount: add_field.value
     };
-    $.post("addFunds", parcel, function (data) {console.log(data);}, "json");
-    update_balance(parseFloat(add_field.value));
+    $.post("addFunds", parcel, function (response) {update_balance(response);}, "json");
     add_field.value = "";
 }
 
@@ -48,7 +41,9 @@ function buy_stock() {
         StockSymbol: stock_symbol.value,
         amount: buy_amount.value
     };
-    $.post("buyStock", parcel, function (data) { console.log(data); }, "json");
+    $.post("buyStock", parcel, function (data) {
+        console.log(data);
+    }, "json");
     stock_symbol.value = "";
     buy_amount.value = "";
 }
@@ -73,7 +68,9 @@ function sell_stock() {
         StockSymbol: stock_symbol.value,
         amount: sell_amount.value
     };
-    $.post("sellStock", parcel, function (data) { console.log(data); }, "json");
+    $.post("sellStock", parcel, function (data) {
+        console.log(data);
+    }, "json");
     stock_symbol.value = "";
     sell_amount.value = "";
 }
@@ -87,10 +84,11 @@ function get_quote() {
         return false;
     }
     let parcel = {
+        Command: "QUOTE",
         userid: currentUser.value,
         StockSymbol: stock_symbol.value
     };
-    $.post("getQuote", parcel, function (data) { console.log(data); }, "json");
+    $.post("getQuote", parcel, function (response) {update_quote(response);}, "json");
     stock_symbol.value = "";
 }
 
@@ -114,7 +112,9 @@ function buy_trigger() {
         StockSymbol: stock_symbol.value,
         amount: target_price.value
     };
-    $.post("buyTrigger", parcel, function (data) { console.log(data); }, "json");
+    $.post("buyTrigger", parcel, function (data) {
+        console.log(data);
+    }, "json");
     stock_symbol.value = "";
     target_price.value = "";
 }
@@ -139,7 +139,9 @@ function sell_trigger() {
         StockSymbol: stock_symbol.value,
         amount: target_price.value
     };
-    $.post("sellTrigger", parcel, function (data) { console.log(data); }, "json");
+    $.post("sellTrigger", parcel, function (data) {
+        console.log(data);
+    }, "json");
     stock_symbol.value = "";
     target_price.value = "";
 }
@@ -147,17 +149,28 @@ function sell_trigger() {
 function get_logs(admin = false) {
     event.preventDefault(); //stops page from resetting/reloading
     let parcel = {
-            Command: "DUMPLOG",
-            filename: "dumplog.txt"
+        Command: "DUMPLOG",
+        filename: "dumplog.txt"
     };
-    if (admin){
+    if (admin) {
         parcel.add("userid", document.getElementById("userId").value);
     }
-    $.post("getLogFile", parcel, function (data) { console.log(data); }, "json");
+    $.post("getLogFile", parcel, function (data) {
+        console.log(data);
+    }, "json");
 }
 
-function update_balance(valToAdd) {
-    if (valToAdd == null || valToAdd < 0) return;
+function update_balance(responseJSON) {
+    // if (isNaN(responseJSON)) return; # Always blocks for some reason
     let balance_field = document.getElementById("accountBalance");
-    balance_field.textContent = (parseFloat(balance_field.textContent) + valToAdd).toString();
+    let valToSet = parseFloat(responseJSON["amount"]) + parseFloat(balance_field.textContent);
+    balance_field.textContent = valToSet.toString();
+}
+
+function update_quote(responseJSON) {
+    // if (isNaN(responseJSON)) return; # Always blocks for some reason
+    let quote_symbol = document.getElementById("qt_sym");
+    let quote_amount = document.getElementById("qt_amt");
+    quote_symbol.textContent = responseJSON["StockSymbol"];
+    quote_amount.textContent = responseJSON["Quote"];
 }

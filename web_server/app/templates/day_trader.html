@@ -7,14 +7,14 @@
     <script type="text/javascript" src="../static/js/day_trader.js"></script>
 <style>
     body {background-color: lightskyblue;}
-    table {  
+    table {
         color: #333; /* Lighten up font color */
         font-family: Helvetica, Arial, sans-serif; /* Nicer font */
-        width: 740px; 
-        border-collapse: collapse; 
+        width: 740px;
+        border-collapse: collapse;
         border-spacing: 2px;
     }
-    
+
     tr {
         color: #333; /* Lighten up font color */
         border: 2px solid black;
@@ -23,7 +23,7 @@
     th {
         border: 2px solid black;
     }
-</style>   
+</style>
 </head>
 <body>
     <h1>Day trader</h1>
@@ -37,7 +37,7 @@
     <table>
         <tr>
             <th>
-                <h2>Add</h2>
+                <h2>Add Funds</h2>
             </th>
             <th>
                 <h2>Buy</h2>
@@ -63,17 +63,19 @@
                     <input type="text" id="symbol_buy" maxlength="3"><br>
                     Price:<br>
                     <input type="number" id="buy_amount">
+                    <button type="submit" onclick="buy_stock();">buy</button>
                 </form>
-                <input type="button" onclick="buy_stock()" value="buy">
-            </th>   
+                <!-- <input type="button" onclick="buy_stock()" value="buy"> -->
+            </th>
             <th>
                 <form>
                     Stock:<br>
                     <input type="text" id="symbol_sell" maxlength="3"><br>
                     Price:<br>
                     <input type="number" id="sell_amount">
+                    <button type="submit" onclick="sell_stock();">sell</button>
                 </form>
-                <input type="button" onclick="sell_stock()" value="sell">
+                <!-- <input type="button" onclick="sell_stock()" value="sell"> -->
             </th>
         </tr>
         <tr>
@@ -89,12 +91,17 @@
         </tr>
         <tr>
             <th>
-                <form>
+    <form>
         Stock:<br>
         <input type="text" id="getQuote" maxlength="3"><br>
+        <button type="submit" onclick="get_quote();">Get quote</button><br><br>
+        <div style="display: inline-block">Quote: $</div>
+        <div style="display: inline-block" id="qt_amt" >---</div>
+        <div style="display: inline-block"> | </div>
+        <div style="display: inline-block" id="qt_sym" >---</div>
     </form>
-    <input type="button" onclick="get_quote()" value="Get quote">
-    
+    <!-- <input type="button" onclick="get_quote()" value="Get quote"> -->
+
             </th>
             <th>
             <form>
@@ -116,14 +123,14 @@
             </th>
          </tr>
     </table>
-    
-    
+
+
     <h2>Log file:</h2>
 <form>
     <input type="button" onclick="get_logs()" value="Download Logs">
 {#    or#}
 {#    <a href="path_to_file" download="proposed_file_name">Download</a>#}
 </form>
-    
+
 </body>
 </html>
