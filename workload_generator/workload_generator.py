@@ -115,11 +115,3 @@ for i, action in enumerate(client_actions_raw):
 	print(i, end="")
 	print(server_response)
 
-
-# server_response = requests.post((base_url + command_urls["ADD"]), data=client_actions)
-# print(server_response)
-
-
-# TODO: process it once to capture all users and add them to the system with no stocks and $0.00 in funds
-
-# TODO: process each command
