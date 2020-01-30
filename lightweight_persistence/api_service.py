@@ -14,7 +14,7 @@ def insert_log():
     response = logger_instance.insert_log(data)
     return json.dumps(response)
 
-@app.route("/getAuditLogs", methods=["GET"])
+@app.route("/dumpLog", methods=["GET"])
 def get_logs():
     response = logger_instance.get_logs()
     return json.dumps(response)

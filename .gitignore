@@ -9,3 +9,4 @@ redis_services/hiredis
 /.idea
 __pycache__
 /workload_generator/workload_files/
+/workload_generator/**.txt

@@ -74,3 +74,12 @@ print(server_response)
 # TODO: process it once to capture all users and add them to the system with no stocks and $0.00 in funds
 
 # TODO: process each command
+
+def process_dumplog(output_filename, dumplog_response):
+	try:
+		xml_string = dumplog_response.json()["data"]
+		with open(output_filename, 'w+') as f:
+			f.write(xml_string)
+	except KeyError:
+		print(f"Error: no data attribute found in response. Response status {dumplog_response.json()['status']}")
+
