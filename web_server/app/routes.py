@@ -6,7 +6,6 @@ import sys
 
 # Create the socket for transaction server communication
 sckt_trans = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sckt_trans.settimeout(4)
 # Create the socket for audit server communication
 sckt_audit = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -240,4 +239,10 @@ def dumpLog():
     # TODO: start the logfile.txt download for user
 
     return "OK", 200
+
+
+@app.route('/displaySummary', methods=["POST"])
+def displaySummary():
+    # TODO:implement displaySummary
+    return "OK", "200"
 
