@@ -8,7 +8,6 @@ from AuditLogBuilder import AuditLogBuilder
 
 # Create the socket for transaction server communication
 sckt_trans = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sckt_trans.settimeout(4)
 # Create the socket for audit server communication
 sckt_audit = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -237,3 +236,23 @@ def setSellTrigger():
 def dumpLog():
     response = requests.get(f"{protocol}://{audit_log_server_ip}:{audit_log_server_port}/dumpLog").json()
     return json.dumps(response)
+
+    # request_dict = json.dumps(request.form.to_dict(flat=True))
+    # print("--REQUEST:" + request_dict)
+    # sckt_audit.sendall(str.encode(request_dict))
+    # TODO: determine if it is user or admin dump
+    # return render_template('log_download.html')
+
+    # Receive response - logfile
+    # TODO: Parse the large log file to be returned
+    # response = sckt_audit.recv(65536).decode()
+    # print("--RESPONSE:" + str(response))
+
+    # TODO: start the logfile.txt download for user
+
+    return "OK", 200
+
+@app.route('/displaySummary', methods=["POST"])
+def displaySummary():
+    # TODO:implement displaySummary
+    return "OK", "200"

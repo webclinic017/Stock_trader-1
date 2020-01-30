@@ -10,3 +10,17 @@ redis_services/hiredis
 __pycache__
 /workload_generator/workload_files/
 /workload_generator/**.txt
+/workload_generator/workload_files/100User_testWorkLoad.txt
+/workload_generator/workload_files/1000User_testWorkLoad.txt
+/workload_generator/workload_files/2016.txt
+/workload_generator/workload_files/final2006WorkLoad.txt
+/workload_generator/workload_files/final2007.txt
+/workload_generator/workload_files/final_workload_2009.txt
+/workload_generator/workload_files/final_workload_2011.txt
+/workload_generator/workload_files/final_workload_2013.txt
+/workload_generator/workload_files/final_workload_2014.txt
+/workload_generator/workload_files/final_workload_2015.txt
+/workload_generator/workload_files/final_workload_2017.txt
+/workload_generator/workload_files/final_workload_2018.txt
+/workload_generator/workload_files/final_workload_2019.txt
+/workload_generator/workload_files/final_workload_spring_2010.txt

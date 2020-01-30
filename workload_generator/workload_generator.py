@@ -3,9 +3,9 @@ import socket
 import sys
 import requests
 
-# TODO: Connect with webserver (eventually a loadbalancer)
-# s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# s.connect(("192.168.0.15", 5000))
+
+# command line usage: "py workload_generator.py --1"
+# Where '--1' is the workload file to use as stated below
 
 workload_paths = {
 	"--1": "./workload_files/1userWorkLoad.txt",
@@ -13,7 +13,7 @@ workload_paths = {
 	"--10": "./workload_files/10User_testWorkLoad.txt",
 	"--45": "./workload_files/45User_testWorkLoad.txt",
 	"--100": "./workload_files/100User_testWorkLoad.txt",
-	"--1000": "./workload_files/1000userWorkLoad.txt",
+	"--1000": "./workload_files/1000User_testWorkLoad.txt",
 	"--2006": "./workload_files/final2006WorkLoad.txt",
 	"--2007": "./workload_files/final2007.txt",
 	"--2009": "./workload_files/final_workload_2009.txt",
@@ -53,23 +53,72 @@ base_url = "http://127.0.0.1:5000"
 file_index = sys.argv[1]
 fileObject = open(workload_paths[file_index])
 
-client_action = {
-	"Command": "ADD",
-	"userid": "treese",
-	"amount": "1200"
-}
+b = {"Command": "ADD", "userid": "treese", "amount": "1200"},
 
-# commands = [line.rstrip().split()[-1] for line in fileObject]
-# print(commands)
+# Read work load file, process into dict commands
+client_actions_raw = [line.rstrip().split()[-1].split(",") for line in fileObject]
+client_actions = []
+for i, action in enumerate(client_actions_raw):
+	command = action[0]
+	next_command = {"Command": command}
 
-server_response = requests.get(base_url + command_urls["ADD"], json=client_action)
-print(server_response)
+	if command == "ADD":
+		next_command["userid"] = action[1]
+		next_command["amount"] = action[2]
+	elif command == "QUOTE":
+		next_command["userid"] = action[1]
+		next_command["StockSymbol"] = action[2]
+	elif command == "BUY":
+		next_command["userid"] = action[1]
+		next_command["StockSymbol"] = action[2]
+		next_command["amount"] = action[3]
+	elif command == "COMMIT_BUY":
+		next_command["userid"] = action[1]
+	elif command == "CANCEL_BUY":
+		next_command["userid"] = action[1]
+	elif command == "SELL":
+		next_command["userid"] = action[1]
+		next_command["StockSymbol"] = action[2]
+		next_command["amount"] = action[3]
+	elif command == "COMMIT_SELL":
+		next_command["userid"] = action[1]
+	elif command == "CANCEL_SELL":
+		next_command["userid"] = action[1]
+	elif command == "SET_BUY_AMOUNT":
+		next_command["userid"] = action[1]
+		next_command["StockSymbol"] = action[2]
+		next_command["amount"] = action[3]
+	elif command == "CANCEL_SET_BUY":
+		next_command["userid"] = action[1]
+		next_command["StockSymbol"] = action[2]
+	elif command == "SET_BUY_TRIGGER":
+		next_command["userid"] = action[1]
+		next_command["StockSymbol"] = action[2]
+		next_command["amount"] = action[3]
+	elif command == "SET_SELL_AMOUNT":
+		next_command["userid"] = action[1]
+		next_command["StockSymbol"] = action[2]
+		next_command["amount"] = action[3]
+	elif command == "CANCEL_SET_SELL":
+		next_command["userid"] = action[1]
+		next_command["StockSymbol"] = action[2]
+	elif command == "SET_SELL_TRIGGER":
+		next_command["userid"] = action[1]
+		next_command["StockSymbol"] = action[2]
+		next_command["amount"] = action[3]
+	elif command == "DISPLAY_SUMMARY":
+		next_command["userid"] = action[1]
+	else:
+		continue
 
-# s.sendall(str.encode(json.dumps(client_action)))
-#
-# # Receive response
-# server_response = s.recv(1024).decode()
-# print("--RESPONSE:" + str(server_response))
+	server_response = requests.post((base_url + command_urls[command]), data=next_command)
+	print(i, end="")
+	print(server_response)
+
+
+# server_response = requests.post((base_url + command_urls["ADD"]), data=client_actions)
+# print(server_response)
+
 
 # TODO: process it once to capture all users and add them to the system with no stocks and $0.00 in funds
 
