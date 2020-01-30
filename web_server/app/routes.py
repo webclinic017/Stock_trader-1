@@ -11,7 +11,10 @@ sckt_trans.settimeout(4)
 sckt_audit = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # transaction_server_ip = "192.168.1.178"  # IP on comp 05
-transaction_server_ip = "localhost"  # IP on home comp
+transaction_server_ip = audit_log_server_ip = "localhost"  # IP on home comp
+transaction_server_port = 44415
+audit_log_server_port = 44416
+
 port_range = (44415, 44420)  # (inclusive,exclusive)
 
 
@@ -29,8 +32,8 @@ def find_open_socket(addr, ports):
 
 # Create connection an any available ports
 # find_open_socket(transaction_server_ip, port_range)
-sckt_trans.connect((transaction_server_ip, 44415))
-
+sckt_trans.connect((transaction_server_ip, transaction_server_port))
+sckt_audit.connect((audit_log_server_ip, audit_log_server_port))
 
 @app.route('/')
 def main_page():
