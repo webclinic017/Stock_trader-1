@@ -1,16 +1,24 @@
 from flask import render_template, request, jsonify
+import requests
 from app import app
 import json
 import socket
 import sys
+from AuditLogBuilder import AuditLogBuilder
 
 # Create the socket for transaction server communication
 sckt_trans = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # Create the socket for audit server communication
 sckt_audit = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+protocol = "http"
+server_name = "server_name_placeholder"
+
 # transaction_server_ip = "192.168.1.178"  # IP on comp 05
-transaction_server_ip = "localhost"  # IP on home comp
+transaction_server_ip = audit_log_server_ip = "localhost"  # IP on home comp
+transaction_server_port = 44415
+audit_log_server_port = 44416
+
 port_range = (44415, 44420)  # (inclusive,exclusive)
 
 
@@ -28,13 +36,12 @@ def find_open_socket(addr, ports):
 
 # Create connection an any available ports
 # find_open_socket(transaction_server_ip, port_range)
-sckt_trans.connect((transaction_server_ip, 44415))
-
+sckt_trans.connect((transaction_server_ip, transaction_server_port))
+sckt_audit.connect((audit_log_server_ip, audit_log_server_port))
 
 @app.route("/")
 def main_page():
     return render_template("day_trader.html")
-
 
 @app.route("/testconn", methods=["GET"])
 def testconn():
@@ -48,6 +55,8 @@ def addFunds():
     # Send request
     request_dict = json.dumps(request.form.to_dict(flat=True))
     print("--REQUEST:" + request_dict)
+    audit_log_json = AuditLogBuilder("ADD", server_name).build(request_dict)
+    requests.post(f"{protocol}://{audit_log_server_ip}:{audit_log_server_port}/auditLog", audit_log_json)
     sckt_trans.sendall(str.encode(request_dict))
 
     # TODO: send client REQUEST LOG to the audit server
@@ -225,6 +234,9 @@ def setSellTrigger():
 
 @app.route('/dumpLog', methods=["GET"])
 def dumpLog():
+    response = requests.get(f"{protocol}://{audit_log_server_ip}:{audit_log_server_port}/dumpLog").json()
+    return json.dumps(response)
+
     # request_dict = json.dumps(request.form.to_dict(flat=True))
     # print("--REQUEST:" + request_dict)
     # sckt_audit.sendall(str.encode(request_dict))
@@ -240,9 +252,7 @@ def dumpLog():
 
     return "OK", 200
 
-
 @app.route('/displaySummary', methods=["POST"])
 def displaySummary():
     # TODO:implement displaySummary
     return "OK", "200"
-

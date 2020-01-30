@@ -43,6 +43,7 @@ class TransactionServer:
         if cli_data.rem_money(user, amount):
             cli_data.push(user, data["StockSymbol"], float(amount), "buy")
             succeeded = True
+        self.cli_data = cli_data
         return succeeded
 
     def commit_buy(self, data):
@@ -61,15 +62,15 @@ class TransactionServer:
             succeeded = True
         except Exception:
             pass
+        self.cli_data = cli_data
         return succeeded
 
     def cancel_buy(self, data):
         succeeded = False
         user = data["userid"]
-        cli_data = self.cli_data
 
         try:
-            cli_data.add_money(user, cli_data.pop(user, "buy")[1])
+            self.cli_data.add_money(user, cli_data.pop(user, "buy")[1])
             succeeded = True
         except Exception:
             pass
@@ -92,6 +93,7 @@ class TransactionServer:
                 succeeded = True
         except Exception:
             pass
+        self.cli_data = cli_data
         return succeeded
 
     def commit_sell(self, data):
@@ -116,6 +118,7 @@ class TransactionServer:
             succeeded = True
         except Exception:
             pass
+        self.cli_data = cli_data
         return succeeded
 
     def cancel_sell(self, data):
@@ -129,6 +132,7 @@ class TransactionServer:
             succeeded = True
         except Exception:
             pass
+        self.cli_data = cli_data
         return succeeded
 
     ###### Buy Trigger Commands #####
@@ -144,6 +148,7 @@ class TransactionServer:
                 succeeded = True
             else:
                 cli_data.add_money(user, amount)
+        self.cli_data = cli_data
         return succeeded
 
     def cancel_set_buy(self, data):
@@ -177,6 +182,7 @@ class TransactionServer:
                 succeeded = True
             else:
                 cli_data.add_stock(user, symbol, amount)
+        self.cli_data = cli_data
         return succeeded
 
     def cancel_set_sell(self, data):
@@ -222,6 +228,7 @@ class TransactionServer:
                 data["Succeeded"] = self.add(data)
             elif command == "QUOTE":
                 data["Quote"] = self.quote(data)[0]
+                print(data)
             elif command == "BUY":
                 data["Succeeded"] = self.buy(data)
             elif command == "COMMIT_BUY":
