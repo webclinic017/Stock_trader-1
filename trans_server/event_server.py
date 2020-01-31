@@ -83,6 +83,7 @@ class EventServer:
 				elif event[1] > 0:
 					amount = event[1]
 				event[1] = 0
+				self.timers[ver][user].pop(symbol)
 			except KeyError:
 				curr[symbol] = [None, 0, 0]
 		except KeyError:
@@ -112,6 +113,13 @@ class EventServer:
 		try:
 			curr["buy"] = self.timers["buy"][user]
 			curr["sel"] = self.timers["sel"][user]
+			# In case a quote thread var is still inside a trigger dict
+			for key, val in curr["buy"].items():
+				if isinstance(val[0], QuoteThread):
+					val[0] = "active"
+			for key, val in curr["sel"].items():
+				if isinstance(val[0], QuoteThread):
+					val[0] = "active"
 		except KeyError:
 			pass
 		return curr
