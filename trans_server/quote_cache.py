@@ -26,8 +26,7 @@ class QuoteCache:
 
         # print(data)
         data[0] = float(data[0])
-        qtm = time.time()
-        self.quotes[symbol] = (qtm, data,)
+        self.quotes[symbol] = data
 
         return data
 

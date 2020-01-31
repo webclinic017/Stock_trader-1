@@ -2,7 +2,6 @@ import select
 import socket
 import json
 
-
 class TransactionServer:
     # Create a server socket then bind and listen the socket
     def __init__(self, cli_data, cache, events, addr, port):
@@ -215,8 +214,10 @@ class TransactionServer:
             if command == "ADD":
                 data["Succeeded"] = self.add(data)
             elif command == "QUOTE":
-                data["Quote"] = self.quote(data)[1][0]
-                print(data)
+                quote_data = self.quote(data)
+                data["Quote"] = quote_data[0]
+                data["quoteServerTime"] = quote_data[3]
+                data["cryptokey"] = quote_data[4]
             elif command == "BUY":
                 data["Succeeded"] = self.buy(data)
             elif command == "COMMIT_BUY":
@@ -243,7 +244,8 @@ class TransactionServer:
                 data["Succeeded"] = self.set_sell_trigger(data)
             elif command == "DISPLAY_SUMMARY":
                 data["Data"] = self.display_summary(data)
-        except:
+        except Exception as e:
+            print(e)
             conn.send(str.encode("{\"FAILED\"}"))
             return False
 
@@ -254,13 +256,19 @@ class TransactionServer:
     # Non-return function launches the server loop
     def launch(self):
         open_sockets = []
-        while True:
-            rlist, wlist, xlisst = select.select([self.server] + open_sockets, [], [])
-            for s in rlist:
-                if s is self.server:
-                    conn, addr = self.server.accept()
-                    open_sockets.append(conn)
-                else:
-                    if not self.transaction(s):
-                        s.close()
-                        open_sockets.remove(s)
+        try:
+            while True:
+                rlist, wlist, xlisst = select.select([self.server] + open_sockets, [], [])
+                for s in rlist:
+                    if s is self.server:
+                        conn, addr = self.server.accept()
+                        open_sockets.append(conn)
+                    else:
+                        if not self.transaction(s):
+                            s.shutdown(socket.SHUT_RDWR)
+                            s.close()
+                            open_sockets.remove(s)
+        except KeyboardInterrupt:
+            for s in open_sockets:
+                s.shutdown(socket.SHUT_RDWR)
+                s.close()

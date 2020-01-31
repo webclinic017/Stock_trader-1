@@ -35,8 +35,6 @@ def addFunds():
     # Send request
     request_dict = json.dumps(request.form.to_dict(flat=True))
     print("--REQUEST:" + request_dict)
-    audit_log_json = AuditLogBuilder("ADD", server_name).build(request_dict)
-    requests.post(f"{protocol}://{audit_log_server_ip}:{audit_log_server_port}/auditLog", audit_log_json)
 
     sckt_trans.sendall(str.encode(request_dict))
 
@@ -45,6 +43,7 @@ def addFunds():
 
     # Receive response
     trans_response = sckt_trans.recv(1024).decode()
+    AuditLogBuilder("ADD", server_name).build(trans_response).send(protocol, audit_log_server_ip, audit_log_server_port)
     print("--RESPONSE:" + str(trans_response))
 
     # TODO: send transaction server RESPONSE LOG to the audit server
@@ -67,6 +66,7 @@ def getQuote():
 
     # Receive response
     trans_response = sckt_trans.recv(1024).decode()
+    AuditLogBuilder("QUOTE", server_name).build(trans_response).send(protocol, audit_log_server_ip, audit_log_server_port)
     print("--RESPONSE:" + str(trans_response))
 
     # TODO: send transaction server RESPONSE LOG to the audit server
@@ -310,7 +310,6 @@ def setSellAmount():
 
     return trans_response
 
-
 @app.route('/cancelSetSell', methods=["POST"])
 def cancelSetSell():
     # Send request
@@ -334,7 +333,6 @@ def cancelSetSell():
 
     return trans_response
 
-
 @app.route('/setSellTrigger', methods=["POST"])
 def setSellTrigger():
     # Send request
@@ -353,27 +351,12 @@ def setSellTrigger():
     # sckt_audit.sendall(str.encode(response))
     # audit_response = sckt_audit.recv(1024).decode()
     # print("RESPONSE:" + str(audit_response))
-
     return trans_response
 
-
-@app.route('/dumpLog', methods=["GET"])
+@app.route('/dumpLog', methods=["POST"])
 def dumpLog():
-    response = requests.get(f"{protocol}://{audit_log_server_ip}:{audit_log_server_port}/dumpLog").json()
+    response = requests.post(f"{protocol}://{audit_log_server_ip}:{audit_log_server_port}/dumpLog", data=request.json).json()
     return json.dumps(response)
-
-    # request_dict = json.dumps(request.form.to_dict(flat=True))
-    # print("--REQUEST:" + request_dict)
-    # sckt_audit.sendall(str.encode(request_dict))
-    # TODO: determine if it is user or admin dump
-    # return render_template('log_download.html')
-
-    # Receive response - logfile
-    # TODO: Parse the large log file to be returned
-    # response = sckt_audit.recv(65536).decode()
-    # print("--RESPONSE:" + str(response))
-
-    # TODO: start the logfile.txt download for user
 
 @app.route('/displaySummary', methods=["POST"])
 def displaySummary():

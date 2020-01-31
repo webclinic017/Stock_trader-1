@@ -1,196 +1,202 @@
 import uuid
 import time
+import requests
+import json
 class AuditLogBuilder:
-    _audit_log = {}
     def __init__(self, command, server):
+        self._audit_log = {}
         self._server = server
         try:
-            self.build = self._func_wrapper(build_func=self._method[command])
+            self.build = self._func_wrapper(self._method[command])
         except KeyError:
             pass
 
-    def build(self):
-        pass
+    def build(self, data):
+        return self
 
-    def _add(self):
-        audit_log = self._audit_log
-        audti_log["commandType"] = "userCommand"
-        audit_log["data_fields"] = {
+    def _add(self, data):
+        log = {}
+        log["commandType"] = "UserCommandType"
+        log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
             "funds": data["amount"]
         }
-        return audit_log
+        return log
 
-    def _quote(self):
-        audit_log = self._audit_log
-        audit_log["data_fields"] = {
+    def _quote(self, data):
+        log = {}
+        log["commandType"] = "QuoteServerType"
+        log["data_fields"] = {
             "price": data["Quote"],
             "stockSymbol": data["StockSymbol"],
             "username": data["userid"],
             "quoteServerTime": data["quoteServerTime"],
             "cryptokey": data["cryptokey"]
         }
-        return audit_log
+        return log
 
-    def _buy(self):
-        audit_log = self._audit_log
-        audit_log["commandType"] = "userCommand"
-        audit_log["data_fields"] = {
+    def _buy(self, data):
+        log = {}
+        log["commandType"] = "UserCommandType"
+        log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
             "stockSymbol": data["StockSymbol"],
             "funds": data["amount"]
         }
-        return audit_log
+        return log
 
-    def _commit_buy(self):
-        audit_log = self._audit_log
-        audit_log["commandType"] = "userCommand"
-        audit_log["data_fields"] = {
+    def _commit_buy(self, data):
+        log = {}
+        log["commandType"] = "UserCommandType"
+        log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
             "stockSymbol": data["StockSymbol"],
             "amount": data["amount"]
         }
-        return audit_log
+        return log
 
-    def _cancel_buy(self):
-        audit_log = self._audit_log
-        audit_log["commandType"] = "userCommand"
-        audit_log["data_fields"] = {
+    def _cancel_buy(self, data):
+        log = {}
+        log["commandType"] = "UserCommandType"
+        log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
             "stockSymbol": data["StockSymbol"]
         }
-        return audit_log
+        return log
 
-    def _sell(self):
-        audit_log = self._audit_log
-        audit_log["commandType"] = "userCommand"
-        audit_log["data_fields"] = {
+    def _sell(self, data):
+        log = {}
+        log["commandType"] = "UserCommandType"
+        log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
             "stockSymbol": data["StockSymbol"],
             "funds": data["amount"]
         }
-        return audit_log
+        return log
 
-    def _commit_sell(self):
-        audit_log = self._audit_log
-        audit_log["commandType"] = "userCommand"
-        audit_log["data_fields"] = {
+    def _commit_sell(self, data):
+        log = {}
+        log["commandType"] = "UserCommandType"
+        log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
             "stockSymbol": data["StockSymbol"],
             "funds": data["amount"]
         }
-        return audit_log
+        return log
 
-    def _cancel_sell(self):
-        audit_log = self._audit_log
-        audit_log["commandType"] = "userCommand"
-        audit_log["data_fields"] = {
+    def _cancel_sell(self, data):
+        log = {}
+        log["commandType"] = "UserCommandType"
+        log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
             "stockSymbol": data["StockSymbol"]
         }
-        return audit_log
+        return log
 
-    def _set_buy_amount(self):
-        audit_log = self._audit_log
-        audit_log["commandType"] = "userCommand"
-        audit_log["data_fields"] = {
+    def _set_buy_amount(self, data):
+        log = {}
+        log["commandType"] = "UserCommandType"
+        log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
             "stockSymbol": data["StockSymbol"],
             "funds": data["amount"]
         }
-        return audit_log
+        return log
 
-    def _cancel_set_buy(self):
-        audit_log = self._audit_log
-        audit_log["commandType"] = "userCommand"
-        audit_log["data_fields"] = {
+    def _cancel_set_buy(self, data):
+        log = {}
+        log["commandType"] = "UserCommandType"
+        log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
             "stockSymbol": data["StockSymbol"]
         }
-        return audit_log
+        return log
 
-    def _set_buy_trigger(self):
-        audit_log = self._audit_log
-        audit_log["commandType"] = "userCommand"
-        audit_log["data_fields"] = {
+    def _set_buy_trigger(self, data):
+        log = {}
+        log["commandType"] = "UserCommandType"
+        log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
             "stockSymbol": data["StockSymbol"],
             "funds": data["amount"]
         }
-        return audit_log
+        return log
 
-    def _set_sell_amount(self):
-        audit_log = self._audit_log
-        audit_log["commandType"] = "userCommand"
-        audit_log["data_fields"] = {
+    def _set_sell_amount(self, data):
+        log = {}
+        log["commandType"] = "UserCommandType"
+        log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
             "stockSymbol": data["StockSymbol"],
             "funds": data["amount"]
         }
-        return audit_log
+        return log
 
-    def _set_sell_trigger(self):
-        audit_log = self._audit_log
-        audit_log["commandType"] = "userCommand"
-        audit_log["data_fields"] = {
+    def _set_sell_trigger(self, data):
+        log = {}
+        log["commandType"] = "UserCommandType"
+        log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
             "stockSymbol": data["StockSymbol"],
             "funds": data["amount"]
         }
-        return audit_log
+        return log
 
-    def _cancel_set_sell(self):
-        audit_log = self._audit_log
-        audit_log["commandType"] = "userCommand"
-        audit_log["data_fields"] = {
+    def _cancel_set_sell(self, data):
+        log = {}
+        log["commandType"] = "UserCommandType"
+        log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
             "stockSymbol": data["StockSymbol"]
         }
-        return audit_log
+        return log
 
-    def _dumplog(self):
-        audit_log = self._audit_log
-        audit_log["commandType"] = "userCommand"
-        audit_log["data_fields"] = {
+    def _dumplog(self, data):
+        log = {}
+        log["commandType"] = "UserCommandType"
+        log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
             "filename": data["filename"]
         }
-        return audit_log
+        return log
 
-    def _display_summary(self):
-        audit_log = self._audit_log
-        audit_log["commandType"] = "userCommand"
-        audit_log["data_fields"] = {
+    def _display_summary(self, data):
+        log = {}
+        log["commandType"] = "UserCommandType"
+        log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"]
         }
-        return audit_log
+        return log
 
-    def _func_wrapper(build_func):
-        def func(self, data):
-            self._audit_log = {
-                "transactionId": str(uuid.uuid4()),
-                "data_fields": {
-                    "timestamp": int(time.time()),
-                    "server": self._server
-                }
-            }
-            return build_func()
+    def _func_wrapper(self, build_func):
+        def func(data_json_str):
+            data = json.loads(data_json_str)
+            transactionId = str(uuid.uuid4())
+            audit_log = self._audit_log
+            audit_log[transactionId] = build_func(self, data)
+            audit_log[transactionId]["data_fields"]["timestamp"] = int(time.time())
+            audit_log[transactionId]["data_fields"]["server"] = self._server
+            self._audit_log = audit_log
+            return self
         return func
+
+    def send(self, protocol, audit_log_server_ip, audit_log_server_port):
+        requests.post(f"{protocol}://{audit_log_server_ip}:{audit_log_server_port}/auditLog", json=self._audit_log)
 
     _method = {
         "ADD": _add,
