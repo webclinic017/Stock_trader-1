@@ -1,6 +1,6 @@
 
 import xml.etree.ElementTree as elementTree
-
+import uuid
 class logger:
     def __init__(self):
         self._audit_log = {}
@@ -60,4 +60,15 @@ class logger:
         xml_string = (elementTree.tostring(logs_root, encoding='utf-8')).decode('utf-8')
         response["status"] = "SUCCESS"
         response["data"] = xml_string
+
+        # log the dumplog command
+        audit_dump_log_entry = {}
+        audit_dump_log_entry[str(uuid.uuid4())] = {
+            "commandType": "userCommand",
+            "data_fields": {
+                "command": "DUMPLOG"
+            }
+        }
+        self.insert_log(audit_dump_log_entry)
+
         return response
