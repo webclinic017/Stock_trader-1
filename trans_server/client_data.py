@@ -92,6 +92,8 @@ class ClientData:
 				if stocks[stock] >= count:
 					stocks[stock] -= count
 					succeeded = True
+					if stocks[stock] <= 0:
+						self.cli_data[user]["stk"].pop(stock)
 			except KeyError:
 				stocks[stock] = 0
 		except KeyError:
@@ -126,7 +128,7 @@ class ClientData:
 	def pop(self, user, key):
 		self.clear_old(user, key, time.time())
 		self.lock.acquire()
-		record = ()
+		record = ()  # not sure about this
 		try:
 			record = self.cli_data[user][key].pop()
 		except Exception:

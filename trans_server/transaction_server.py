@@ -162,7 +162,7 @@ class TransactionServer:
         succeeded = False
         user = data["userid"]
         symbol = data["StockSymbol"]
-        amount = int(data["amount"])
+        amount = float(data["amount"])
         cli_data = self.cli_data
 
         if cli_data.rem_stock(user, symbol, amount):
@@ -243,6 +243,7 @@ class TransactionServer:
                 data["Succeeded"] = self.set_sell_trigger(data)
             elif command == "DISPLAY_SUMMARY":
                 data["Data"] = self.display_summary(data)
+                print(data)
         except:
             conn.send(str.encode("{\"FAILED\"}"))
             return False
