@@ -1,8 +1,5 @@
-import json
-import socket
 import sys
 import requests
-
 
 # command line usage: "py workload_generator.py --1"
 # Where '--1' is the workload file to use as stated below
@@ -48,8 +45,6 @@ command_urls = {
 }
 
 base_url = "http://127.0.0.1:5000"
-
-# TODO: take in workload file index from command line args
 file_index = sys.argv[1]
 fileObject = open(workload_paths[file_index])
 
@@ -61,68 +56,64 @@ client_actions = []
 for i, action in enumerate(client_actions_raw):
 	command = action[0]
 	next_command = {"Command": command}
-
-	if command == "ADD":
-		next_command["userid"] = action[1]
-		next_command["amount"] = action[2]
-	elif command == "QUOTE":
-		next_command["userid"] = action[1]
-		next_command["StockSymbol"] = action[2]
-	elif command == "BUY":
-		next_command["userid"] = action[1]
-		next_command["StockSymbol"] = action[2]
-		next_command["amount"] = action[3]
-	elif command == "COMMIT_BUY":
-		next_command["userid"] = action[1]
-	elif command == "CANCEL_BUY":
-		next_command["userid"] = action[1]
-	elif command == "SELL":
-		next_command["userid"] = action[1]
-		next_command["StockSymbol"] = action[2]
-		next_command["amount"] = action[3]
-	elif command == "COMMIT_SELL":
-		next_command["userid"] = action[1]
-	elif command == "CANCEL_SELL":
-		next_command["userid"] = action[1]
-	elif command == "SET_BUY_AMOUNT":
-		next_command["userid"] = action[1]
-		next_command["StockSymbol"] = action[2]
-		next_command["amount"] = action[3]
-	elif command == "CANCEL_SET_BUY":
-		next_command["userid"] = action[1]
-		next_command["StockSymbol"] = action[2]
-	elif command == "SET_BUY_TRIGGER":
-		next_command["userid"] = action[1]
-		next_command["StockSymbol"] = action[2]
-		next_command["amount"] = action[3]
-	elif command == "SET_SELL_AMOUNT":
-		next_command["userid"] = action[1]
-		next_command["StockSymbol"] = action[2]
-		next_command["amount"] = action[3]
-	elif command == "CANCEL_SET_SELL":
-		next_command["userid"] = action[1]
-		next_command["StockSymbol"] = action[2]
-	elif command == "SET_SELL_TRIGGER":
-		next_command["userid"] = action[1]
-		next_command["StockSymbol"] = action[2]
-		next_command["amount"] = action[3]
-	elif command == "DISPLAY_SUMMARY":
-		next_command["userid"] = action[1]
-	else:
+	try:
+		if command == "ADD":
+			next_command["userid"] = action[1]
+			next_command["amount"] = action[2]
+		elif command == "QUOTE":
+			next_command["userid"] = action[1]
+			next_command["StockSymbol"] = action[2]
+		elif command == "BUY":
+			next_command["userid"] = action[1]
+			next_command["StockSymbol"] = action[2]
+			next_command["amount"] = action[3]
+		elif command == "COMMIT_BUY":
+			next_command["userid"] = action[1]
+		elif command == "CANCEL_BUY":
+			next_command["userid"] = action[1]
+		elif command == "SELL":
+			next_command["userid"] = action[1]
+			next_command["StockSymbol"] = action[2]
+			next_command["amount"] = action[3]
+		elif command == "COMMIT_SELL":
+			next_command["userid"] = action[1]
+		elif command == "CANCEL_SELL":
+			next_command["userid"] = action[1]
+		elif command == "SET_BUY_AMOUNT":
+			next_command["userid"] = action[1]
+			next_command["StockSymbol"] = action[2]
+			next_command["amount"] = action[3]
+		elif command == "CANCEL_SET_BUY":
+			next_command["userid"] = action[1]
+			next_command["StockSymbol"] = action[2]
+		elif command == "SET_BUY_TRIGGER":
+			next_command["userid"] = action[1]
+			next_command["StockSymbol"] = action[2]
+			next_command["amount"] = action[3]
+		elif command == "SET_SELL_AMOUNT":
+			next_command["userid"] = action[1]
+			next_command["StockSymbol"] = action[2]
+			next_command["amount"] = action[3]
+		elif command == "CANCEL_SET_SELL":
+			next_command["userid"] = action[1]
+			next_command["StockSymbol"] = action[2]
+		elif command == "SET_SELL_TRIGGER":
+			next_command["userid"] = action[1]
+			next_command["StockSymbol"] = action[2]
+			next_command["amount"] = action[3]
+		elif command == "DISPLAY_SUMMARY":
+			next_command["userid"] = action[1]
+		elif command == "DUMPLOG":
+			next_command["filename"] = action[1]
+		else:
+			print(f"Invalid command: #{i+1} -> {action}")
+			continue
+	except Exception as e:
+		print(f"{e} | {action}")
 		continue
 
 	server_response = requests.post((base_url + command_urls[command]), data=next_command)
-	print(i, end="")
-	print(server_response)
-
-
-# server_response = requests.post((base_url + command_urls["ADD"]), data=client_actions)
-# print(server_response)
-
-
-# TODO: process it once to capture all users and add them to the system with no stocks and $0.00 in funds
-
-# TODO: process each command
+	print(f"#{i+1} action:{action} response:{server_response}")
 
 def process_dumplog(output_filename, dumplog_response):
 	try:
@@ -131,4 +122,3 @@ def process_dumplog(output_filename, dumplog_response):
 			f.write(xml_string)
 	except KeyError:
 		print(f"Error: no data attribute found in response. Response status {dumplog_response.json()['status']}")
-

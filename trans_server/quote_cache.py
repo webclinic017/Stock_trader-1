@@ -35,15 +35,12 @@ class QuoteCache:
         val = []
         self.lock.acquire()
         try:
-            q = self.quotes.get(symbol)  # get previous quote time
-            if q is None or time.time() - q[0] >= 6:
-                print("-need new quote")
+            q = self.quotes.get(symbol)  # get previous quote if exists
+            if q is None or time.time() - q[0] >= 60:
                 val = self.new_quote(symbol, user)
             else:
-                print("-cached quote")
                 val = q
         except KeyError:
-            print("-error new_quote")
             val = self.new_quote(symbol, user)
         print(str(val))
         self.lock.release()

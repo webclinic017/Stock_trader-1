@@ -21,19 +21,6 @@ audit_log_server_port = 44416
 
 port_range = (44415, 44420)  # (inclusive,exclusive)
 
-
-def find_open_socket(addr, ports):
-    for i in range(ports[0], ports[1]):
-        try:
-            sckt_trans.connect((addr, i))
-            print("connected on port:" + str(i))
-            return
-        except Exception as e:
-            print(str(i), end="")
-            print(e)
-            continue
-
-
 # Create connection an any available ports
 # find_open_socket(transaction_server_ip, port_range)
 sckt_trans.connect((transaction_server_ip, transaction_server_port))
@@ -43,13 +30,6 @@ sckt_audit.connect((audit_log_server_ip, audit_log_server_port))
 def main_page():
     return render_template("day_trader.html")
 
-@app.route("/testconn", methods=["GET"])
-def testconn():
-    request_dict = json.dumps(request.form.to_dict(flat=True))
-    print("--REQUEST:" + request_dict)
-    return {"hello": "12", "bye": "13"}
-
-
 @app.route('/addFunds', methods=["POST"])
 def addFunds():
     # Send request
@@ -57,6 +37,7 @@ def addFunds():
     print("--REQUEST:" + request_dict)
     audit_log_json = AuditLogBuilder("ADD", server_name).build(request_dict)
     requests.post(f"{protocol}://{audit_log_server_ip}:{audit_log_server_port}/auditLog", audit_log_json)
+
     sckt_trans.sendall(str.encode(request_dict))
 
     # TODO: send client REQUEST LOG to the audit server
@@ -120,14 +101,50 @@ def buyStock():
 
 @app.route('/commitBuy', methods=["POST"])
 def commitBuy():
-    # TODO:implement commitBuy
-    return "OK", "200"
+    # Send request
+    request_dict = json.dumps(request.form.to_dict(flat=True))
+    print("--REQUEST:" + request_dict)
+    # audit_log_json = AuditLogBuilder("COMMIT_BUY", server_name).build(request_dict)
+    # requests.post(f"{protocol}://{audit_log_server_ip}:{audit_log_server_port}/auditLog", audit_log_json)
+    sckt_trans.sendall(str.encode(request_dict))
+
+    # TODO: send client REQUEST LOG to the audit server
+    # sckt_audit.sendall(str.encode(request_dict))
+
+    # Receive response
+    trans_response = sckt_trans.recv(1024).decode()
+    print("--RESPONSE:" + str(trans_response))
+
+    # TODO: send transaction server RESPONSE LOG to the audit server
+    # sckt_audit.sendall(str.encode(response))
+    # audit_response = sckt_audit.recv(1024).decode()
+    # print("RESPONSE:" + str(audit_response))
+
+    return trans_response
 
 
 @app.route('/cancelBuy', methods=["POST"])
 def cancelBuy():
-    # TODO:implement cancelBuy
-    return "OK", "200"
+    # Send request
+    request_dict = json.dumps(request.form.to_dict(flat=True))
+    print("--REQUEST:" + request_dict)
+    # audit_log_json = AuditLogBuilder("CANCEL_BUY", server_name).build(request_dict)
+    # requests.post(f"{protocol}://{audit_log_server_ip}:{audit_log_server_port}/auditLog", audit_log_json)
+    sckt_trans.sendall(str.encode(request_dict))
+
+    # TODO: send client REQUEST LOG to the audit server
+    # sckt_audit.sendall(str.encode(request_dict))
+
+    # Receive response
+    trans_response = sckt_trans.recv(1024).decode()
+    print("--RESPONSE:" + str(trans_response))
+
+    # TODO: send transaction server RESPONSE LOG to the audit server
+    # sckt_audit.sendall(str.encode(response))
+    # audit_response = sckt_audit.recv(1024).decode()
+    # print("RESPONSE:" + str(audit_response))
+
+    return trans_response
 
 
 @app.route('/sellStock', methods=["POST"])
@@ -154,26 +171,98 @@ def sellStock():
 
 @app.route('/commitSell', methods=["POST"])
 def commitSell():
-    # TODO:implement commitSell
-    return "OK", "200"
+    # Send request
+    request_dict = json.dumps(request.form.to_dict(flat=True))
+    print("--REQUEST:" + request_dict)
+    # audit_log_json = AuditLogBuilder("COMMIT_SELL", server_name).build(request_dict)
+    # requests.post(f"{protocol}://{audit_log_server_ip}:{audit_log_server_port}/auditLog", audit_log_json)
+    sckt_trans.sendall(str.encode(request_dict))
+
+    # TODO: send client REQUEST LOG to the audit server
+    # sckt_audit.sendall(str.encode(request_dict))
+
+    # Receive response
+    trans_response = sckt_trans.recv(1024).decode()
+    print("--RESPONSE:" + str(trans_response))
+
+    # TODO: send transaction server RESPONSE LOG to the audit server
+    # sckt_audit.sendall(str.encode(response))
+    # audit_response = sckt_audit.recv(1024).decode()
+    # print("RESPONSE:" + str(audit_response))
+
+    return trans_response
 
 
 @app.route('/cancelSell', methods=["POST"])
 def cancelSell():
-    # TODO:implement cancelSell
-    return "OK", "200"
+    # Send request
+    request_dict = json.dumps(request.form.to_dict(flat=True))
+    print("--REQUEST:" + request_dict)
+    # audit_log_json = AuditLogBuilder("CANCEL_SELL", server_name).build(request_dict)
+    # requests.post(f"{protocol}://{audit_log_server_ip}:{audit_log_server_port}/auditLog", audit_log_json)
+    sckt_trans.sendall(str.encode(request_dict))
+
+    # TODO: send client REQUEST LOG to the audit server
+    # sckt_audit.sendall(str.encode(request_dict))
+
+    # Receive response
+    trans_response = sckt_trans.recv(1024).decode()
+    print("--RESPONSE:" + str(trans_response))
+
+    # TODO: send transaction server RESPONSE LOG to the audit server
+    # sckt_audit.sendall(str.encode(response))
+    # audit_response = sckt_audit.recv(1024).decode()
+    # print("RESPONSE:" + str(audit_response))
+
+    return trans_response
 
 
 @app.route('/setBuyAmount', methods=["POST"])
 def setBuyAmount():
-    # TODO:implement setBuyAmount
-    return "OK", "200"
+    # Send request
+    request_dict = json.dumps(request.form.to_dict(flat=True))
+    print("--REQUEST:" + request_dict)
+    # audit_log_json = AuditLogBuilder("SET_BUY_AMOUNT", server_name).build(request_dict)
+    # requests.post(f"{protocol}://{audit_log_server_ip}:{audit_log_server_port}/auditLog", audit_log_json)
+    sckt_trans.sendall(str.encode(request_dict))
+
+    # TODO: send client REQUEST LOG to the audit server
+    # sckt_audit.sendall(str.encode(request_dict))
+
+    # Receive response
+    trans_response = sckt_trans.recv(1024).decode()
+    print("--RESPONSE:" + str(trans_response))
+
+    # TODO: send transaction server RESPONSE LOG to the audit server
+    # sckt_audit.sendall(str.encode(response))
+    # audit_response = sckt_audit.recv(1024).decode()
+    # print("RESPONSE:" + str(audit_response))
+
+    return trans_response
 
 
 @app.route('/cancelSetBuy', methods=["POST"])
 def cancelSetBuy():
-    # TODO:implement cancelSetBuy
-    return "OK", "200"
+    # Send request
+    request_dict = json.dumps(request.form.to_dict(flat=True))
+    print("--REQUEST:" + request_dict)
+    # audit_log_json = AuditLogBuilder("CANCEL_SET_BUY", server_name).build(request_dict)
+    # requests.post(f"{protocol}://{audit_log_server_ip}:{audit_log_server_port}/auditLog", audit_log_json)
+    sckt_trans.sendall(str.encode(request_dict))
+
+    # TODO: send client REQUEST LOG to the audit server
+    # sckt_audit.sendall(str.encode(request_dict))
+
+    # Receive response
+    trans_response = sckt_trans.recv(1024).decode()
+    print("--RESPONSE:" + str(trans_response))
+
+    # TODO: send transaction server RESPONSE LOG to the audit server
+    # sckt_audit.sendall(str.encode(response))
+    # audit_response = sckt_audit.recv(1024).decode()
+    # print("RESPONSE:" + str(audit_response))
+
+    return trans_response
 
 
 @app.route('/setBuyTrigger', methods=["POST"])
@@ -200,14 +289,50 @@ def setBuyTrigger():
 
 @app.route('/setSellAmount', methods=["POST"])
 def setSellAmount():
-    # TODO:implement setSellAmount
-    return "OK", "200"
+    # Send request
+    request_dict = json.dumps(request.form.to_dict(flat=True))
+    print("--REQUEST:" + request_dict)
+    # audit_log_json = AuditLogBuilder("SET_SELL_AMOUNT", server_name).build(request_dict)
+    # requests.post(f"{protocol}://{audit_log_server_ip}:{audit_log_server_port}/auditLog", audit_log_json)
+    sckt_trans.sendall(str.encode(request_dict))
+
+    # TODO: send client REQUEST LOG to the audit server
+    # sckt_audit.sendall(str.encode(request_dict))
+
+    # Receive response
+    trans_response = sckt_trans.recv(1024).decode()
+    print("--RESPONSE:" + str(trans_response))
+
+    # TODO: send transaction server RESPONSE LOG to the audit server
+    # sckt_audit.sendall(str.encode(response))
+    # audit_response = sckt_audit.recv(1024).decode()
+    # print("RESPONSE:" + str(audit_response))
+
+    return trans_response
 
 
 @app.route('/cancelSetSell', methods=["POST"])
 def cancelSetSell():
-    # TODO:implement cancelSetSell
-    return "OK", "200"
+    # Send request
+    request_dict = json.dumps(request.form.to_dict(flat=True))
+    print("--REQUEST:" + request_dict)
+    # audit_log_json = AuditLogBuilder("CANCEL_SET_SELL", server_name).build(request_dict)
+    # requests.post(f"{protocol}://{audit_log_server_ip}:{audit_log_server_port}/auditLog", audit_log_json)
+    sckt_trans.sendall(str.encode(request_dict))
+
+    # TODO: send client REQUEST LOG to the audit server
+    # sckt_audit.sendall(str.encode(request_dict))
+
+    # Receive response
+    trans_response = sckt_trans.recv(1024).decode()
+    print("--RESPONSE:" + str(trans_response))
+
+    # TODO: send transaction server RESPONSE LOG to the audit server
+    # sckt_audit.sendall(str.encode(response))
+    # audit_response = sckt_audit.recv(1024).decode()
+    # print("RESPONSE:" + str(audit_response))
+
+    return trans_response
 
 
 @app.route('/setSellTrigger', methods=["POST"])
@@ -250,9 +375,25 @@ def dumpLog():
 
     # TODO: start the logfile.txt download for user
 
-    return "OK", 200
-
 @app.route('/displaySummary', methods=["POST"])
 def displaySummary():
-    # TODO:implement displaySummary
-    return "OK", "200"
+    # Send request
+    request_dict = json.dumps(request.form.to_dict(flat=True))
+    print("--REQUEST:" + request_dict)
+    # audit_log_json = AuditLogBuilder("DISPLAY_SUMMARY", server_name).build(request_dict)
+    # requests.post(f"{protocol}://{audit_log_server_ip}:{audit_log_server_port}/auditLog", audit_log_json)
+    sckt_trans.sendall(str.encode(request_dict))
+
+    # TODO: send client REQUEST LOG to the audit server
+    # sckt_audit.sendall(str.encode(request_dict))
+
+    # Receive response
+    trans_response = sckt_trans.recv(1024).decode()
+    print("--RESPONSE:" + str(trans_response))
+
+    # TODO: send transaction server RESPONSE LOG to the audit server
+    # sckt_audit.sendall(str.encode(response))
+    # audit_response = sckt_audit.recv(1024).decode()
+    # print("RESPONSE:" + str(audit_response))
+
+    return trans_response

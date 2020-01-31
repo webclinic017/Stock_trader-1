@@ -1,8 +1,10 @@
 import time
 import threading
 
+
 # Surrogate for client database
 # Provides API for actions on client records
+
 class ClientData:
 	# Could be extended to load users on init
 	def __init__(self):
@@ -19,7 +21,7 @@ class ClientData:
 	##### Account Commands #####
 	def check_money(self, user):
 		account = -1.0
-		self.lock.acquire()	
+		self.lock.acquire()
 		try:
 			account = self.cli_data[user]["acc"]
 		except KeyError:
@@ -36,8 +38,8 @@ class ClientData:
 		except KeyError:
 			self.new_user(user, amount, dict(), [], [])
 		self.lock.release()
-		
-		#DEBUG
+
+		# DEBUG
 		print("ADD MONEY: " + user + "\t" + str(self.cli_data[user]["acc"]) + "\t" + str(True))
 
 		return True
@@ -54,8 +56,8 @@ class ClientData:
 		except KeyError:
 			self.new_user(user, 0.0, dict(), [], [])
 		self.lock.release()
-		
-		#DEBUG
+
+		# DEBUG
 		print("REM MONEY: " + user + "\t" + str(self.cli_data[user]["acc"]) + "\t" + str(succeeded))
 
 		return succeeded
@@ -73,8 +75,8 @@ class ClientData:
 		except KeyError:
 			self.new_user(user, 0.0, {stock: count}, [], [])
 		self.lock.release()
-		
-		#DEBUG
+
+		# DEBUG
 		print("ADD STOCK: " + user + "\t" + str(self.cli_data[user]["stk"]) + "\t" + str(True))
 
 		return True
@@ -95,8 +97,8 @@ class ClientData:
 		except KeyError:
 			self.new_user(user, 0.0, dict(), [], [])
 		self.lock.release()
-		
-		#DEBUG
+
+		# DEBUG
 		print("REM STOCK: " + user + "\t" + str(self.cli_data[user]["stk"]) + "\t" + str(succeeded))
 
 		return succeeded
@@ -105,7 +107,7 @@ class ClientData:
 	def clear_old(self, user, key, curr):
 		filtered = []
 		command_stack = self.cli_data[user][key]
-		
+
 		for cmd in command_stack:
 			if curr - cmd[2] >= 60:
 				if key == "buy":
