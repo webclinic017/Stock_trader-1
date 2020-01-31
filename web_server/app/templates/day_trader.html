@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <title>Day trader</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script type="text/javascript" src="../static/js/day_trader.js"></script>
+<style>
+    body {background-color: lightskyblue;}
+    table {
+        color: #333; /* Lighten up font color */
+        font-family: Helvetica, Arial, sans-serif; /* Nicer font */
+        width: 740px;
+        border-collapse: collapse;
+        border-spacing: 2px;
+    }
+
+    tr {
+        color: #333; /* Lighten up font color */
+        border: 2px solid black;
+        border-spacing: 2px;
+    }
+    th {
+        border: 2px solid black;
+    }
+</style>
+</head>
+<body>
+    <h1>Day trader</h1>
+    Current User:
+    <input type="text" value="John Doe" class="field left" readonly id="userId">
+    <br />
+    <div style="display: inline-block">Account balance: $</div>
+    <div id="accountBalance" style="display: inline-block">0.00</div>
+    <br />
+    <br />
+    <table>
+        <tr>
+            <th>
+                <h2>Add Funds</h2>
+            </th>
+            <th>
+                <h2>Buy</h2>
+            </th>
+            <th>
+                <h2>Sell</h2>
+            </th>
+        </tr>
+        <tr>
+            <th>
+                <form>
+                    Amount:
+                    <br>
+                        <input type="number" id="addFunds">
+                        <button type="submit" onclick="add();">add</button>
+                    <br>
+                </form>
+<!--                <input type="button" onclick="add()" value="add">-->
+            </th>
+            <th>
+                <form>
+                    Stock:<br>
+                    <input type="text" id="symbol_buy" minlength="1" maxlength="3"><br>
+                    Price:<br>
+                    <input type="number" id="buy_amount">
+                    <button type="submit" onclick="buy_stock();">buy</button>
+                </form>
+                <!-- <input type="button" onclick="buy_stock()" value="buy"> -->
+            </th>
+            <th>
+                <form>
+                    Stock:<br>
+                    <input type="text" id="symbol_sell" minlength="1" maxlength="3"><br>
+                    Price:<br>
+                    <input type="number" id="sell_amount">
+                    <button type="submit" onclick="sell_stock();">sell</button>
+                </form>
+                <!-- <input type="button" onclick="sell_stock()" value="sell"> -->
+            </th>
+        </tr>
+        <tr>
+            <th>
+                <h2>Quote</h2>
+            </th>
+            <th>
+                <h2>Set buy trigger</h2>
+            </th>
+            <th>
+                <h2>Set sell trigger</h2>
+            </th>
+        </tr>
+        <tr>
+            <th>
+    <form>
+        Stock:<br>
+        <input type="text" id="getQuote" minlength="1" maxlength="3"><br>
+        <button type="submit" onclick="get_quote();">Get quote</button><br><br>
+        <div style="display: inline-block">Quote: $</div>
+        <div style="display: inline-block" id="qt_amt" >---</div>
+        <div style="display: inline-block"> | </div>
+        <div style="display: inline-block" id="qt_sym" >---</div>
+    </form>
+    <!-- <input type="button" onclick="get_quote()" value="Get quote"> -->
+
+            </th>
+            <th>
+            <form>
+        Stock:<br>
+        <input type="text" id="symbol_buy_trigger" minlength="1" maxlength="3"><br>
+        Price:<br>
+        <input type="number" id="targetPrice_buy">
+    </form>
+    <input type="button" onclick="buy_trigger()" value="Set buy trigger">
+            </th>
+            <th>
+                <form>
+        Stock:<br>
+        <input type="text" id="symbol_sell_trigger" minlength="1" maxlength="3"><br>
+        Price:<br>
+        <input type="number" id="targetPrice_sell">
+    </form>
+    <input type="button" onclick="sell_trigger()" value="Set sell trigger">
+            </th>
+         </tr>
+    </table>
+
+
+    <h2>Log file:</h2>
+<form>
+    <input type="button" onclick="get_logs()" value="Download Logs">
+{#    or#}
+{#    <a href="path_to_file" download="proposed_file_name">Download</a>#}
+</form>
+
+</body>
+</html>

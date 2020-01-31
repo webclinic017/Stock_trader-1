@@ -15,7 +15,7 @@ eventObject * buildEventObject(redisReply * reply, uuid_t eventId) {
      
     char * stockSymbol = reply -> element[1] -> str;
     int targetAmount = atoi(reply -> element[3] -> str);
-    int type = reply -> element[5] -> integer;
+    enum commandType type = atoi(reply -> element[5] -> str);
     char * username = reply -> element[7] -> str;
     enum eventStatus status = atoi(reply -> element[9] -> str);
     int sizeUuid = sizeof(uuid_t);

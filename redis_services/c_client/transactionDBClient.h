@@ -1,52 +1,50 @@
 #include "baseTypes.h"
 #include "hiredis.h"
 
-enum transactionArgsType {
-    REDIS_REPLY,
-    FINE_GRAINED_ARGS
-};
+typedef struct transactionDataField {
+    char * field;
+    char * value;
+    transactionDataField * next;
+} transactionDataField;
 
-typedef struct transactionArgs {
-    enum transactionArgsType type;
-    redisReply * reply;
+typedef struct transactionLog {
     char * transactionId;
     char * username;
-    enum commandType * command;
-    char * cryptokey;
-    char * stockSymbol;
-    int * amount;
-} transactionArgs;
+    int numDataFields;
+    transactionDataField * head;
+    transactionDataField * tail;
+} transactionLog;
 
-typedef struct transactionListNode {
-    struct transactionListNode * prev;
-    struct transactionObject * data;
-    struct transactionListNode * next;
-} transactionListNode;
+typedef struct transactionLogListNode {
+    struct transactionLogListNode * prev;
+    struct transactionLog * log;
+    struct transactionLogListNode * next;
+} transactionLogListNode;
 
-typedef struct transactionList {
+typedef struct transactionLogList {
     int size;
-    struct transactionListNode * head;
-    struct transactionListNode * tail;
-} transactionList;
+    struct transactionLogListNode * head;
+    struct transactionLogListNode * tail;
+} transactionLogList;
 
-typedef struct transactionObject {
-    char * transactionId;
-    enum commandType * command;
-    char * cryptokey;
-    char * username;
-    char * stockSymbol;
-    int * amount;
-} transactionObject;
+void freeTransactionDataField(transactionDataField * dataField)
+void freetransactionLog(transactionLog * transObj);
+void freetransactionLogList(transactionLogList * list);
+void freeTransactionLogListNode(transactionLogListNode * node);
 
-void freeArgsObject(transactionArgs * args);
-void freeTransactionObject(transactionObject * transObj);
-void freeTransactionList(transactionList * list);
-void freeTransactionNode(transactionListNode * node);
-transactionObject * buildTransactionObject(transactionArgs * args);
-transactionList * newTransactionList();
-void addTransactionToList(transactionList * list, transactionObject * transObj);
-char * addFieldToSetCommand(char * commandStr, char * fieldname, char * value);
-char * newTransactionLog(redisContext * c, transactionObject * transaction);
-transactionList * redisScan(redisContext * c, char * scanCommand, char * username);
-transactionList * getTransactionLog(redisContext * c, char * username);
-transactionList * getAllTransactionLogs(redisContext * c);
+transactionDataField * initTransactionDataField(char * field, char * value);
+transactionLog * initEmptyTransactionLog();
+transactionLogList * initEmptyTransactionLogList();
+
+transactionLog * buildTransactionLogFromRedisReply(redisReply * reply);
+void addDataFieldToTransactionLog(transactionLog * log, transactionDataField * dataField);
+void addTransactionLogToList(transactionLogList * logList, transactionLog * log);
+char * addtransactionDataFieldToRedisCommand(char * commandStr, transactionDataField * dataField);
+
+char * coallesceUsernameAndTransactionId(char * username, char * transactionId);
+
+char * persistTransactionLogs(redisContext * c, transactionLogsList * logs);
+transactionLogList * redisScan(redisContext * c, char * scanCommand, char * username);
+transactionLog * getTransactionLog(redisContext * c, char * username, char * transactionId);
+transactionLogList * getAllUserTransactionLogs(redisContext * c, char * username);
+transactionLogList * getAllTransactionLogs(redisContext * c);
