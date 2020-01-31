@@ -4,7 +4,6 @@ from app import app
 import json
 import socket
 import sys
-from AuditLogBuilder import AuditLogBuilder
 
 # Create the socket for transaction server communication
 sckt_trans = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -12,7 +11,7 @@ sckt_trans = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sckt_audit = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 protocol = "http"
-server_name = "server_name_placeholder"
+server_name = "web server"
 
 # transaction_server_ip = "192.168.1.178"  # IP on comp 05
 transaction_server_ip = audit_log_server_ip = "localhost"  # IP on home comp
@@ -43,7 +42,6 @@ def addFunds():
 
     # Receive response
     trans_response = sckt_trans.recv(1024).decode()
-    AuditLogBuilder("ADD", server_name).build(trans_response).send(protocol, audit_log_server_ip, audit_log_server_port)
     print("--RESPONSE:" + str(trans_response))
 
     # TODO: send transaction server RESPONSE LOG to the audit server
@@ -66,7 +64,6 @@ def getQuote():
 
     # Receive response
     trans_response = sckt_trans.recv(1024).decode()
-    AuditLogBuilder("QUOTE", server_name).build(trans_response).send(protocol, audit_log_server_ip, audit_log_server_port)
     print("--RESPONSE:" + str(trans_response))
 
     # TODO: send transaction server RESPONSE LOG to the audit server

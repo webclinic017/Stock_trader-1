@@ -52,9 +52,7 @@ class AuditLogBuilder:
         log["commandType"] = "userCommand"
         log["data_fields"] = {
             "command": data["Command"],
-            "username": data["userid"],
-            "stockSymbol": data["StockSymbol"],
-            "amount": data["amount"]
+            "username": data["userid"]
         }
         return log
 
@@ -63,8 +61,7 @@ class AuditLogBuilder:
         log["commandType"] = "userCommand"
         log["data_fields"] = {
             "command": data["Command"],
-            "username": data["userid"],
-            "stockSymbol": data["StockSymbol"]
+            "username": data["userid"]
         }
         return log
 
@@ -84,9 +81,7 @@ class AuditLogBuilder:
         log["commandType"] = "userCommand"
         log["data_fields"] = {
             "command": data["Command"],
-            "username": data["userid"],
-            "stockSymbol": data["StockSymbol"],
-            "funds": data["amount"]
+            "username": data["userid"]
         }
         return log
 
@@ -95,8 +90,7 @@ class AuditLogBuilder:
         log["commandType"] = "userCommand"
         log["data_fields"] = {
             "command": data["Command"],
-            "username": data["userid"],
-            "stockSymbol": data["StockSymbol"]
+            "username": data["userid"]
         }
         return log
 
@@ -116,8 +110,7 @@ class AuditLogBuilder:
         log["commandType"] = "userCommand"
         log["data_fields"] = {
             "command": data["Command"],
-            "username": data["userid"],
-            "stockSymbol": data["StockSymbol"]
+            "username": data["userid"]
         }
         return log
 
