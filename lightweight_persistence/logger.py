@@ -35,13 +35,12 @@ class logger:
     def get_logs(self):
         audit_log = self._audit_log
         print("dumplog")
+        print(self._audit_log)
         transactionNum = 1
         response = {"status": "ERROR"}
-        logs_xml = elementTree.Element('?xml version="1.0"?')
         logs_root = elementTree.Element("log")
         log_keys = audit_log.keys()
         log_i = 0
-        print("number of logs in audit log: " + str(len(log_keys)))
         for log_key in log_keys:
             log = audit_log[log_key]
             data_fields = log["data_fields"].keys()
@@ -52,16 +51,13 @@ class logger:
                 data_field_element = elementTree.Element(data_field)
                 data_field_element.text = str(value)
                 data_field_elements.append(data_field_element)
-            if (log["commandType"] != "LogType"):
-                transaction_num_field = elementTree.SubElement(log_element, "transactionNum")
-                transaction_num_field.text = str(transactionNum)
-                transactionNum = transactionNum + 1
-                print(transaction_num_field)
+            transaction_num_field = elementTree.SubElement(log_element, "transactionNum")
+            transaction_num_field.text = str(transactionNum)
+            transactionNum = transactionNum + 1
             log_element.extend(data_field_elements)
-            print("----------")
             logs_root.append(log_element)
             log_i = log_i + 1
-        xml_string = (elementTree.tostring(logs_xml, encoding='utf-8') + elementTree.tostring(logs_root, encoding='utf-8')).decode('utf-8')
+        xml_string = (elementTree.tostring(logs_root, encoding='utf-8')).decode('utf-8')
         response["status"] = "SUCCESS"
         response["data"] = xml_string
         return response

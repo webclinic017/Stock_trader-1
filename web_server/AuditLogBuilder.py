@@ -16,7 +16,7 @@ class AuditLogBuilder:
 
     def _add(self, data):
         log = {}
-        log["commandType"] = "UserCommandType"
+        log["commandType"] = "userCommand"
         log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
@@ -26,19 +26,19 @@ class AuditLogBuilder:
 
     def _quote(self, data):
         log = {}
-        log["commandType"] = "QuoteServerType"
+        log["commandType"] = "quoteServer"
         log["data_fields"] = {
             "price": data["Quote"],
             "stockSymbol": data["StockSymbol"],
             "username": data["userid"],
-            "quoteServerTime": data["quoteServerTime"],
+            "quoteServerTime": int(data["quoteServerTime"]),
             "cryptokey": data["cryptokey"]
         }
         return log
 
     def _buy(self, data):
         log = {}
-        log["commandType"] = "UserCommandType"
+        log["commandType"] = "userCommand"
         log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
@@ -49,7 +49,7 @@ class AuditLogBuilder:
 
     def _commit_buy(self, data):
         log = {}
-        log["commandType"] = "UserCommandType"
+        log["commandType"] = "userCommand"
         log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
@@ -60,7 +60,7 @@ class AuditLogBuilder:
 
     def _cancel_buy(self, data):
         log = {}
-        log["commandType"] = "UserCommandType"
+        log["commandType"] = "userCommand"
         log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
@@ -70,7 +70,7 @@ class AuditLogBuilder:
 
     def _sell(self, data):
         log = {}
-        log["commandType"] = "UserCommandType"
+        log["commandType"] = "userCommand"
         log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
@@ -81,7 +81,7 @@ class AuditLogBuilder:
 
     def _commit_sell(self, data):
         log = {}
-        log["commandType"] = "UserCommandType"
+        log["commandType"] = "userCommand"
         log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
@@ -92,7 +92,7 @@ class AuditLogBuilder:
 
     def _cancel_sell(self, data):
         log = {}
-        log["commandType"] = "UserCommandType"
+        log["commandType"] = "userCommand"
         log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
@@ -102,7 +102,7 @@ class AuditLogBuilder:
 
     def _set_buy_amount(self, data):
         log = {}
-        log["commandType"] = "UserCommandType"
+        log["commandType"] = "userCommand"
         log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
@@ -113,7 +113,7 @@ class AuditLogBuilder:
 
     def _cancel_set_buy(self, data):
         log = {}
-        log["commandType"] = "UserCommandType"
+        log["commandType"] = "userCommand"
         log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
@@ -123,7 +123,7 @@ class AuditLogBuilder:
 
     def _set_buy_trigger(self, data):
         log = {}
-        log["commandType"] = "UserCommandType"
+        log["commandType"] = "userCommand"
         log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
@@ -134,7 +134,7 @@ class AuditLogBuilder:
 
     def _set_sell_amount(self, data):
         log = {}
-        log["commandType"] = "UserCommandType"
+        log["commandType"] = "userCommand"
         log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
@@ -145,7 +145,7 @@ class AuditLogBuilder:
 
     def _set_sell_trigger(self, data):
         log = {}
-        log["commandType"] = "UserCommandType"
+        log["commandType"] = "userCommand"
         log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
@@ -156,7 +156,7 @@ class AuditLogBuilder:
 
     def _cancel_set_sell(self, data):
         log = {}
-        log["commandType"] = "UserCommandType"
+        log["commandType"] = "userCommand"
         log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
@@ -166,7 +166,7 @@ class AuditLogBuilder:
 
     def _dumplog(self, data):
         log = {}
-        log["commandType"] = "UserCommandType"
+        log["commandType"] = "userCommand"
         log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
@@ -176,7 +176,7 @@ class AuditLogBuilder:
 
     def _display_summary(self, data):
         log = {}
-        log["commandType"] = "UserCommandType"
+        log["commandType"] = "userCommand"
         log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"]
@@ -189,7 +189,7 @@ class AuditLogBuilder:
             transactionId = str(uuid.uuid4())
             audit_log = self._audit_log
             audit_log[transactionId] = build_func(self, data)
-            audit_log[transactionId]["data_fields"]["timestamp"] = int(time.time())
+            audit_log[transactionId]["data_fields"]["timestamp"] = int(time.time()) * 1000
             audit_log[transactionId]["data_fields"]["server"] = self._server
             self._audit_log = audit_log
             return self

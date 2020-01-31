@@ -144,9 +144,7 @@ for i, action in enumerate(client_actions_raw):
 	server_response = requests.post((base_url + command_urls[command]), data=next_command)
 	print(f"#{i+1} action:{action} response:{server_response}")
 
-#	# TEMPORARY: for dumplog development--------
 	try:
 		process_dumplog(next_command["filename"], server_response)
 	except KeyError:
 		pass
-#	#-------------------------------------------
