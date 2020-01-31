@@ -10,8 +10,7 @@ def main():
     es = EventServer()
     qc = QuoteCache("quoteserve.seng.uvic.ca", 4444)
     es.give_hooks(cd, qc)
-    # server = TransactionServer(cd, qc, es, "192.168.1.178", (44415, 44420))
-    server = TransactionServer(cd, qc, es, "127.0.0.1", (44415, 44420))
+    server = TransactionServer(cd, qc, es, "127.0.0.1", 44415)
     server.launch()
 
 

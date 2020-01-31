@@ -1,6 +1,5 @@
-import time
 import threading
-import json
+
 
 class QuoteThread(threading.Thread):
 	def __init__(self, cli_data, cache, ver, user, symbol, amount, price):
@@ -17,7 +16,7 @@ class QuoteThread(threading.Thread):
 	def run(self):
 		while not self.stopevent.isSet():
 			quote = self.cache.quote(self.symbol, self.user)[0]
-			if (self.ver == "buy" and quote <= self.price):
+			if self.ver == "buy" and quote <= self.price:
 				count = int(self.amount / quote)
 				delta = self.amount - (count * quote)
 				# Add bought stock to portfolio
@@ -25,20 +24,21 @@ class QuoteThread(threading.Thread):
 				# Add delta of transaction back to balance
 				self.cli_data.add_money(self.user, delta)
 				break
-			elif (self.ver == "sel" and quote >= self.price):
+			elif self.ver == "sel" and quote >= self.price:
 				value = quote * self.amount
 				# Add sell amount to balance
 				self.cli_data.add_money(self.user, value)
 				break
 			self.stopevent.wait(60.0)
-	
+
 	def join(self):
 		self.stopevent.set()
 		threading.Thread.join(self, None)
 
+
 class EventServer:
 	def __init__(self):
-		self.timers = {"buy":{},"sel":{}}
+		self.timers = {"buy": {}, "sel": {}}
 
 	def give_hooks(self, cli_data, cache):
 		self.cache = cache
@@ -78,9 +78,9 @@ class EventServer:
 						event[0] = None
 					else:
 						event[0] = None
-						event[1] = 0			
-					amount = event[1]	
-				elif event[1] > 0:			
+						event[1] = 0
+					amount = event[1]
+				elif event[1] > 0:
 					amount = event[1]
 				event[1] = 0
 			except KeyError:
@@ -106,9 +106,9 @@ class EventServer:
 		except KeyError:
 			self.timers[ver][user] = {symbol: [None, 0, 0]}
 		return succeeded
-		
+
 	def state(self, user):
-		curr = {"buy":{}, "sel":{}}
+		curr = {"buy": {}, "sel": {}}
 		try:
 			curr["buy"] = self.timers["buy"][user]
 			curr["sel"] = self.timers["sel"][user]

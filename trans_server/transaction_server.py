@@ -3,25 +3,14 @@ import socket
 import json
 
 
-def find_open_socket(sock, addr, port_range):
-    for i in range(port_range[0], port_range[1]):
-        try:
-            sock.connect((addr, i))
-            print("bound to port:" + str(i))
-            return
-        except Exception as e:
-            continue
-
-
 class TransactionServer:
     # Create a server socket then bind and listen the socket
-    def __init__(self, cli_data, cache, events, addr, port_range):
+    def __init__(self, cli_data, cache, events, addr, port):
         self.cli_data = cli_data
         self.cache = cache
         self.events = events
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server.bind((addr, port_range[0]))
-        # self.find_open_socket(sock.server, addr, port_range)
+        self.server.bind((addr, port))
         self.server.listen(4)
 
     ##### Base Commands #####
@@ -70,7 +59,7 @@ class TransactionServer:
         user = data["userid"]
 
         try:
-            self.cli_data.add_money(user, cli_data.pop(user, "buy")[1])
+            self.cli_data.add_money(user, self.cli_data.pop(user, "buy")[1])
             succeeded = True
         except Exception:
             pass
@@ -85,7 +74,6 @@ class TransactionServer:
         cli_data = self.cli_data
 
         try:
-            print("here1")
             price = self.cache.quote(symbol, user)[0]
             count = int(amount / price)
             if cli_data.rem_stock(user, symbol, count):
@@ -227,7 +215,7 @@ class TransactionServer:
             if command == "ADD":
                 data["Succeeded"] = self.add(data)
             elif command == "QUOTE":
-                data["Quote"] = self.quote(data)[0]
+                data["Quote"] = self.quote(data)[1][0]
                 print(data)
             elif command == "BUY":
                 data["Succeeded"] = self.buy(data)

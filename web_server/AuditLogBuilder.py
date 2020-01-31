@@ -1,7 +1,10 @@
 import uuid
 import time
+
+
 class AuditLogBuilder:
     _audit_log = {}
+
     def __init__(self, command, server):
         self._server = server
         try:
@@ -14,7 +17,7 @@ class AuditLogBuilder:
 
     def _add(self):
         audit_log = self._audit_log
-        audti_log["commandType"] = "userCommand"
+        audit_log["commandType"] = "userCommand"
         audit_log["data_fields"] = {
             "command": data["Command"],
             "username": data["userid"],
