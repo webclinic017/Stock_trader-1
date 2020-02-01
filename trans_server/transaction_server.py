@@ -25,7 +25,9 @@ class TransactionServer:
         return self.cli_data.add_money(user, amount)
 
     def quote(self, data):
-        return self.cache.quote(data["StockSymbol"], data["userid"])
+        result =  self.cache.quote(data["StockSymbol"], data["userid"])
+        AuditLogBuilder("QUOTE", server_name).build(json.dumps(data)).send(protocol, audit_log_server_ip, audit_log_server_port)
+        return result
 
     ###### Buy Commands #####
     def buy(self, data):

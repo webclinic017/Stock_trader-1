@@ -112,7 +112,14 @@ for i, action in enumerate(client_actions_raw):
 		elif command == "DISPLAY_SUMMARY":
 			next_command["userid"] = action[1]
 		elif command == "DUMPLOG":
-			next_command["filename"] = action[1]
+			filenameIndex = 1
+			usernameIndex = None
+			if (len(action) == 3):
+				filenameIndex = 2
+				usernameIndex = 1
+			next_command["filename"] = action[filenameIndex]
+			if (usernameIndex != None):
+				next_command["userid"] = action[usernameIndex]
 		else:
 			print(f"Invalid command: #{i+1} -> {action}")
 			continue
