@@ -1,12 +1,7 @@
 import select
 import socket
 import json
-from AuditLogBuilder import AuditLogBuilder
 
-server_name = "transaction server"
-protocol = "http"
-audit_log_server_ip = "localhost"
-audit_log_server_port = 44416
 
 class TransactionServer:
     # Create a server socket then bind and listen the socket
@@ -37,7 +32,6 @@ class TransactionServer:
         if cli_data.rem_money(user, amount):
             cli_data.push(user, data["StockSymbol"], float(amount), "buy")
             succeeded = True
-            AuditLogBuilder("BUY", server_name).build(json.dumps(data)).send(protocol, audit_log_server_ip, audit_log_server_port)
         self.cli_data = cli_data
         return succeeded
 
@@ -55,9 +49,7 @@ class TransactionServer:
             # Update stock ownership records
             cli_data.add_stock(user, buy_data[0], count)
             succeeded = True
-            AuditLogBuilder("COMMIT_BUY", server_name).build(json.dumps(data)).send(protocol, audit_log_server_ip, audit_log_server_port)
-        except Exception as e:
-            print(e)
+        except Exception:
             pass
         self.cli_data = cli_data
         return succeeded
@@ -69,7 +61,6 @@ class TransactionServer:
         try:
             self.cli_data.add_money(user, self.cli_data.pop(user, "buy")[1])
             succeeded = True
-            AuditLogBuilder("CANCEL_BUY", server_name).build(json.dumps(data)).send(protocol, audit_log_server_ip, audit_log_server_port)
         except Exception:
             pass
         return succeeded
@@ -88,7 +79,6 @@ class TransactionServer:
             if cli_data.rem_stock(user, symbol, count):
                 cli_data.push(user, symbol, (amount, count), "sel")
                 succeeded = True
-                AuditLogBuilder("SELL", server_name).build(json.dumps(data)).send(protocol, audit_log_server_ip, audit_log_server_port)
         except Exception:
             pass
         self.cli_data = cli_data
@@ -114,7 +104,6 @@ class TransactionServer:
                     raise Exception
             cli_data.add_money(user, count * price)
             succeeded = True
-            AuditLogBuilder("COMMIT_SELL", server_name).build(json.dumps(data)).send(protocol, audit_log_server_ip, audit_log_server_port)
         except Exception:
             pass
         self.cli_data = cli_data
@@ -129,7 +118,6 @@ class TransactionServer:
             sell_data = cli_data.pop(user, "sel")
             cli_data.add_stock(user, sell_data[0], sell_data[1][1])
             succeeded = True
-            AuditLogBuilder("CANCEL_SELL", server_name).build(json.dumps(data)).send(protocol, audit_log_server_ip, audit_log_server_port)
         except Exception:
             pass
         self.cli_data = cli_data
@@ -146,7 +134,6 @@ class TransactionServer:
         if cli_data.rem_money(user, amount):
             if self.events.register("buy", user, symbol, amount):
                 succeeded = True
-                AuditLogBuilder("SET_BUY_AMOUNT", server_name).build(json.dumps(data)).send(protocol, audit_log_server_ip, audit_log_server_port)
             else:
                 cli_data.add_money(user, amount)
         self.cli_data = cli_data
@@ -161,7 +148,6 @@ class TransactionServer:
         if amount >= 0:
             if self.cli_data.add_money(user, amount):
                 succeeded = True
-                AuditLogBuilder("CANCEL_SET_BUY", server_name).build(json.dumps(data)).send(protocol, audit_log_server_ip, audit_log_server_port)
         return succeeded
 
     def set_buy_trigger(self, data):
@@ -169,9 +155,7 @@ class TransactionServer:
         symbol = data["StockSymbol"]
         price = float(data["amount"])
 
-        result = self.events.trigger("buy", user, symbol, price)
-        AuditLogBuilder("SET_BUY_TRIGGER", server_name).build(json.dumps(data)).send(protocol, audit_log_server_ip, audit_log_server_port)
-        return result
+        return self.events.trigger("buy", user, symbol, price)
 
     ###### Sell Trigger Commands #####
     def set_sell_amount(self, data):
@@ -184,7 +168,6 @@ class TransactionServer:
         if cli_data.rem_stock(user, symbol, amount):
             if self.events.register("sel", user, symbol, amount):
                 succeeded = True
-                AuditLogBuilder("SET_SELL_AMOUNT", server_name).build(json.dumps(data)).send(protocol, audit_log_server_ip, audit_log_server_port)
             else:
                 cli_data.add_stock(user, symbol, amount)
         self.cli_data = cli_data
@@ -199,7 +182,6 @@ class TransactionServer:
         if amount > 0:
             if self.cli_data.add_stock(user, symbol, amount):
                 succeeded = True
-                AuditLogBuilder("CANCEL_SET_SELL", server_name).build(json.dumps(data)).send(protocol, audit_log_server_ip, audit_log_server_port)
         return succeeded
 
     def set_sell_trigger(self, data):
@@ -207,16 +189,13 @@ class TransactionServer:
         symbol = data["StockSymbol"]
         price = float(data["amount"])
 
-        result = self.events.trigger("sel", user, symbol, price)
-        AuditLogBuilder("SET_SELL_TRIGGER", server_name).build(json.dumps(data)).send(protocol, audit_log_server_ip, audit_log_server_port)
-        return result
+        return self.events.trigger("sel", user, symbol, price)
 
     ##### Audit Commands #####
     def display_summary(self, data):
         user = data["userid"]
         tri = self.events.state(user)
         acc = self.cli_data.check_money(user)
-        AuditLogBuilder("DISPLAY_SUMMARY", server_name).build(json.dumps(data)).send(protocol, audit_log_server_ip, audit_log_server_port)
         return {"Triggers": tri, "Account": acc}
 
     # Command entry point
@@ -236,13 +215,10 @@ class TransactionServer:
             if command == "ADD":
                 data["Succeeded"] = self.add(data)
             elif command == "QUOTE":
-                quote_data = self.quote(data)
-                data["Quote"] = quote_data[0]
-                data["quoteServerTime"] = quote_data[3]
-                data["cryptokey"] = quote_data[4]
+                data["Quote"] = self.quote(data)[1][0]
+                print(data)
             elif command == "BUY":
-                buy_data = self.buy(data)
-                data["Succeeded"] = buy_data
+                data["Succeeded"] = self.buy(data)
             elif command == "COMMIT_BUY":
                 data["Succeeded"] = self.commit_buy(data)
             elif command == "CANCEL_BUY":
@@ -267,8 +243,8 @@ class TransactionServer:
                 data["Succeeded"] = self.set_sell_trigger(data)
             elif command == "DISPLAY_SUMMARY":
                 data["Data"] = self.display_summary(data)
-        except Exception as e:
-            print(e)
+                print(data)
+        except:
             conn.send(str.encode("{\"FAILED\"}"))
             return False
 
@@ -279,19 +255,13 @@ class TransactionServer:
     # Non-return function launches the server loop
     def launch(self):
         open_sockets = []
-        try:
-            while True:
-                rlist, wlist, xlisst = select.select([self.server] + open_sockets, [], [])
-                for s in rlist:
-                    if s is self.server:
-                        conn, addr = self.server.accept()
-                        open_sockets.append(conn)
-                    else:
-                        if not self.transaction(s):
-                            s.shutdown(socket.SHUT_RDWR)
-                            s.close()
-                            open_sockets.remove(s)
-        except KeyboardInterrupt:
-            for s in open_sockets:
-                s.shutdown(socket.SHUT_RDWR)
-                s.close()
+        while True:
+            rlist, wlist, xlisst = select.select([self.server] + open_sockets, [], [])
+            for s in rlist:
+                if s is self.server:
+                    conn, addr = self.server.accept()
+                    open_sockets.append(conn)
+                else:
+                    if not self.transaction(s):
+                        s.close()
+                        open_sockets.remove(s)

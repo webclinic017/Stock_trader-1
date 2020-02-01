@@ -40,11 +40,13 @@ class ClientData:
 		self.lock.release()
 
 		# DEBUG
-		print("ADD MONEY: " + user + "\t" + str(self.cli_data[user]["acc"]) + "\t" + str(True))
+		# print("ADD MONEY: " + user + "\t" + str(self.cli_data[user]["acc"]) + "\t" + str(True))
+		print(f"ADD_MNY1|user:{user}|STATE:{self.cli_data[user]}")
 
 		return True
 
 	def rem_money(self, user, amount):
+		print(f"REM_MNY0|user:{user}|STATE:{self.cli_data[user]}")
 		succeeded = False
 		self.lock.acquire()
 		try:
@@ -58,12 +60,14 @@ class ClientData:
 		self.lock.release()
 
 		# DEBUG
-		print("REM MONEY: " + user + "\t" + str(self.cli_data[user]["acc"]) + "\t" + str(succeeded))
+		# print("REM MONEY: " + user + "\t" + str(self.cli_data[user]["acc"]) + "\t" + str(succeeded))
+		print(f"REM_MNY1|user:{user}|STATE:{self.cli_data[user]}")
 
 		return succeeded
 
 	##### Portfolio Commands #####
 	def add_stock(self, user, stock, count):
+		print(f"ADD_STK0|user:{user}|STATE:{self.cli_data[user]}")
 		self.lock.acquire()
 		try:
 			count = int(count)
@@ -77,11 +81,13 @@ class ClientData:
 		self.lock.release()
 
 		# DEBUG
-		print("ADD STOCK: " + user + "\t" + str(self.cli_data[user]["stk"]) + "\t" + str(True))
+		# print("ADD STOCK: " + user + "\t" + str(self.cli_data[user]["stk"]) + "\t" + str(True))
+		print(f"ADD_STK1|user:{user}|STATE:{self.cli_data[user]}")
 
 		return True
 
 	def rem_stock(self, user, stock, count):
+		print(f"REM_STK0|user:{user}|STATE:{self.cli_data[user]}")
 		succeeded = False
 		self.lock.acquire()
 		try:
@@ -92,21 +98,22 @@ class ClientData:
 				if stocks[stock] >= count:
 					stocks[stock] -= count
 					succeeded = True
-					if stocks[stock] <= 0:
-						self.cli_data[user]["stk"].pop(stock)
 			except KeyError:
-				stocks[stock] = 0
+				pass
+				# stocks[stock] = 0 # TR- if none of said stock is held, why insert into held stock dict?
 		except KeyError:
 			self.new_user(user, 0.0, dict(), [], [])
 		self.lock.release()
 
 		# DEBUG
-		print("REM STOCK: " + user + "\t" + str(self.cli_data[user]["stk"]) + "\t" + str(succeeded))
+		# print("REM STOCK: " + user + "\t" + str(self.cli_data[user]["stk"]) + "\t" + str(succeeded))
+		print(f"REM_STK1|user:{user}|STATE:{self.cli_data[user]}")
 
 		return succeeded
 
 	##### Buy and Sell Commands #####
 	def clear_old(self, user, key, curr):
+		print(f"CLR_OLD0|user:{user}|STATE:{self.cli_data[user]}")
 		filtered = []
 		command_stack = self.cli_data[user][key]
 
@@ -119,6 +126,7 @@ class ClientData:
 			else:
 				filtered.append(cmd)
 		self.cli_data[user][key] = filtered
+		print(f"CLR_OLD1|user:{user}|STATE:{self.cli_data[user]}")
 
 	def push(self, user, symbol, amount, key):
 		self.lock.acquire()
