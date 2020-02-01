@@ -352,7 +352,9 @@ def setSellTrigger():
 
 @app.route('/dumpLog', methods=["POST"])
 def dumpLog():
-    response = requests.post(f"{protocol}://{audit_log_server_ip}:{audit_log_server_port}/dumpLog", data=request.json).json()
+    data = json.dumps(request.form.to_dict(flat=True))
+    print(data)
+    response = requests.post(f"{protocol}://{audit_log_server_ip}:{audit_log_server_port}/dumpLog", json=data).json()
     return json.dumps(response)
 
 @app.route('/displaySummary', methods=["POST"])

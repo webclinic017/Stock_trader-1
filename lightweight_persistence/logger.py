@@ -1,6 +1,9 @@
 
 import xml.etree.ElementTree as elementTree
 import uuid
+import time
+import json
+server_name = "audit_log_server"
 class logger:
     def __init__(self):
         self._audit_log = {}
@@ -15,27 +18,29 @@ class logger:
         print(data)
         audit_log = self._audit_log
         response = {"status": "ERROR"}
-        try:
-            log_key = list(data.keys())[0]
-            log = data[log_key]
-            audit_log[log_key] = {
-                "commandType": log["commandType"],
-                "data_fields": {}
-            }
-            fields = log["data_fields"].keys()
-            for field in fields:
-                value = log["data_fields"][field]
-                audit_log[log_key]["data_fields"][field] = value
-            response["status"] = "SUCCESS"
-            self._audit_log = audit_log
-        except Exception as e:
-            print(e)
+
+        log_key = list(data.keys())[0]
+        log = data[log_key]
+        audit_log[log_key] = {
+            "commandType": log["commandType"],
+            "data_fields": {}
+        }
+        fields = log["data_fields"].keys()
+        for field in fields:
+            value = log["data_fields"][field]
+            audit_log[log_key]["data_fields"][field] = value
+        response["status"] = "SUCCESS"
+        self._audit_log = audit_log
+
         return response
 
-    def get_logs(self):
+    def get_logs(self, data):
+        try:
+            data = json.loads(data)
+        except TypeError:
+            pass
         audit_log = self._audit_log
         print("dumplog")
-        print(self._audit_log)
         transactionNum = 1
         response = {"status": "ERROR"}
         logs_root = elementTree.Element("log")
@@ -62,13 +67,22 @@ class logger:
         response["data"] = xml_string
 
         # log the dumplog command
+        print("dumplog request data payload:")
         audit_dump_log_entry = {}
-        audit_dump_log_entry[str(uuid.uuid4())] = {
+        log_key = str(uuid.uuid4())
+        audit_dump_log_entry[log_key] = {
             "commandType": "userCommand",
             "data_fields": {
-                "command": "DUMPLOG"
+                "timestamp": int(time.time() * 1000),
+                "filename": data["filename"],
+                "command": "DUMPLOG",
+                "server": server_name
             }
         }
+        try:
+            audit_dump_log_entry["data_fields"]["username"] = data["userid"]
+        except KeyError:
+            pass
         self.insert_log(audit_dump_log_entry)
 
         return response

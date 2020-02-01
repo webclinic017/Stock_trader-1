@@ -21,7 +21,8 @@ def insert_log():
 
 @app.route("/dumpLog", methods=["POST"])
 def get_logs():
-    response = logger_instance.get_logs()
+    data = request.json
+    response = logger_instance.get_logs(data)
     return json.dumps(response)
 
 if __name__ == "__main__":
