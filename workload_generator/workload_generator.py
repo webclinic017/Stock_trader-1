@@ -5,7 +5,6 @@ import requests
 # Where '--1' is the workload file to use as stated below
 
 workload_paths = {
-	"--test": "./workload_files/test1.txt",
 	"--1": "./workload_files/1userWorkLoad.txt",
 	"--2": "./workload_files/2userWorkLoad.txt",
 	"--10": "./workload_files/10User_testWorkLoad.txt",
@@ -23,7 +22,7 @@ workload_paths = {
 	"--2016": "./workload_files/2016.txt",
 	"--2017": "./workload_files/final_workload_2017.txt",
 	"--2018": "./workload_files/final_workload_2018.txt",
-	"--2019": "./workload_files/final_workload_2019.txt"
+	"--2019": "./workload_files/final_workload_2019.txt",
 }
 
 command_urls = {
@@ -56,6 +55,8 @@ def process_dumplog(output_filename, dumplog_response):
 base_url = "http://127.0.0.1:5000"
 file_index = sys.argv[1]
 fileObject = open(workload_paths[file_index])
+
+b = {"Command": "ADD", "userid": "treese", "amount": "1200"},
 
 # Read work load file, process into dict commands
 client_actions_raw = [line.rstrip().split()[-1].split(",") for line in fileObject]

@@ -26,8 +26,8 @@ class QuoteCache:
 
         # print(data)
         data[0] = float(data[0])
-        qtm = time.time()
-        self.quotes[symbol] = (qtm, data,)
+        self.quotes[symbol] = data
+
         return data
 
     def quote(self, symbol, user):
@@ -38,7 +38,7 @@ class QuoteCache:
             if q is None or time.time() - q[0] >= 60:
                 val = self.new_quote(symbol, user)
             else:
-                val = q[1]
+                val = q
         except KeyError:
             val = self.new_quote(symbol, user)
         print(str(val))

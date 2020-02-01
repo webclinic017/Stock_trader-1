@@ -68,9 +68,9 @@ class EventServer:
 	def cancel(self, ver, user, symbol):
 		amount = -1
 		try:
-			curr = self.timers[ver][user]  # 'curr' is the buy trigger dict
+			curr = self.timers[ver][user]
 			try:
-				event = curr[symbol]  # 'event' is list of specifics for trigger of given stock symbol
+				event = curr[symbol]
 				if not event[0] is None:
 					if event[0].is_alive():
 						# Kill QuoteThread if running
@@ -87,9 +87,7 @@ class EventServer:
 			except KeyError:
 				curr[symbol] = [None, 0, 0]
 		except KeyError:
-			pass
-			# TR-If given trigger to cancel doesn't exist, no need to add an empty trigger
-			# self.timers[ver][user] = {symbol: [None, 0, 0]}
+			self.timers[ver][user] = {symbol: [None, 0, 0]}
 		return amount
 
 	def trigger(self, ver, user, symbol, price):
