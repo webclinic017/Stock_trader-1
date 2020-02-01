@@ -25,9 +25,13 @@ class TransactionServer:
         return self.cli_data.add_money(user, amount)
 
     def quote(self, data):
-        result =  self.cache.quote(data["StockSymbol"], data["userid"])
+        quote_data = self.cache.quote(data["StockSymbol"], data["userid"])
+        data["Quote"] = quote_data[0]
+        data["quoteServerTime"] = quote_data[3]
+        data["cryptokey"] = quote_data[4]
+        data["Succeeded"] = True
         AuditLogBuilder("QUOTE", server_name).build(json.dumps(data)).send(protocol, audit_log_server_ip, audit_log_server_port)
-        return result
+        return quote_data
 
     ###### Buy Commands #####
     def buy(self, data):
@@ -238,13 +242,9 @@ class TransactionServer:
             if command == "ADD":
                 data["Succeeded"] = self.add(data)
             elif command == "QUOTE":
-                quote_data = self.quote(data)
-                data["Quote"] = quote_data[0]
-                data["quoteServerTime"] = quote_data[3]
-                data["cryptokey"] = quote_data[4]
+                data["Succeeded"] = self.quote(data)
             elif command == "BUY":
-                buy_data = self.buy(data)
-                data["Succeeded"] = buy_data
+                data["Succeeded"] = self.buy(data)
             elif command == "COMMIT_BUY":
                 data["Succeeded"] = self.commit_buy(data)
             elif command == "CANCEL_BUY":
