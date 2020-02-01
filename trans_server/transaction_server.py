@@ -22,6 +22,7 @@ class TransactionServer:
     def add(self, data):
         user = data["userid"]
         amount = data["amount"]
+        AuditLogBuilder("ADD", server_name).build(json.dumps(data)).send(protocol, audit_log_server_ip, audit_log_server_port)
         return self.cli_data.add_money(user, amount)
 
     def quote(self, data):
