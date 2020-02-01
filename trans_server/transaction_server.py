@@ -47,8 +47,9 @@ class TransactionServer:
             # Return the delta of the transaction to user's account
             cli_data.add_money(user, buy_data[1] - (count * price))
             # Update stock ownership records
-            cli_data.add_stock(user, buy_data[0], count)
-            succeeded = True
+            if count > 0:
+                cli_data.add_stock(user, buy_data[0], count)
+                succeeded = True
         except Exception:
             pass
         self.cli_data = cli_data
@@ -205,7 +206,7 @@ class TransactionServer:
             return False
 
         # DEBUG
-        print(data)
+        print(f"T-Input:{data}")
 
         try:
             data = json.loads(data)
@@ -215,8 +216,7 @@ class TransactionServer:
             if command == "ADD":
                 data["Succeeded"] = self.add(data)
             elif command == "QUOTE":
-                data["Quote"] = self.quote(data)[1][0]
-                print(data)
+                data["Quote"] = self.quote(data)[0]
             elif command == "BUY":
                 data["Succeeded"] = self.buy(data)
             elif command == "COMMIT_BUY":
@@ -243,10 +243,11 @@ class TransactionServer:
                 data["Succeeded"] = self.set_sell_trigger(data)
             elif command == "DISPLAY_SUMMARY":
                 data["Data"] = self.display_summary(data)
-                print(data)
         except:
             conn.send(str.encode("{\"FAILED\"}"))
             return False
+        # DEBUG
+        print(f"T-Output:{data}", end="\n\n")
 
         # Echo back JSON with new attributes
         conn.send(str.encode(json.dumps(data)))
