@@ -8,7 +8,6 @@ redis_services/hiredis
 
 /.idea
 __pycache__
-
 /workload_generator/workload_files/100User_testWorkLoad.txt
 /workload_generator/workload_files/1000User_testWorkLoad.txt
 /workload_generator/workload_files/2016.txt

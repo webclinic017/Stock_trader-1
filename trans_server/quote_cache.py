@@ -28,7 +28,6 @@ class QuoteCache:
         data[0] = float(data[0])
         qtm = time.time()
         self.quotes[symbol] = (qtm, data,)
-
         return data
 
     def quote(self, symbol, user):

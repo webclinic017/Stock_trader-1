@@ -45,6 +45,14 @@ command_urls = {
 	"DISPLAY_SUMMARY": "/displaySummary"
 }
 
+def process_dumplog(output_filename, dumplog_response):
+	try:
+		xml_string = dumplog_response.json()["data"]
+		with open(output_filename, 'w+') as f:
+			f.write(xml_string)
+	except KeyError:
+		print(f"Error: no data attribute found in response. Response status {dumplog_response.json()['status']}")
+
 base_url = "http://127.0.0.1:5000"
 file_index = sys.argv[1]
 fileObject = open(workload_paths[file_index])
@@ -111,14 +119,31 @@ for i, action in enumerate(client_actions_raw):
 		print(f"{e} | {action}")
 		continue
 
+	# TEMPORARY: for dumplog development--------
+#	audit_log_server_ip = "localhost"  # IP on home comp
+#	audit_log_server_port = 44416
+#	protocol = "http"
+#	from AuditLogBuilder import AuditLogBuilder
+#	import json
+#	server_name = "someserver"
+#	request_dict1 = json.dumps({
+#		"Command": "ADD",
+#		"userid": "someUserGuy",
+#		"amount": 100.10
+#	})
+#	AuditLogBuilder("ADD", server_name).build(request_dict1).send(protocol, audit_log_server_ip, audit_log_server_port)
+#	request_dict2 = json.dumps({
+#		"Command": "ADD",
+#		"userid": "someUserGuy2",
+#		"amount": 100.10
+#	})
+#	AuditLogBuilder("ADD", server_name).build(request_dict2).send(protocol, audit_log_server_ip, audit_log_server_port)
+#	#-------------------------------------------
+
 	server_response = requests.post((base_url + command_urls[command]), data=next_command)
 	print(f"#{i+1} action:{action} response:{server_response}")
 
-
-def process_dumplog(output_filename, dumplog_response):
 	try:
-		xml_string = dumplog_response.json()["data"]
-		with open(output_filename, 'w+') as f:
-			f.write(xml_string)
+		process_dumplog(next_command["filename"], server_response)
 	except KeyError:
-		print(f"Error: no data attribute found in response. Response status {dumplog_response.json()['status']}")
+		pass
