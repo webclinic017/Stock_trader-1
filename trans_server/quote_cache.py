@@ -4,26 +4,31 @@ import time
 
 
 class QuoteCache:
-    def __init__(self, addr, port):
-
-        self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            self.conn.connect((addr, port))
-        except Exception as e:
-            print("quote_server:", end="")
-            print(e)
+    def __init__(self, addr, port, should_stub):
+        if (not should_stub):
+            print(f"connecting to quote server running at {addr}:{port}")
+            self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            try:
+                self.conn.connect((addr, port))
+            except Exception as e:
+                print("quote_server:", end="")
+                print(e)
+        else:
+            print("stubbing out quote server")
+        self.should_stub = should_stub
 
         # Simulating DB with dictionary
         self.quotes = dict()
         self.lock = threading.Lock()
 
     def new_quote(self, symbol, user):
-        self.conn.sendall(str.encode(symbol + ", " + user + "\n"))
-        print("->quote_server 'quote request' sent\n->waiting for response...")
-        data = self.conn.recv(1024).decode().split(",")
-
-        # STUB
-        #data = ["20.87", symbol, user, time.time(), "QWERTYUIOP"]
+        if (not self.should_stub):
+            self.conn.sendall(str.encode(symbol + ", " + user + "\n"))
+            print("->quote_server 'quote request' sent\n->waiting for response...")
+            data = self.conn.recv(1024).decode().split(",")
+        else:
+            # STUB
+            data = ["20.87", symbol, user, time.time(), "QWERTYUIOP"]
 
         # print(data)
         data[0] = float(data[0])
