@@ -3,7 +3,27 @@ import requests
 
 # command line usage: "py workload_generator.py --1"
 # Where '--1' is the workload file to use as stated below
-rootFolder = ""
+
+workload_paths = {
+	"--1": "./workload_files/1userWorkLoad.txt",
+	"--2": "./workload_files/2userWorkLoad.txt",
+	"--10": "./workload_files/10User_testWorkLoad.txt",
+	"--45": "./workload_files/45User_testWorkLoad.txt",
+	"--100": "./workload_files/100User_testWorkLoad.txt",
+	"--1000": "./workload_files/1000User_testWorkLoad.txt",
+	"--2006": "./workload_files/final2006WorkLoad.txt",
+	"--2007": "./workload_files/final2007.txt",
+	"--2009": "./workload_files/final_workload_2009.txt",
+	"--2010": "./workload_files/final_workload_spring_2010.txt",
+	"--2011": "./workload_files/final_workload_2011.txt",
+	"--2013": "./workload_files/final_workload_2013.txt",
+	"--2014": "./workload_files/final_workload_2014.txt",
+	"--2015": "./workload_files/final_workload_2015.txt",
+	"--2016": "./workload_files/2016.txt",
+	"--2017": "./workload_files/final_workload_2017.txt",
+	"--2018": "./workload_files/final_workload_2018.txt",
+	"--2019": "./workload_files/final_workload_2019.txt",
+}
 
 command_urls = {
 	"ADD": "/addFunds",
@@ -34,32 +54,6 @@ def process_dumplog(output_filename, dumplog_response):
 
 base_url = "http://127.0.0.1:5000"
 file_index = sys.argv[1]
-try:
-	rootFolder = f"{sys.argv[2]}/"
-except IndexError:
-	rootFolder = ""
-
-workload_paths = {
-	"--1": f"./{rootFolder}workload_files/1userWorkLoad.txt",
-	"--2": f"./{rootFolder}workload_files/2userWorkLoad.txt",
-	"--10": f"./{rootFolder}workload_files/10User_testWorkLoad.txt",
-	"--45": f"./{rootFolder}workload_files/45User_testWorkLoad.txt",
-	"--100": f"./{rootFolder}workload_files/100User_testWorkLoad.txt",
-	"--1000": f"./{rootFolder}workload_files/1000User_testWorkLoad.txt",
-	"--2006": f"./{rootFolder}workload_files/final2006WorkLoad.txt",
-	"--2007": f"./{rootFolder}workload_files/final2007.txt",
-	"--2009": f"./{rootFolder}workload_files/final_workload_2009.txt",
-	"--2010": f"./{rootFolder}workload_files/final_workload_spring_2010.txt",
-	"--2011": f"./{rootFolder}workload_files/final_workload_2011.txt",
-	"--2013": f"./{rootFolder}workload_files/final_workload_2013.txt",
-	"--2014": f"./{rootFolder}workload_files/final_workload_2014.txt",
-	"--2015": f"./{rootFolder}workload_files/final_workload_2015.txt",
-	"--2016": f"./{rootFolder}workload_files/2016.txt",
-	"--2017": f"./{rootFolder}workload_files/final_workload_2017.txt",
-	"--2018": f"./{rootFolder}workload_files/final_workload_2018.txt",
-	"--2019": f"./{rootFolder}workload_files/final_workload_2019.txt",
-}
-
 fileObject = open(workload_paths[file_index])
 
 b = {"Command": "ADD", "userid": "treese", "amount": "1200"},
