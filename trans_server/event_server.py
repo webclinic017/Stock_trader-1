@@ -1,5 +1,6 @@
 import threading
-
+from audit_logger.AuditLogBuilder import AuditLogBuilder
+from audit_logger.AuditCommandType import AuditCommandType
 
 class QuoteThread(threading.Thread):
 	def __init__(self, cli_data, cache, ver, user, symbol, amount, price):
@@ -71,19 +72,24 @@ class EventServer:
 			curr = self.timers[ver][user]
 			try:
 				event = curr[symbol]
-				if not event[0] is None:
-					if event[0].is_alive():
-						# Kill QuoteThread if running
-						event[0].join()
-						event[0] = None
-					else:
-						event[0] = None
-						event[1] = 0
-					amount = event[1]
-				elif event[1] > 0:
-					amount = event[1]
-				event[1] = 0
-				self.timers[ver][user].pop(symbol)
+				try:
+					if (not event[0] is None):
+						if event[0].is_alive():
+							# Kill QuoteThread if running
+							event[0].join()
+							event[0] = None
+						else:
+							event[0] = None
+							event[1] = 0
+						amount = event[1]
+					elif event[1] > 0:
+						amount = event[1]
+					event[1] = 0
+					self.timers[ver][user].pop(symbol)
+				except Exception as e:
+					AuditLogBuilder("ERROR", "event_server", AuditCommandType.errorEvent).build({
+						"errorMessage": f"event_server.cancel() method expected event[0] to be of type QuoteThread, but instead was str with value of '{event[0]}'"
+					}).send()
 			except KeyError:
 				curr[symbol] = [None, 0, 0]
 		except KeyError:

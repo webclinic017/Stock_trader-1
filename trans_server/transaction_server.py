@@ -226,54 +226,69 @@ class TransactionServer:
 
     # Command entry point
     def transaction(self, conn):
-        data = conn.recv(1024).decode()
-        if data == "":
+        incoming_data = conn.recv(1024).decode()
+        if incoming_data == "":
             return False
 
         # DEBUG
-        print(data)
+        print(incoming_data)
 
         try:
-            data = json.loads(data)
-            command = data["Command"]
+            try:
+                data_payload_list = [json.loads(incoming_data)]
+            except ValueError as v:
+                data_payload_list = []
+                split_data = incoming_data.split("}{")
+                for partial_json_str in split_data:
+                    json_str = partial_json_str
+                    if (partial_json_str[0] != "{"):
+                        json_str = "{" + json_str
+                    if (partial_json_str[len(partial_json_str) - 1] != "}"):
+                        json_str = json_str + "}"
+                    json_data = json.loads(json_str)
+                    data_payload_list.append(json_data)
 
-            if command == "ADD":
-                data["Succeeded"] = self.add(data)
-            elif command == "QUOTE":
-                data["Succeeded"] = self.quote(data)
-            elif command == "BUY":
-                data["Succeeded"] = self.buy(data)
-            elif command == "COMMIT_BUY":
-                data["Succeeded"] = self.commit_buy(data)
-            elif command == "CANCEL_BUY":
-                data["Succeeded"] = self.cancel_buy(data)
-            elif command == "SELL":
-                data["Succeeded"] = self.sell(data)
-            elif command == "COMMIT_SELL":
-                data["Succeeded"] = self.commit_sell(data)
-            elif command == "CANCEL_SELL":
-                data["Succeeded"] = self.cancel_sell(data)
-            elif command == "SET_BUY_AMOUNT":
-                data["Succeeded"] = self.set_buy_amount(data)
-            elif command == "CANCEL_SET_BUY":
-                data["Succeeded"] = self.cancel_set_buy(data)
-            elif command == "SET_BUY_TRIGGER":
-                data["Succeeded"] = self.set_buy_trigger(data)
-            elif command == "SET_SELL_AMOUNT":
-                data["Succeeded"] = self.set_sell_amount(data)
-            elif command == "CANCEL_SET_SELL":
-                data["Succeeded"] = self.cancel_set_sell(data)
-            elif command == "SET_SELL_TRIGGER":
-                data["Succeeded"] = self.set_sell_trigger(data)
-            elif command == "DISPLAY_SUMMARY":
-                data["Data"] = self.display_summary(data)
+            for data in data_payload_list:
+                command = data["Command"]
+
+                if command == "ADD":
+                    data["Succeeded"] = self.add(data)
+                elif command == "QUOTE":
+                    data["Succeeded"] = self.quote(data)
+                elif command == "BUY":
+                    data["Succeeded"] = self.buy(data)
+                elif command == "COMMIT_BUY":
+                    data["Succeeded"] = self.commit_buy(data)
+                elif command == "CANCEL_BUY":
+                    data["Succeeded"] = self.cancel_buy(data)
+                elif command == "SELL":
+                    data["Succeeded"] = self.sell(data)
+                elif command == "COMMIT_SELL":
+                    data["Succeeded"] = self.commit_sell(data)
+                elif command == "CANCEL_SELL":
+                    data["Succeeded"] = self.cancel_sell(data)
+                elif command == "SET_BUY_AMOUNT":
+                    data["Succeeded"] = self.set_buy_amount(data)
+                elif command == "CANCEL_SET_BUY":
+                    data["Succeeded"] = self.cancel_set_buy(data)
+                elif command == "SET_BUY_TRIGGER":
+                    data["Succeeded"] = self.set_buy_trigger(data)
+                elif command == "SET_SELL_AMOUNT":
+                    data["Succeeded"] = self.set_sell_amount(data)
+                elif command == "CANCEL_SET_SELL":
+                    data["Succeeded"] = self.cancel_set_sell(data)
+                elif command == "SET_SELL_TRIGGER":
+                    data["Succeeded"] = self.set_sell_trigger(data)
+                elif command == "DISPLAY_SUMMARY":
+                    data["Data"] = self.display_summary(data)
+
+                # Echo back JSON with new attributes
+                conn.send(str.encode(json.dumps(data)))
+
         except Exception as e:
             print(e)
             conn.send(str.encode("{\"FAILED\"}"))
             return False
-
-        # Echo back JSON with new attributes
-        conn.send(str.encode(json.dumps(data)))
         return True
 
     # Non-return function launches the server loop

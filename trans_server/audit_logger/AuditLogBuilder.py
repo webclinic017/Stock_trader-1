@@ -190,11 +190,26 @@ class AuditLogBuilder:
 
     def _error(self, data):
         log = {}
-        log["commandType"] =  "errorEvent"
+        log["commandType"] =  self._commandType
         log["data_fields"] = {
             "errorMessage": data["errorMessage"]
         }
         return log
+
+    def _get_appropriate_transaction_num(self):
+        if (self._commandType == "userCommand"):
+            return self._get_next_transaction_num()
+        else:
+            return self._get_current_transaction_num()
+
+    def _get_current_transaction_num(self):
+        return requests.post(f"{self._protocol}://{self._audit_log_server_ip}:{self._audit_log_server_port}/getCurrentTransactionNum")
+
+    def _get_next_transaction_num(self):
+        return requests.post(f"{self._protocol}://{self._audit_log_server_ip}:{self._audit_log_server_port}/getNextTransactionNum")
+
+    def send(self):
+        requests.post(f"{self._protocol}://{self._audit_log_server_ip}:{self._audit_log_server_port}/auditLog", json=self._audit_log)
 
     def _func_wrapper(self, build_func):
         def func(data):
@@ -214,22 +229,7 @@ class AuditLogBuilder:
             self._audit_log = audit_log
             return self
         return func
-
-    def _get_appropriate_transaction_num(self):
-        if (self._commandType == "userCommand"):
-            return self._get_next_transaction_num()
-        else:
-            return self._get_current_transaction_num()
-
-    def _get_current_transaction_num(self):
-        return requests.post(f"{self._protocol}://{self._audit_log_server_ip}:{self._audit_log_server_port}/getCurrentTransactionNum")
-
-    def _get_next_transaction_num(self):
-        return requests.post(f"{self._protocol}://{self._audit_log_server_ip}:{self._audit_log_server_port}/getNextTransactionNum")
-
-    def send(self):
-        requests.post(f"{self._protocol}://{self._audit_log_server_ip}:{self._audit_log_server_port}/auditLog", json=self._audit_log)
-
+        
     _method = {
         "ADD": _accountUpdate,
         "REMOVE": _accountUpdate,
@@ -247,5 +247,6 @@ class AuditLogBuilder:
         "SET_SELL_TRIGGER": _set_sell_trigger,
         "CANCEL_SET_SELL": _cancel_set_sell,
         "DUMPLOG": _dumplog,
-        "DISPLAY_SUMMARY": _display_summary
+        "DISPLAY_SUMMARY": _display_summary,
+        "ERROR": _error
     }
