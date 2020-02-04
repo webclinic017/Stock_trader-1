@@ -18,22 +18,23 @@ class TransactionServer:
 
     ##### Base Commands #####
     def add(self, data):
+        AuditLogBuilder("ADD", self._server_name, AuditCommandType.userCommand).build(data).send()
         user = data["userid"]
         amount = data["amount"]
-        AuditLogBuilder("ADD", self._server_name, AuditCommandType.userCommand).build(data).send()
         return self.cli_data.add_money(user, amount)
 
     def quote(self, data):
+        AuditLogBuilder("QUOTE", self._server_name, AuditCommandType.userCommand).build(data).send()
         quote_data = self.cache.quote(data["StockSymbol"], data["userid"])
         data["Quote"] = quote_data[0]
         data["quoteServerTime"] = quote_data[3]
         data["cryptokey"] = quote_data[4]
         data["Succeeded"] = True
-        AuditLogBuilder("QUOTE", self._server_name, AuditCommandType.userCommand).build(data).send()
         return quote_data
 
     ###### Buy Commands #####
     def buy(self, data):
+        AuditLogBuilder("BUY", self._server_name, AuditCommandType.userCommand).build(data).send()
         succeeded = False
         user = data["userid"]
         amount = data["amount"]
@@ -42,11 +43,11 @@ class TransactionServer:
         if cli_data.rem_money(user, amount):
             cli_data.push(user, data["StockSymbol"], float(amount), "buy")
             succeeded = True
-            AuditLogBuilder("BUY", self._server_name, AuditCommandType.userCommand).build(data).send()
         self.cli_data = cli_data
         return succeeded
 
     def commit_buy(self, data):
+        AuditLogBuilder("COMMIT_BUY", self._server_name, AuditCommandType.userCommand).build(data).send()
         succeeded = False
         user = data["userid"]
         cli_data = self.cli_data
@@ -60,7 +61,6 @@ class TransactionServer:
             # Update stock ownership records
             cli_data.add_stock(user, buy_data[0], count)
             succeeded = True
-            AuditLogBuilder("COMMIT_BUY", self._server_name, AuditCommandType.userCommand).build(data).send()
         except Exception as e:
             print(e)
             pass
@@ -68,19 +68,20 @@ class TransactionServer:
         return succeeded
 
     def cancel_buy(self, data):
+        AuditLogBuilder("CANCEL_BUY", self._server_name, AuditCommandType.userCommand).build(data).send()
         succeeded = False
         user = data["userid"]
 
         try:
             self.cli_data.add_money(user, self.cli_data.pop(user, "buy")[1])
             succeeded = True
-            AuditLogBuilder("CANCEL_BUY", self._server_name, AuditCommandType.userCommand).build(data).send()
         except Exception:
             pass
         return succeeded
 
     ###### Sell Commands #####
     def sell(self, data):
+        AuditLogBuilder("SELL", self._server_name, AuditCommandType.userCommand).build(data).send()
         succeeded = False
         user = data["userid"]
         amount = float(data["amount"])
@@ -93,13 +94,13 @@ class TransactionServer:
             if cli_data.rem_stock(user, symbol, count):
                 cli_data.push(user, symbol, (amount, count), "sel")
                 succeeded = True
-                AuditLogBuilder("SELL", self._server_name, AuditCommandType.userCommand).build(data).send()
         except Exception:
             pass
         self.cli_data = cli_data
         return succeeded
 
     def commit_sell(self, data):
+        AuditLogBuilder("COMMIT_SELL", self._server_name, AuditCommandType.userCommand).build(data).send()
         succeeded = False
         user = data["userid"]
         cli_data = self.cli_data
@@ -119,13 +120,13 @@ class TransactionServer:
                     raise Exception
             cli_data.add_money(user, count * price)
             succeeded = True
-            AuditLogBuilder("COMMIT_SELL", self._server_name, AuditCommandType.userCommand).build(data).send()
         except Exception:
             pass
         self.cli_data = cli_data
         return succeeded
 
     def cancel_sell(self, data):
+        AuditLogBuilder("CANCEL_SELL", self._server_name, AuditCommandType.userCommand).build(data).send()
         succeeded = False
         user = data["userid"]
         cli_data = self.cli_data
@@ -134,7 +135,6 @@ class TransactionServer:
             sell_data = cli_data.pop(user, "sel")
             cli_data.add_stock(user, sell_data[0], sell_data[1][1])
             succeeded = True
-            AuditLogBuilder("CANCEL_SELL", self._server_name, AuditCommandType.userCommand).build(data).send()
         except Exception:
             pass
         self.cli_data = cli_data
@@ -142,6 +142,7 @@ class TransactionServer:
 
     ###### Buy Trigger Commands #####
     def set_buy_amount(self, data):
+        AuditLogBuilder("SET_BUY_AMOUNT", self._server_name, AuditCommandType.userCommand).build(data).send()
         succeeded = False
         user = data["userid"]
         symbol = data["StockSymbol"]
@@ -151,13 +152,13 @@ class TransactionServer:
         if cli_data.rem_money(user, amount):
             if self.events.register("buy", user, symbol, amount):
                 succeeded = True
-                AuditLogBuilder("SET_BUY_AMOUNT", self._server_name, AuditCommandType.userCommand).build(data).send()
             else:
                 cli_data.add_money(user, amount)
         self.cli_data = cli_data
         return succeeded
 
     def cancel_set_buy(self, data):
+        AuditLogBuilder("CANCEL_SET_BUY", self._server_name, AuditCommandType.userCommand).build(data).send()
         succeeded = False
         user = data["userid"]
         symbol = data["StockSymbol"]
@@ -166,20 +167,20 @@ class TransactionServer:
         if amount >= 0:
             if self.cli_data.add_money(user, amount):
                 succeeded = True
-                AuditLogBuilder("CANCEL_SET_BUY", self._server_name, AuditCommandType.userCommand).build(data).send()
         return succeeded
 
     def set_buy_trigger(self, data):
+        AuditLogBuilder("SET_BUY_TRIGGER", self._server_name, AuditCommandType.userCommand).build(data).send()
         user = data["userid"]
         symbol = data["StockSymbol"]
         price = float(data["amount"])
 
         result = self.events.trigger("buy", user, symbol, price)
-        AuditLogBuilder("SET_BUY_TRIGGER", self._server_name, AuditCommandType.userCommand).build(data).send()
         return result
 
     ###### Sell Trigger Commands #####
     def set_sell_amount(self, data):
+        AuditLogBuilder("SET_SELL_AMOUNT", self._server_name, AuditCommandType.userCommand).build(data).send()
         succeeded = False
         user = data["userid"]
         symbol = data["StockSymbol"]
@@ -189,13 +190,13 @@ class TransactionServer:
         if cli_data.rem_stock(user, symbol, amount):
             if self.events.register("sel", user, symbol, amount):
                 succeeded = True
-                AuditLogBuilder("SET_SELL_AMOUNT", self._server_name, AuditCommandType.userCommand).build(data).send()
             else:
                 cli_data.add_stock(user, symbol, amount)
         self.cli_data = cli_data
         return succeeded
 
     def cancel_set_sell(self, data):
+        AuditLogBuilder("CANCEL_SET_SELL", self._server_name, AuditCommandType.userCommand).build(data).send()
         succeeded = False
         user = data["userid"]
         symbol = data["StockSymbol"]
@@ -204,24 +205,23 @@ class TransactionServer:
         if amount > 0:
             if self.cli_data.add_stock(user, symbol, amount):
                 succeeded = True
-                AuditLogBuilder("CANCEL_SET_SELL", self._server_name, AuditCommandType.userCommand).build(data).send()
         return succeeded
 
     def set_sell_trigger(self, data):
+        AuditLogBuilder("SET_SELL_TRIGGER", self._server_name, AuditCommandType.userCommand).build(data).send()
         user = data["userid"]
         symbol = data["StockSymbol"]
         price = float(data["amount"])
 
         result = self.events.trigger("sel", user, symbol, price)
-        AuditLogBuilder("SET_SELL_TRIGGER", self._server_name, AuditCommandType.userCommand).build(data).send()
         return result
 
     ##### Audit Commands #####
     def display_summary(self, data):
+        AuditLogBuilder("DISPLAY_SUMMARY", self._server_name, AuditCommandType.userCommand).build(data).send()
         user = data["userid"]
         tri = self.events.state(user)
         acc = self.cli_data.check_money(user)
-        AuditLogBuilder("DISPLAY_SUMMARY", self._server_name, AuditCommandType.userCommand).build(data).send()
         return {"Triggers": tri, "Account": acc}
 
     # Command entry point
