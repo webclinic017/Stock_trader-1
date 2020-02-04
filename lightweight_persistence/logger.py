@@ -47,6 +47,7 @@ class logger:
         audit_log = self._audit_log
         print("dumplog")
         response = {"status": "ERROR"}
+        self._log_dumplog(data)
         logs_root = elementTree.Element("log")
         log_keys = audit_log.keys()
         log_i = 0
@@ -66,7 +67,14 @@ class logger:
         xml_string = (elementTree.tostring(logs_root, encoding='utf-8')).decode('utf-8')
         response["status"] = "SUCCESS"
         response["data"] = xml_string
+        return response
 
+    def debug(self):
+        print("current state of audit_log dict:")
+        print(self._audit_log)  
+        return self._audit_log  
+
+    def _log_dumplog(self, data):
         # log the dumplog command
         audit_dump_log_entry = {}
         log_key = str(uuid.uuid4())
@@ -85,10 +93,3 @@ class logger:
         except KeyError:
             pass
         self.insert_log(audit_dump_log_entry)
-
-        return response
-
-    def debug(self):
-        print("current state of audit_log dict:")
-        print(self._audit_log)  
-        return self._audit_log  
