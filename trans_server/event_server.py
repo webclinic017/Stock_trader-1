@@ -36,6 +36,9 @@ class QuoteThread(threading.Thread):
 		self.stopevent.set()
 		threading.Thread.join(self, None)
 
+	def __str__(self):
+		return "active"
+
 
 class EventServer:
 	def __init__(self):
@@ -122,10 +125,10 @@ class EventServer:
 			# In case a quote thread var is still inside a trigger dict
 			for key, val in curr["buy"].items():
 				if isinstance(val[0], QuoteThread):
-					val[0] = "active"
+					val[0] = str(val[0])
 			for key, val in curr["sel"].items():
 				if isinstance(val[0], QuoteThread):
-					val[0] = "active"
+					val[0] = str(val[0])
 		except KeyError:
 			pass
 		return curr
