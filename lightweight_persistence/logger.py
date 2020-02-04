@@ -46,7 +46,6 @@ class logger:
             pass
         audit_log = self._audit_log
         print("dumplog")
-        transactionNum = 1
         response = {"status": "ERROR"}
         logs_root = elementTree.Element("log")
         log_keys = audit_log.keys()
@@ -69,12 +68,12 @@ class logger:
         response["data"] = xml_string
 
         # log the dumplog command
-        print("dumplog request data payload:")
         audit_dump_log_entry = {}
         log_key = str(uuid.uuid4())
         audit_dump_log_entry[log_key] = {
             "commandType": "userCommand",
             "data_fields": {
+                "transactionNum": self.get_next_transaction_num(),
                 "timestamp": int(time.time() * 1000),
                 "filename": data["filename"],
                 "command": "DUMPLOG",
