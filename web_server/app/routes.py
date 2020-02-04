@@ -4,6 +4,7 @@ from app import app
 import json
 import socket
 import sys
+BUFFER_SIZE = 4096
 
 # Create the socket for transaction server communication
 sckt_trans = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -41,12 +42,12 @@ def addFunds():
     # sckt_audit.sendall(str.encode(request_dict))
 
     # Receive response
-    trans_response = sckt_trans.recv(1024).decode()
+    trans_response = sckt_trans.recv(BUFFER_SIZE).decode()
     print("--RESPONSE:" + str(trans_response))
 
     # TODO: send transaction server RESPONSE LOG to the audit server
     # sckt_audit.sendall(str.encode(response))
-    # audit_response = sckt_audit.recv(1024).decode()
+    # audit_response = sckt_audit.recv(BUFFER_SIZE).decode()
     # print("RESPONSE:" + str(audit_response))
 
     return trans_response
@@ -63,12 +64,12 @@ def getQuote():
     # sckt_audit.sendall(str.encode(request_dict))
 
     # Receive response
-    trans_response = sckt_trans.recv(1024).decode()
+    trans_response = sckt_trans.recv(BUFFER_SIZE).decode()
     print("--RESPONSE:" + str(trans_response))
 
     # TODO: send transaction server RESPONSE LOG to the audit server
     # sckt_audit.sendall(str.encode(response))
-    # audit_response = sckt_audit.recv(1024).decode()
+    # audit_response = sckt_audit.recv(BUFFER_SIZE).decode()
     # print("RESPONSE:" + str(audit_response))
 
     return trans_response
@@ -85,12 +86,12 @@ def buyStock():
     # sckt_audit.sendall(str.encode(request_dict))
 
     # Receive response
-    trans_response = sckt_trans.recv(1024).decode()
+    trans_response = sckt_trans.recv(BUFFER_SIZE).decode()
     print("--RESPONSE:" + str(trans_response))
 
     # TODO: send transaction server RESPONSE LOG to the audit server
     # sckt_audit.sendall(str.encode(response))
-    # audit_response = sckt_audit.recv(1024).decode()
+    # audit_response = sckt_audit.recv(BUFFER_SIZE).decode()
     # print("RESPONSE:" + str(audit_response))
 
     return trans_response
@@ -109,12 +110,12 @@ def commitBuy():
     # sckt_audit.sendall(str.encode(request_dict))
 
     # Receive response
-    trans_response = sckt_trans.recv(1024).decode()
+    trans_response = sckt_trans.recv(BUFFER_SIZE).decode()
     print("--RESPONSE:" + str(trans_response))
 
     # TODO: send transaction server RESPONSE LOG to the audit server
     # sckt_audit.sendall(str.encode(response))
-    # audit_response = sckt_audit.recv(1024).decode()
+    # audit_response = sckt_audit.recv(BUFFER_SIZE).decode()
     # print("RESPONSE:" + str(audit_response))
 
     return trans_response
@@ -133,12 +134,12 @@ def cancelBuy():
     # sckt_audit.sendall(str.encode(request_dict))
 
     # Receive response
-    trans_response = sckt_trans.recv(1024).decode()
+    trans_response = sckt_trans.recv(BUFFER_SIZE).decode()
     print("--RESPONSE:" + str(trans_response))
 
     # TODO: send transaction server RESPONSE LOG to the audit server
     # sckt_audit.sendall(str.encode(response))
-    # audit_response = sckt_audit.recv(1024).decode()
+    # audit_response = sckt_audit.recv(BUFFER_SIZE).decode()
     # print("RESPONSE:" + str(audit_response))
 
     return trans_response
@@ -155,12 +156,12 @@ def sellStock():
     # sckt_audit.sendall(str.encode(request_dict))
 
     # Receive response
-    trans_response = sckt_trans.recv(1024).decode()
+    trans_response = sckt_trans.recv(BUFFER_SIZE).decode()
     print("--RESPONSE:" + str(trans_response))
 
     # TODO: send transaction server RESPONSE LOG to the audit server
     # sckt_audit.sendall(str.encode(response))
-    # audit_response = sckt_audit.recv(1024).decode()
+    # audit_response = sckt_audit.recv(BUFFER_SIZE).decode()
     # print("RESPONSE:" + str(audit_response))
 
     return trans_response
@@ -179,12 +180,12 @@ def commitSell():
     # sckt_audit.sendall(str.encode(request_dict))
 
     # Receive response
-    trans_response = sckt_trans.recv(1024).decode()
+    trans_response = sckt_trans.recv(BUFFER_SIZE).decode()
     print("--RESPONSE:" + str(trans_response))
 
     # TODO: send transaction server RESPONSE LOG to the audit server
     # sckt_audit.sendall(str.encode(response))
-    # audit_response = sckt_audit.recv(1024).decode()
+    # audit_response = sckt_audit.recv(BUFFER_SIZE).decode()
     # print("RESPONSE:" + str(audit_response))
 
     return trans_response
@@ -203,12 +204,12 @@ def cancelSell():
     # sckt_audit.sendall(str.encode(request_dict))
 
     # Receive response
-    trans_response = sckt_trans.recv(1024).decode()
+    trans_response = sckt_trans.recv(BUFFER_SIZE).decode()
     print("--RESPONSE:" + str(trans_response))
 
     # TODO: send transaction server RESPONSE LOG to the audit server
     # sckt_audit.sendall(str.encode(response))
-    # audit_response = sckt_audit.recv(1024).decode()
+    # audit_response = sckt_audit.recv(BUFFER_SIZE).decode()
     # print("RESPONSE:" + str(audit_response))
 
     return trans_response
@@ -227,12 +228,12 @@ def setBuyAmount():
     # sckt_audit.sendall(str.encode(request_dict))
 
     # Receive response
-    trans_response = sckt_trans.recv(1024).decode()
+    trans_response = sckt_trans.recv(BUFFER_SIZE).decode()
     print("--RESPONSE:" + str(trans_response))
 
     # TODO: send transaction server RESPONSE LOG to the audit server
     # sckt_audit.sendall(str.encode(response))
-    # audit_response = sckt_audit.recv(1024).decode()
+    # audit_response = sckt_audit.recv(BUFFER_SIZE).decode()
     # print("RESPONSE:" + str(audit_response))
 
     return trans_response
@@ -251,12 +252,12 @@ def cancelSetBuy():
     # sckt_audit.sendall(str.encode(request_dict))
 
     # Receive response
-    trans_response = sckt_trans.recv(1024).decode()
+    trans_response = sckt_trans.recv(BUFFER_SIZE).decode()
     print("--RESPONSE:" + str(trans_response))
 
     # TODO: send transaction server RESPONSE LOG to the audit server
     # sckt_audit.sendall(str.encode(response))
-    # audit_response = sckt_audit.recv(1024).decode()
+    # audit_response = sckt_audit.recv(BUFFER_SIZE).decode()
     # print("RESPONSE:" + str(audit_response))
 
     return trans_response
@@ -273,12 +274,12 @@ def setBuyTrigger():
     # sckt_audit.sendall(str.encode(request_dict))
 
     # Receive response
-    trans_response = sckt_trans.recv(1024).decode()
+    trans_response = sckt_trans.recv(BUFFER_SIZE).decode()
     print("--RESPONSE:" + str(trans_response))
 
     # TODO: send transaction server RESPONSE LOG to the audit server
     # sckt_audit.sendall(str.encode(response))
-    # audit_response = sckt_audit.recv(1024).decode()
+    # audit_response = sckt_audit.recv(BUFFER_SIZE).decode()
     # print("RESPONSE:" + str(audit_response))
 
     return trans_response
@@ -297,12 +298,12 @@ def setSellAmount():
     # sckt_audit.sendall(str.encode(request_dict))
 
     # Receive response
-    trans_response = sckt_trans.recv(1024).decode()
+    trans_response = sckt_trans.recv(BUFFER_SIZE).decode()
     print("--RESPONSE:" + str(trans_response))
 
     # TODO: send transaction server RESPONSE LOG to the audit server
     # sckt_audit.sendall(str.encode(response))
-    # audit_response = sckt_audit.recv(1024).decode()
+    # audit_response = sckt_audit.recv(BUFFER_SIZE).decode()
     # print("RESPONSE:" + str(audit_response))
 
     return trans_response
@@ -320,12 +321,12 @@ def cancelSetSell():
     # sckt_audit.sendall(str.encode(request_dict))
 
     # Receive response
-    trans_response = sckt_trans.recv(1024).decode()
+    trans_response = sckt_trans.recv(BUFFER_SIZE).decode()
     print("--RESPONSE:" + str(trans_response))
 
     # TODO: send transaction server RESPONSE LOG to the audit server
     # sckt_audit.sendall(str.encode(response))
-    # audit_response = sckt_audit.recv(1024).decode()
+    # audit_response = sckt_audit.recv(BUFFER_SIZE).decode()
     # print("RESPONSE:" + str(audit_response))
 
     return trans_response
@@ -341,12 +342,12 @@ def setSellTrigger():
     # sckt_audit.sendall(str.encode(request_dict))
 
     # Receive response
-    trans_response = sckt_trans.recv(1024).decode()
+    trans_response = sckt_trans.recv(BUFFER_SIZE).decode()
     print("--RESPONSE:" + str(trans_response))
 
     # TODO: send transaction server RESPONSE LOG to the audit server
     # sckt_audit.sendall(str.encode(response))
-    # audit_response = sckt_audit.recv(1024).decode()
+    # audit_response = sckt_audit.recv(BUFFER_SIZE).decode()
     # print("RESPONSE:" + str(audit_response))
     return trans_response
 
@@ -369,12 +370,12 @@ def displaySummary():
     # sckt_audit.sendall(str.encode(request_dict))
 
     # Receive response
-    trans_response = sckt_trans.recv(1024).decode()
+    trans_response = sckt_trans.recv(BUFFER_SIZE).decode()
     print("--RESPONSE:" + str(trans_response))
 
     # TODO: send transaction server RESPONSE LOG to the audit server
     # sckt_audit.sendall(str.encode(response))
-    # audit_response = sckt_audit.recv(1024).decode()
+    # audit_response = sckt_audit.recv(BUFFER_SIZE).decode()
     # print("RESPONSE:" + str(audit_response))
 
     return trans_response

@@ -1,6 +1,6 @@
 import socket
 import sys
-
+BUFFER_SIZE = 4096
 
 # Simple client to debug TransactionServer
 def main():
@@ -10,7 +10,7 @@ def main():
 		print("Enter JSON command: ")
 		command = sys.stdin.readline()
 		conn.send(str.encode(command))
-		command = conn.recv(1024).decode()
+		command = conn.recv(BUFFER_SIZE).decode()
 		print("Received: " + command + "\n")
 
 

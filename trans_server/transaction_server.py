@@ -4,6 +4,7 @@ import json
 import requests
 from audit_logger.AuditLogBuilder import AuditLogBuilder
 from audit_logger.AuditCommandType import AuditCommandType
+BUFFER_SIZE = 4096
 
 class TransactionServer:
     # Create a server socket then bind and listen the socket
@@ -226,7 +227,7 @@ class TransactionServer:
 
     # Command entry point
     def transaction(self, conn):
-        incoming_data = conn.recv(1024).decode()
+        incoming_data = conn.recv(BUFFER_SIZE).decode()
         if incoming_data == "":
             return False
 
@@ -287,6 +288,7 @@ class TransactionServer:
 
         except Exception as e:
             print(e)
+            AuditLogBuilder("ERROR", self._server_name, AuditCommandType.errorEvent).build({"errorMessage": str(e)}).send()
             conn.send(str.encode("{\"FAILED\"}"))
             return False
         return True
