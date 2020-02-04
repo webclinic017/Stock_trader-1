@@ -3,6 +3,7 @@ import threading
 import time
 from audit_logger.AuditLogBuilder import AuditLogBuilder
 from audit_logger.AuditCommandType import AuditCommandType
+BUFFER_SIZE = 4096
 
 class QuoteCache:
     def __init__(self, addr, port, should_stub, server_name):
@@ -27,7 +28,7 @@ class QuoteCache:
         if (not self.should_stub):
             self.conn.sendall(str.encode(symbol + ", " + user + "\n"))
             print("->quote_server 'quote request' sent\n->waiting for response...")
-            data = self.conn.recv(1024).decode().split(",")
+            data = self.conn.recv(BUFFER_SIZE).decode().split(",")
         else:
             # STUB
             data = ["20.87", symbol, user, time.time(), "QWERTYUIOP"]
