@@ -7,12 +7,17 @@ server_name = "audit_log_server"
 class logger:
     def __init__(self):
         self._audit_log = {}
-
-    def debug(self):
-        print("current state of audit_log dict:")
-        print(self._audit_log)  
-        return self._audit_log  
+        self._transaction_num = 0
     
+    def get_current_transaction_num(self):
+        return self._transaction_num
+
+    def get_next_transaction_num(self):
+        transaction_num = self._transaction_num
+        transaction_num = transaction_num + 1
+        self._transaction_num = transaction_num
+        return transaction_num
+
     def insert_log(self, data):
         print("incoming log data:")
         print(data)
@@ -56,9 +61,6 @@ class logger:
                 data_field_element = elementTree.Element(data_field)
                 data_field_element.text = str(value)
                 data_field_elements.append(data_field_element)
-            transaction_num_field = elementTree.SubElement(log_element, "transactionNum")
-            transaction_num_field.text = str(transactionNum)
-            transactionNum = transactionNum + 1
             log_element.extend(data_field_elements)
             logs_root.append(log_element)
             log_i = log_i + 1
@@ -86,3 +88,8 @@ class logger:
         self.insert_log(audit_dump_log_entry)
 
         return response
+
+    def debug(self):
+        print("current state of audit_log dict:")
+        print(self._audit_log)  
+        return self._audit_log  

@@ -1,10 +1,12 @@
 import socket
 import threading
 import time
-
+from audit_logger.AuditLogBuilder import AuditLogBuilder
+from audit_logger.AuditCommandType import AuditCommandType
 
 class QuoteCache:
-    def __init__(self, addr, port, should_stub):
+    def __init__(self, addr, port, should_stub, server_name):
+        self._server_name = server_name
         if (not should_stub):
             print(f"connecting to quote server running at {addr}:{port}")
             self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -34,7 +36,13 @@ class QuoteCache:
         data[0] = float(data[0])
         qtm = time.time()
         self.quotes[symbol] = (qtm, data)
-
+        AuditLogBuilder("QUOTE", self._server_name, AuditCommandType.quoteServer).build({
+            "Quote": data[0],
+            "StockSymbol": data[1],
+            "userid": data[2],
+            "quoteServerTime": data[3],
+            "cryptokey": data[4]
+        }).send()
         return data
 
     def quote(self, symbol, user):

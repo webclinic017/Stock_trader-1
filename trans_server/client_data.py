@@ -1,13 +1,17 @@
 import time
 import threading
-
+from audit_logger.AuditLogBuilder import AuditLogBuilder
+from audit_logger.AuditCommandType import AuditCommandType
 
 # Surrogate for client database
 # Provides API for actions on client records
 
 class ClientData:
+	_commandType = AuditCommandType.accountTransaction
+
 	# Could be extended to load users on init
-	def __init__(self):
+	def __init__(self, server_name):
+		self._server_name = server_name
 		self.lock = threading.Lock()
 		self.cli_data = dict()
 
@@ -41,6 +45,12 @@ class ClientData:
 
 		# DEBUG
 		print("ADD MONEY: " + user + "\t" + str(self.cli_data[user]["acc"]) + "\t" + str(True))
+		AuditLogBuilder("ADD", self._server_name, self._commandType).build({
+			"server": self._server_name,
+			"userid": user,
+			"action": "ADD",
+			"amount": amount 
+		}).send()
 
 		return True
 
@@ -59,7 +69,12 @@ class ClientData:
 
 		# DEBUG
 		print("REM MONEY: " + user + "\t" + str(self.cli_data[user]["acc"]) + "\t" + str(succeeded))
-
+		AuditLogBuilder("REMOVE", self._server_name, self._commandType).build({
+			"server": self._server_name,
+			"userid": user,
+			"action": "REMOVE",
+			"amount": amount 
+		}).send()
 		return succeeded
 
 	##### Portfolio Commands #####
