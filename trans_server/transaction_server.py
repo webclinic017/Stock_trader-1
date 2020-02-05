@@ -282,6 +282,12 @@ class TransactionServer:
                     data["Succeeded"] = self.set_sell_trigger(data)
                 elif command == "DISPLAY_SUMMARY":
                     data["Data"] = self.display_summary(data)
+                    buy_triggers_keys = data["Data"]["Triggers"]["buy"].keys()
+                    sell_triggers_keys = data["Data"]["Triggers"]["sel"].keys()
+                    for stock_sym in buy_triggers_keys:
+                        data["Data"]["Triggers"]["buy"][stock_sym][0] = str(data["Data"]["Triggers"]["buy"][stock_sym][0])
+                    for stock_sym in sell_triggers_keys:
+                        data["Data"]["Triggers"]["sel"][stock_sym][0] = str(data["Data"]["Triggers"]["sel"][stock_sym][0])
 
                 # Echo back JSON with new attributes
                 conn.send(str.encode(json.dumps(data)))

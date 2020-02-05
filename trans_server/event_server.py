@@ -39,6 +39,12 @@ class QuoteThread(threading.Thread):
 	def __str__(self):
 		return "active"
 
+	def __repr__(self):
+		return "active"
+
+	def __dict__(self):
+		return {"objectType": "QuoteThread", "status": "active"}
+
 
 class EventServer:
 	def __init__(self):
@@ -91,6 +97,7 @@ class EventServer:
 					self.timers[ver][user].pop(symbol)
 				except Exception as e:
 					AuditLogBuilder("ERROR", "event_server", AuditCommandType.errorEvent).build({
+						"Command": "CANCEL_SET_BUY",
 						"errorMessage": f"event_server.cancel() method expected event[0] to be of type QuoteThread, but instead was str with value of '{event[0]}'"
 					}).send()
 			except KeyError:
@@ -122,13 +129,6 @@ class EventServer:
 		try:
 			curr["buy"] = self.timers["buy"][user]
 			curr["sel"] = self.timers["sel"][user]
-			# In case a quote thread var is still inside a trigger dict
-			for key, val in curr["buy"].items():
-				if isinstance(val[0], QuoteThread):
-					val[0] = str(val[0])
-			for key, val in curr["sel"].items():
-				if isinstance(val[0], QuoteThread):
-					val[0] = str(val[0])
 		except KeyError:
 			pass
 		return curr

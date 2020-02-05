@@ -192,6 +192,7 @@ class AuditLogBuilder:
         log = {}
         log["commandType"] =  self._commandType
         log["data_fields"] = {
+            "command": data["Command"],
             "errorMessage": data["errorMessage"]
         }
         return log
