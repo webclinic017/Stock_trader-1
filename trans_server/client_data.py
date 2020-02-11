@@ -24,24 +24,30 @@ class ClientData:
 
 	##### Account Commands #####
 	def check_money(self, user):
-		account = -1.0
+		account = -1.0  # TODO: What is this var set here for? I believe except handles it properly
+		print(f"Lock Wait: check_money |{user}")
 		self.lock.acquire()
+		print(f"Lock acquired: check_money |{user}")
 		try:
 			account = self.cli_data[user]["acc"]
 		except KeyError:
 			self.new_user(user, 0.0, dict(), [], [])
 			account = 0.0
 		self.lock.release()
+		print(f"Lock released: check_money |{user}")
 		return account
 
 	def add_money(self, user, amount):
+		print(f"Lock Wait: add_money |{user}|{amount}")
 		self.lock.acquire()
+		print(f"Lock acquired: add_money |{user}|{amount}")
 		try:
 			amount = float(amount)
 			self.cli_data[user]["acc"] += amount
 		except KeyError:
 			self.new_user(user, amount, dict(), [], [])
 		self.lock.release()
+		print(f"Lock released: add_money |{user}|{amount}")
 
 		# DEBUG
 		print("ADD MONEY: " + user + "\t" + str(self.cli_data[user]["acc"]) + "\t" + str(True))
@@ -56,16 +62,19 @@ class ClientData:
 
 	def rem_money(self, user, amount):
 		succeeded = False
+		self.clear_old(user, "buy", time.time())
+		print(f"Lock Wait: rem_money |{user}|{amount}")
 		self.lock.acquire()
+		print(f"Lock acquired: rem_money |{user}|{amount}")
 		try:
 			amount = float(amount)
-			self.clear_old(user, "buy", time.time())
 			if self.cli_data[user]["acc"] >= amount:
 				self.cli_data[user]["acc"] -= amount
 				succeeded = True
 		except KeyError:
 			self.new_user(user, 0.0, dict(), [], [])
 		self.lock.release()
+		print(f"Lock released: rem_money |{user}|{amount}")
 
 		# DEBUG
 		print("REM MONEY: " + user + "\t" + str(self.cli_data[user]["acc"]) + "\t" + str(succeeded))
@@ -79,7 +88,9 @@ class ClientData:
 
 	##### Portfolio Commands #####
 	def add_stock(self, user, stock, count):
+		print(f"Lock Wait: add_stock |{user}|{stock}|{count}")
 		self.lock.acquire()
+		print(f"Lock acquired: add_stock |{user}|{stock}|{count}")
 		try:
 			count = int(count)
 			stocks = self.cli_data[user]["stk"]
@@ -90,6 +101,7 @@ class ClientData:
 		except KeyError:
 			self.new_user(user, 0.0, {stock: count}, [], [])
 		self.lock.release()
+		print(f"Lock released: add_stock |{user}|{stock}|{count}")
 
 		# DEBUG
 		print("ADD STOCK: " + user + "\t" + str(self.cli_data[user]["stk"]) + "\t" + str(True))
@@ -98,10 +110,12 @@ class ClientData:
 
 	def rem_stock(self, user, stock, count):
 		succeeded = False
+		self.clear_old(user, "sel", time.time())
+		print(f"Lock Wait: rem_stock |{user}|{stock}|{count}")
 		self.lock.acquire()
+		print(f"Lock acquired: rem_stock |{user}|{stock}|{count}")
 		try:
 			count = int(count)
-			self.clear_old(user, "sel", time.time())
 			stocks = self.cli_data[user]["stk"]
 			try:
 				if stocks[stock] >= count:
@@ -114,6 +128,7 @@ class ClientData:
 		except KeyError:
 			self.new_user(user, 0.0, dict(), [], [])
 		self.lock.release()
+		print(f"Lock released: rem_stock |{user}|{stock}|{count}")
 
 		# DEBUG
 		print("REM STOCK: " + user + "\t" + str(self.cli_data[user]["stk"]) + "\t" + str(succeeded))
@@ -136,13 +151,18 @@ class ClientData:
 		self.cli_data[user][key] = filtered
 
 	def push(self, user, symbol, amount, key):
+		print(f"Lock Wait: push |{user}|{symbol}|{amount}|{key}")
 		self.lock.acquire()
+		print(f"Lock acquired: push |{user}|{symbol}|{amount}|{key}")
 		self.cli_data[user][key].append((symbol, amount, time.time()))
 		self.lock.release()
+		print(f"Lock released: push |{user}|{symbol}|{amount}|{key}")
 
 	def pop(self, user, key):
 		self.clear_old(user, key, time.time())
+		print(f"Lock Wait: pop |{user}|{key}")
 		self.lock.acquire()
+		print(f"Lock acquired: pop |{user}|{key}")
 		record = ()  # not sure about this
 		try:
 			record = self.cli_data[user][key].pop()
@@ -150,4 +170,5 @@ class ClientData:
 			self.lock.release()
 			raise Exception
 		self.lock.release()
+		print(f"Lock released: pop |{user}|{key}")
 		return record

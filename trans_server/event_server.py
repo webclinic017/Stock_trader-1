@@ -98,7 +98,7 @@ class EventServer:
 				except Exception as e:
 					AuditLogBuilder("ERROR", "event_server", AuditCommandType.errorEvent).build({
 						"Command": "CANCEL_SET_BUY",
-						"errorMessage": f"event_server.cancel() method expected event[0] to be of type QuoteThread, but instead was str with value of '{event[0]}'"
+						"errorMessage": str(e)
 					}).send()
 			except KeyError:
 				curr[symbol] = [None, 0, 0]
