@@ -8,29 +8,28 @@ BUFFER_SIZE = 4096
 class QuoteCache:
     def __init__(self, addr, port, should_stub, server_name):
         self._server_name = server_name
-        if (not should_stub):
-            print(f"connecting to quote server running at {addr}:{port}")
-            self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            try:
-                self.conn.connect((addr, port))
-            except Exception as e:
-                print("quote_server:", end="")
-                print(e)
-        else:
-            print("stubbing out quote server")
-        self.should_stub = should_stub
+        self._addr = addr
+        self._port = port
+        self._should_stub = should_stub
 
         # Simulating DB with dictionary
         self.quotes = dict()
         self.lock = threading.Lock()
 
     def new_quote(self, symbol, user):
-        if (not self.should_stub):
-            self.conn.sendall(str.encode(symbol + ", " + user + "\n"))
-            print("->quote_server 'quote request' sent\n->waiting for response...")
-            data = self.conn.recv(BUFFER_SIZE).decode().split(",")
+        addr = self._addr
+        port = self._port
+        if (not self._should_stub):
+            self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            try:
+                self.conn.connect((addr, port))
+                self.conn.sendall(str.encode(symbol + ", " + user + "\n"))
+                print("->quote_server 'quote request' sent\n->waiting for response...")
+                data = self.conn.recv(BUFFER_SIZE).decode().split(",")
+                self.conn.close()
+            except Exception as e:
+                print(e)
         else:
-            # STUB
             data = ["20.87", symbol, user, time.time(), "QWERTYUIOP"]
 
         # print(data)
