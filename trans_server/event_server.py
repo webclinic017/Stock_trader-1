@@ -82,7 +82,7 @@ class EventServer:
 			try:
 				event = curr[symbol]
 				try:
-					if (not event[0] is None):
+					if (event[0] != None):
 						if event[0].is_alive():
 							# Kill QuoteThread if running
 							event[0].join()
