@@ -288,7 +288,7 @@ class TransactionServer:
                         data["Data"]["Triggers"]["buy"][stock_sym][0] = str(data["Data"]["Triggers"]["buy"][stock_sym][0])
                     for stock_sym in sell_triggers_keys:
                         data["Data"]["Triggers"]["sel"][stock_sym][0] = str(data["Data"]["Triggers"]["sel"][stock_sym][0])
-
+                    # print(data)
                 # Echo back JSON with new attributes
                 conn.send(str.encode(json.dumps(data)))
 
