@@ -6,6 +6,8 @@ from audit_logger.AuditLogBuilder import AuditLogBuilder
 from audit_logger.AuditCommandType import AuditCommandType
 BUFFER_SIZE = 4096
 
+
+# noinspection PyRedundantParentheses
 class TransactionServer:
     # Create a server socket then bind and listen the socket
     def __init__(self, cli_data, cache, events, addr, port, server_name):
@@ -38,11 +40,11 @@ class TransactionServer:
         AuditLogBuilder("BUY", self._server_name, AuditCommandType.userCommand).build(data).send()
         succeeded = False
         user = data["userid"]
-        amount = data["amount"]
+        amount = float(data["amount"])
         cli_data = self.cli_data
 
-        if cli_data.rem_money(user, amount):
-            cli_data.push(user, data["StockSymbol"], float(amount), "buy")
+        if cli_data.check_money(user) >= amount:
+            cli_data.push(user, data["StockSymbol"], amount, "buy")
             succeeded = True
         self.cli_data = cli_data
         return succeeded
@@ -57,8 +59,8 @@ class TransactionServer:
             buy_data = cli_data.pop(user, "buy")
             price = self.cache.quote(buy_data[0], user)[0]
             count = int(buy_data[1] / price)
-            # Return the delta of the transaction to user's account
-            cli_data.add_money(user, buy_data[1] - (count * price))
+            # Remove the cost of stock from user's account
+            cli_data.rem_money(user, (count * price))
             # Update stock ownership records
             cli_data.add_stock(user, buy_data[0], count)
             succeeded = True
@@ -74,7 +76,7 @@ class TransactionServer:
         user = data["userid"]
 
         try:
-            self.cli_data.add_money(user, self.cli_data.pop(user, "buy")[1])
+            self.cli_data.pop(user, "buy")
             succeeded = True
         except Exception:
             pass
@@ -92,7 +94,7 @@ class TransactionServer:
         try:
             price = self.cache.quote(symbol, user)[0]
             count = int(amount / price)
-            if cli_data.rem_stock(user, symbol, count):
+            if cli_data.get_stock_held(user, symbol, count) >= amount:
                 cli_data.push(user, symbol, (amount, count), "sel")
                 succeeded = True
         except Exception:
@@ -222,7 +224,8 @@ class TransactionServer:
         AuditLogBuilder("DISPLAY_SUMMARY", self._server_name, AuditCommandType.userCommand).build(data).send()
         user = data["userid"]
         tri = self.events.state(user)
-        acc = self.cli_data.check_money(user)
+        # acc = self.cli_data.check_money(user)  # TR:This only returns the user funds, need full user account
+        acc = self.cli_data.get_user_account(user)
         return {"Triggers": tri, "Account": acc}
 
     # Command entry point

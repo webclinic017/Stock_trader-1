@@ -22,20 +22,33 @@ class ClientData:
 		# sel -> stack of pending sells
 		self.cli_data[user] = {"acc": amount, "stk": stock, "buy": buys, "sel": sells}
 
-	##### Account Commands #####
-	def check_money(self, user):
-		account = -1.0  # TODO: What is this var set here for? I believe except handles it properly
-		print(f"Lock Wait: check_money |{user}")
+	def get_user_account(self, user):
+		print(f"Lock Wait: get_user_account |{user}")
 		self.lock.acquire()
-		print(f"Lock acquired: check_money |{user}")
+		print(f"Lock acquired: get_user_account |{user}")
 		try:
-			account = self.cli_data[user]["acc"]
+			account = self.cli_data[user]
 		except KeyError:
 			self.new_user(user, 0.0, dict(), [], [])
 			account = 0.0
 		self.lock.release()
-		print(f"Lock released: check_money |{user}")
+		print(f"Lock released: get_user_account |{user}")
 		return account
+
+	##### Account Commands #####
+	def check_money(self, user):
+		funds = -1.0  # TODO: What is this var set here for? I believe except handles it properly
+		print(f"Lock Wait: check_money |{user}")
+		self.lock.acquire()
+		print(f"Lock acquired: check_money |{user}")
+		try:
+			funds = self.cli_data[user]["acc"]
+		except KeyError:
+			self.new_user(user, 0.0, dict(), [], [])
+			funds = 0.0
+		self.lock.release()
+		print(f"Lock released: check_money |{user}")
+		return funds
 
 	def add_money(self, user, amount):
 		print(f"Lock Wait: add_money |{user}|{amount}")
@@ -87,6 +100,22 @@ class ClientData:
 		return succeeded
 
 	##### Portfolio Commands #####
+	def get_stock_held(self, user, symbol, count):
+		print(f"Lock Wait: get_stock_held |{user}|{symbol}|{count}")
+		self.lock.acquire()
+		print(f"Lock acquired: get_stock_held |{user}|{symbol}|{count}")
+		try:
+			stocks = self.cli_data[user]["stk"]
+			try:
+				num_shares = stocks[symbol]
+			except KeyError:
+				num_shares = 0
+		except KeyError:
+			self.new_user(user, 0.0, dict(), [], [])
+		self.lock.release()
+		print(f"Lock released: get_stock_held |{user}|{symbol}|{count}")
+		return num_shares
+
 	def add_stock(self, user, stock, count):
 		print(f"Lock Wait: add_stock |{user}|{stock}|{count}")
 		self.lock.acquire()
