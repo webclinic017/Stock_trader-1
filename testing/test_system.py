@@ -6,6 +6,16 @@ from enum_utils import CommandURLs
 
 base_url = "http://127.0.0.1:5000"
 
+# Usage:
+#   1. Run start_script.py with a "--QuoteServer 0" flag
+#   2. run 'pytest' from commandline within project directory
+
+# Information:
+#   - User funds are carried over between testing blocks
+#   - Tests must be run on a freshly started system for a clear database until a reset system is created
+
+# TODO: Test blocks should fully reset state before moving to next function test
+
 # 'routes.main_page' testing ------------------------------------------------------------------------------------
 def test_main_page_response_200_OK():
     server_response = requests.get((base_url + "/"))
@@ -204,23 +214,23 @@ def test_sellStock_response_200_OK():
     assert server_response.status_code == 200
 
 def test_sellStock_response_data_pass():
-    next_command = {"Command": "SELL", "userid": "j_doe", "StockSymbol": "ABC", "amount": "10"}
+    next_command = {"Command": "SELL", "userid": "j_doe", "StockSymbol": "ABC", "amount": "210.00"}
     server_response = requests.post((base_url + CommandURLs.SELL.value), data=next_command)
     response_json = server_response.json()
     assert response_json["Command"] == "SELL"
     assert response_json["StockSymbol"] == "ABC"
     assert response_json["Succeeded"]
-    assert response_json["amount"] == "10"
+    assert response_json["amount"] == "210.00"
     assert response_json["userid"] == "j_doe"
 
 def test_sellStock_response_data_fail():
-    next_command = {"Command": "SELL", "userid": "j_doe", "StockSymbol": "ABC", "amount": "50"}
+    next_command = {"Command": "SELL", "userid": "j_doe", "StockSymbol": "ABC", "amount": "5000.00"}
     server_response = requests.post((base_url + CommandURLs.SELL.value), data=next_command)
     response_json = server_response.json()
     assert response_json["Command"] == "SELL"
     assert response_json["StockSymbol"] == "ABC"
     assert not response_json["Succeeded"]   # user shouldn't have enough stock for 'sell' to be pending
-    assert response_json["amount"] == "50"
+    assert response_json["amount"] == "5000.00"
     assert response_json["userid"] == "j_doe"
 
 def test_post_sellStock_user_state():
@@ -228,12 +238,12 @@ def test_post_sellStock_user_state():
     server_response = requests.post((base_url + CommandURLs.DISPLAY_SUMMARY.value), data=next_command)
     response_json = server_response.json()
     assert response_json["Command"] == "DISPLAY_SUMMARY"
-    assert response_json["Data"]["Account"]["acc"] == 9624.34
-    assert not response_json["Data"]["Account"]["buy"]  # Ensure list empty
-    assert len(response_json["Data"]["Account"]["sel"]) == 1  # should only be 1 pending sell(2nd overwrites 1st)
+    assert response_json["Data"]["Account"]["acc"] == 9707.82
+    assert not response_json["Data"]["Account"]["buy"]         # should be NO pending buys
+    assert len(response_json["Data"]["Account"]["sel"]) == 1   # should only be 1 pending sell(2nd overwrites 1st)
     assert response_json["Data"]["Account"]["sel"][0][0] == "ABC"
-    assert response_json["Data"]["Account"]["sel"][0][1][0] == 10
-    assert response_json["Data"]["Account"]["stk"] == {"ABC": 14}
+    assert response_json["Data"]["Account"]["sel"][0][1][0] == 210.00
+    assert response_json["Data"]["Account"]["stk"] == {"ABC": 14}  # No stock should be removed yet
     assert not response_json["Data"]["Triggers"]["buy"]  # should be NO buy triggers
     assert not response_json["Data"]["Triggers"]["sel"]  # should be NO sell triggers
     assert response_json["userid"] == "j_doe"
@@ -243,6 +253,7 @@ def test_commitSell_response_200_OK():
     next_command = {"Command": "COMMIT_SELL", "userid": "j_doe"}
     server_response = requests.post((base_url + CommandURLs.COMMIT_SELL.value), data=next_command)
     assert server_response.status_code == 200
+
 
 def test_commitSell_response_data_fail():
     next_command = {"Command": "COMMIT_SELL", "userid": "j_doe"}
@@ -254,7 +265,7 @@ def test_commitSell_response_data_fail():
 
 def test_commitSell_response_data_pass():
     # Send sell command
-    next_command = {"Command": "SELL", "userid": "j_doe", "StockSymbol": "ABC", "amount": "3"}
+    next_command = {"Command": "SELL", "userid": "j_doe", "StockSymbol": "ABC", "amount": "63.00"}
     requests.post((base_url + CommandURLs.SELL.value), data=next_command)
     # Commit sell command
     next_command = {"Command": "COMMIT_SELL", "userid": "j_doe"}
@@ -320,14 +331,20 @@ def test_setSellTrigger_response_200_OK():
     assert server_response.status_code == 200
 
 # 'routes.dumpLog[user]' testing --------------------------------------------------------------------------------
-def test_dumpLog_response_200_OK():
+def test_dumpLog_user_response_200_OK():
     next_command = {"Command": "DUMPLOG", "userid": "j_doe", "filename": "user_dumplog_test.txt"}
     server_response = requests.post((base_url + CommandURLs.DUMPLOG.value), data=next_command)
     assert server_response.status_code == 200
 
+# TODO: Test the dumplogs against xml schema
+# TODO: Ensure proper logs are submitted for each transaction
+
 # 'routes.dumpLog[admin]' testing -------------------------------------------------------------------------------
-def test_dumpLog_response_200_OK():
+def test_dumpLog_admin_response_200_OK():
     next_command = {"Command": "DUMPLOG", "filename": "admin_dumplog_test.txt"}
     server_response = requests.post((base_url + CommandURLs.DUMPLOG.value), data=next_command)
     assert server_response.status_code == 200
+
+# TODO: Test the dumplogs against xml schema
+# TODO: Ensure proper logs are submitted for each transaction
 # ----------------------------------

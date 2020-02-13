@@ -34,6 +34,9 @@ try:
 except ConnectionRefusedError as e:
     audit_server_stubbed = True
 
+# TODO: We should consider creating a queue for all incoming requests and responses
+#  and try to create a completely asynchronous system
+
 def forward_request_tserver(request_dict):
     if transaction_server_stubbed:
         return str(request_dict)

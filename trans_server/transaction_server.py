@@ -60,7 +60,7 @@ class TransactionServer:
             price = self.cache.quote(buy_data[0], user)[0]
             count = int(buy_data[1] / price)
             # Remove the cost of stock from user's account
-            cli_data.rem_money(user, (count * price))
+            cli_data.rem_money(user, round((count * price), 2))
             # Update stock ownership records
             cli_data.add_stock(user, buy_data[0], count)
             succeeded = True
@@ -87,15 +87,15 @@ class TransactionServer:
         AuditLogBuilder("SELL", self._server_name, AuditCommandType.userCommand).build(data).send()
         succeeded = False
         user = data["userid"]
-        amount = float(data["amount"])
+        dollar_amt_to_sell = float(data["amount"])
         symbol = data["StockSymbol"]
         cli_data = self.cli_data
 
         try:
             price = self.cache.quote(symbol, user)[0]
-            count = int(amount / price)
-            if cli_data.get_stock_held(user, symbol, count) >= amount:
-                cli_data.push(user, symbol, (amount, count), "sel")
+            shares_to_sell = int(dollar_amt_to_sell / price)
+            if 0 < shares_to_sell <= cli_data.get_stock_held(user, symbol):
+                cli_data.push(user, symbol, (dollar_amt_to_sell, shares_to_sell), "sel")
                 succeeded = True
         except Exception:
             pass
@@ -110,18 +110,19 @@ class TransactionServer:
 
         try:
             sell_data = cli_data.pop(user, "sel")
-            stocks = sell_data[1][1]
             symbol = sell_data[0]
+            shares_on_hand = cli_data.get_stock_held(user, symbol)
+            dollar_amt_to_sell = sell_data[1][0]
             price = self.cache.quote(symbol, user)[0]
-            count = int(sell_data[1][0] / price)
-            if count < stocks:
-                # Add back remaining stock
-                cli_data.add_stock(user, symbol, stocks - count)
-            elif count > stocks:
-                # Try to sell more stock
-                if not cli_data.rem_stock(user, symbol, count - stocks):
-                    raise Exception
-            cli_data.add_money(user, count * price)
+            shares_to_sell = int(dollar_amt_to_sell / price)
+            if shares_to_sell <= shares_on_hand:
+                cli_data.rem_stock(user, symbol, shares_to_sell)
+                cli_data.add_money(user, round(shares_to_sell * price, 2))
+            # elif count > stocks:
+            #     # Try to sell more stock
+            #     if not cli_data.rem_stock(user, symbol, count - stocks):
+            #         raise Exception
+            # cli_data.add_money(user, shares_to_sell * price)
             succeeded = True
         except Exception:
             pass
@@ -135,8 +136,7 @@ class TransactionServer:
         cli_data = self.cli_data
 
         try:
-            sell_data = cli_data.pop(user, "sel")
-            cli_data.add_stock(user, sell_data[0], sell_data[1][1])
+            cli_data.pop(user, "sel")
             succeeded = True
         except Exception:
             pass
@@ -230,6 +230,7 @@ class TransactionServer:
 
     # Command entry point
     def transaction(self, conn):
+        # TODO: We should consider creating a queue for the incoming commands.
         incoming_data = conn.recv(BUFFER_SIZE).decode()
         if incoming_data == "":
             return False

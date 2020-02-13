@@ -15,12 +15,13 @@ class ClientData:
 		self.lock = threading.Lock()
 		self.cli_data = dict()
 
-	def new_user(self, user, amount, stock, buys, sells):
+	def new_user(self, user, amount=0.0, stock={}, buys=[], sells=[]):
 		# acc -> float, account balance
 		# stk -> dictionary[symbol] -> int, number of stocks of "symbol" owned
 		# buy -> stack of pending buys 
 		# sel -> stack of pending sells
 		self.cli_data[user] = {"acc": amount, "stk": stock, "buy": buys, "sel": sells}
+		return self.cli_data[user]
 
 	def get_user_account(self, user):
 		print(f"Lock Wait: get_user_account |{user}")
@@ -29,8 +30,7 @@ class ClientData:
 		try:
 			account = self.cli_data[user]
 		except KeyError:
-			self.new_user(user, 0.0, dict(), [], [])
-			account = 0.0
+			account = self.new_user(user=user)
 		self.lock.release()
 		print(f"Lock released: get_user_account |{user}")
 		return account
@@ -44,7 +44,7 @@ class ClientData:
 		try:
 			funds = self.cli_data[user]["acc"]
 		except KeyError:
-			self.new_user(user, 0.0, dict(), [], [])
+			self.new_user(user=user)
 			funds = 0.0
 		self.lock.release()
 		print(f"Lock released: check_money |{user}")
@@ -56,9 +56,9 @@ class ClientData:
 		print(f"Lock acquired: add_money |{user}|{amount}")
 		try:
 			amount = float(amount)
-			self.cli_data[user]["acc"] += amount
+			self.cli_data[user]["acc"] += round(amount, 2)
 		except KeyError:
-			self.new_user(user, amount, dict(), [], [])
+			self.new_user(user=user, amount=amount)
 		self.lock.release()
 		print(f"Lock released: add_money |{user}|{amount}")
 
@@ -82,10 +82,10 @@ class ClientData:
 		try:
 			amount = float(amount)
 			if self.cli_data[user]["acc"] >= amount:
-				self.cli_data[user]["acc"] -= amount
+				self.cli_data[user]["acc"] -= round(amount, 2)
 				succeeded = True
 		except KeyError:
-			self.new_user(user, 0.0, dict(), [], [])
+			self.new_user(user=user)
 		self.lock.release()
 		print(f"Lock released: rem_money |{user}|{amount}")
 
@@ -100,20 +100,21 @@ class ClientData:
 		return succeeded
 
 	##### Portfolio Commands #####
-	def get_stock_held(self, user, symbol, count):
-		print(f"Lock Wait: get_stock_held |{user}|{symbol}|{count}")
+	def get_stock_held(self, user, symbol):
+		print(f"Lock Wait: get_stock_held |{user}|{symbol}")
 		self.lock.acquire()
-		print(f"Lock acquired: get_stock_held |{user}|{symbol}|{count}")
+		print(f"Lock acquired: get_stock_held |{user}|{symbol}")
+		num_shares = 0
 		try:
 			stocks = self.cli_data[user]["stk"]
 			try:
 				num_shares = stocks[symbol]
 			except KeyError:
-				num_shares = 0
+				pass
 		except KeyError:
-			self.new_user(user, 0.0, dict(), [], [])
+			self.new_user(user=user)
 		self.lock.release()
-		print(f"Lock released: get_stock_held |{user}|{symbol}|{count}")
+		print(f"Lock released: get_stock_held |{user}|{symbol}")
 		return num_shares
 
 	def add_stock(self, user, stock, count):
@@ -128,7 +129,7 @@ class ClientData:
 			except KeyError:
 				stocks[stock] = count
 		except KeyError:
-			self.new_user(user, 0.0, {stock: count}, [], [])
+			self.new_user(user=user, stock={stock: count})
 		self.lock.release()
 		print(f"Lock released: add_stock |{user}|{stock}|{count}")
 
@@ -155,7 +156,7 @@ class ClientData:
 			except KeyError:
 				stocks[stock] = 0
 		except KeyError:
-			self.new_user(user, 0.0, dict(), [], [])
+			self.new_user(user=user)
 		self.lock.release()
 		print(f"Lock released: rem_stock |{user}|{stock}|{count}")
 
@@ -181,8 +182,11 @@ class ClientData:
 
 	def push(self, user, symbol, amount, key):
 		print(f"Lock Wait: push |{user}|{symbol}|{amount}|{key}")
-		self.lock.acquire()
+		self.lock.acquire()  # TODO: Can we have have user specific locks instead of locking all client data?
 		print(f"Lock acquired: push |{user}|{symbol}|{amount}|{key}")
+		# TR-Remove any pre-existing buy/sell order for the same stock for the given user
+		filtered_client_data = [order for order in self.cli_data[user][key] if order[0] != symbol]
+		self.cli_data[user][key] = filtered_client_data
 		self.cli_data[user][key].append((symbol, amount, time.time()))
 		self.lock.release()
 		print(f"Lock released: push |{user}|{symbol}|{amount}|{key}")
@@ -192,7 +196,6 @@ class ClientData:
 		print(f"Lock Wait: pop |{user}|{key}")
 		self.lock.acquire()
 		print(f"Lock acquired: pop |{user}|{key}")
-		record = ()  # not sure about this
 		try:
 			record = self.cli_data[user][key].pop()
 		except Exception:
