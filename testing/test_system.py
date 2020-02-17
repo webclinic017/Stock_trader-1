@@ -8,7 +8,9 @@ base_url = "http://127.0.0.1:5000"
 
 # Usage:
 #   1. Run start_script.py with a "--QuoteServer 0" flag
-#   2. run 'pytest' from commandline within project directory
+#   2. run 'pytest' from commandline within project directory to run all project tests
+#       - run 'pytest test_system.py' to run just this file
+#       - run 'pytest test_system.py::specific_test_name' to run just one test in this file
 
 # Information:
 #   - User funds are carried over between testing blocks

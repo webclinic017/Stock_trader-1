@@ -4,6 +4,8 @@ import json
 import requests
 from audit_logger.AuditLogBuilder import AuditLogBuilder
 from audit_logger.AuditCommandType import AuditCommandType
+from currency import Currency
+
 BUFFER_SIZE = 4096
 
 
@@ -118,11 +120,6 @@ class TransactionServer:
             if shares_to_sell <= shares_on_hand:
                 cli_data.rem_stock(user, symbol, shares_to_sell)
                 cli_data.add_money(user, round(shares_to_sell * price, 2))
-            # elif count > stocks:
-            #     # Try to sell more stock
-            #     if not cli_data.rem_stock(user, symbol, count - stocks):
-            #         raise Exception
-            # cli_data.add_money(user, shares_to_sell * price)
             succeeded = True
         except Exception:
             pass
@@ -224,7 +221,6 @@ class TransactionServer:
         AuditLogBuilder("DISPLAY_SUMMARY", self._server_name, AuditCommandType.userCommand).build(data).send()
         user = data["userid"]
         tri = self.events.state(user)
-        # acc = self.cli_data.check_money(user)  # TR:This only returns the user funds, need full user account
         acc = self.cli_data.get_user_account(user)
         return {"Triggers": tri, "Account": acc}
 
@@ -292,7 +288,7 @@ class TransactionServer:
                         data["Data"]["Triggers"]["buy"][stock_sym][0] = str(data["Data"]["Triggers"]["buy"][stock_sym][0])
                     for stock_sym in sell_triggers_keys:
                         data["Data"]["Triggers"]["sel"][stock_sym][0] = str(data["Data"]["Triggers"]["sel"][stock_sym][0])
-                    # print(data)
+                    print(data)
                 # Echo back JSON with new attributes
                 conn.send(str.encode(json.dumps(data)))
 
