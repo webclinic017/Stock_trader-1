@@ -188,6 +188,6 @@ def test_currency_equivalence_random_negative():
 def test_currency_json_encoding():
     import json
     unencoded = Currency(12.34)
-    user_dict = {"acc": unencoded, "stk": 34.56, "empty_list": 43.21}
+    user_dict = {"acc": unencoded, "stk": 34.56, "empty_list": []}
 
-    assert json.dumps(user_dict, cls=Currency.default) == 45
+    assert json.dumps(user_dict, cls=Currency) == '{"acc": "12.34", "stk": 34.56, "empty_list": []}'

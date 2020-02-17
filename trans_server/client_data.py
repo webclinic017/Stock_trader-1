@@ -22,7 +22,7 @@ class ClientData:
         # stk -> dictionary[symbol] -> int, number of stocks of "symbol" owned
         # buy -> stack of pending buys
         # sel -> stack of pending sells
-        self.cli_data[user] = {"acc": amount, "stk": stock, "buy": buys, "sel": sells}
+        self.cli_data[user] = {"acc": Currency(amount), "stk": stock, "buy": buys, "sel": sells}
         return self.cli_data[user]
 
     def get_user_account(self, user):

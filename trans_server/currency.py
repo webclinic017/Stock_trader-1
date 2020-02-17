@@ -12,8 +12,8 @@ class Currency(JSONEncoder):
     Support for constructing from Currency object, float, int, and string values. Left
     empty, the return value will be a zero value currency object.
     """
-    def __init__(self, value=None):
-        super().__init__()
+    def __init__(self, value=None, **kwargs):
+        super().__init__(**kwargs)
         if isinstance(value, Currency):
             self.dollars = value.dollars
             self.cents = value.cents
@@ -114,7 +114,6 @@ class Currency(JSONEncoder):
 
     def default(self, o):
         if isinstance(o, Currency):
-            return {o.dollars, o.cents}
+            return o.__float__()
 
         return JSONEncoder.default(self, o)
-        # return super().default(self, o)

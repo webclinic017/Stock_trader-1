@@ -290,7 +290,7 @@ class TransactionServer:
                         data["Data"]["Triggers"]["sel"][stock_sym][0] = str(data["Data"]["Triggers"]["sel"][stock_sym][0])
                     print(data)
                 # Echo back JSON with new attributes
-                conn.send(str.encode(json.dumps(data)))
+                conn.send(str.encode(json.dumps(data, cls=Currency)))
 
         except Exception as e:
             print(e)
