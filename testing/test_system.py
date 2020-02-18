@@ -22,7 +22,7 @@ base_url = "http://127.0.0.1:5000"
 
 @pytest.fixture
 def set_funds():
-    next_command = {"Command": "ADD", "userid": "j_doe", "amount": "5000.00"}
+    next_command = {"Command": "ADD", "userid": "j_doe0", "amount": "5000.00"}
     requests.post((base_url + CommandURLs.ADD.value), data=next_command)
 
 # 'main_page' testing --------------------------------------------------------------------------------------------------
@@ -34,13 +34,13 @@ def test_main_page_response_200_OK():
 # 'displaySummary' testing 1--------------------------------------------------------------------------------------------
 # =====web server response check=====
 def test_displaySummary_response_200_OK():
-    next_command = {"Command": "DISPLAY_SUMMARY", "userid": "j_doe"}
+    next_command = {"Command": "DISPLAY_SUMMARY", "userid": "j_doe0"}
     server_response = requests.post((base_url + CommandURLs.DISPLAY_SUMMARY.value), data=next_command)
     assert server_response.status_code == 200
 
 # =====transaction server response checks=====
 def test_displaySummary_response_data():
-    next_command = {"Command": "DISPLAY_SUMMARY", "userid": "j_doe"}
+    next_command = {"Command": "DISPLAY_SUMMARY", "userid": "j_doe0"}
     server_response = requests.post((base_url + CommandURLs.DISPLAY_SUMMARY.value), data=next_command)
     response_json = server_response.json()
     assert response_json["Command"] == "DISPLAY_SUMMARY"
@@ -50,7 +50,7 @@ def test_displaySummary_response_data():
     assert not response_json["Data"]["Account"]["stk"]   # should be NO stocks held
     assert not response_json["Data"]["Triggers"]["buy"]  # should be NO buy amounts/triggers
     assert not response_json["Data"]["Triggers"]["sel"]  # should be NO sell amounts/triggers
-    assert response_json["userid"] == "j_doe"
+    assert response_json["userid"] == "j_doe0"
 
 # 'addFunds' testing ---------------------------------------------------------------------------------------------------
 # =====web server response check=====
