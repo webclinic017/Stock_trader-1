@@ -188,7 +188,7 @@ def setSellTrigger():
 def dumpLog():
     data = json.dumps(request.form.to_dict(flat=True))
 
-    if transaction_server_stubbed:
+    if transaction_server_stubbed or audit_server_stubbed:
         return str(data)
     else:
         response = requests.post(f"{protocol}://{audit_log_server_ip}:{audit_log_server_port}/dumpLog", json=data).json()

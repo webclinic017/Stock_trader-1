@@ -1,7 +1,7 @@
 import select
 import socket
 import json
-import requests
+from event_server import QuoteThread
 from audit_logger.AuditLogBuilder import AuditLogBuilder
 from audit_logger.AuditCommandType import AuditCommandType
 from currency import Currency
@@ -184,7 +184,7 @@ class TransactionServer:
         succeeded = False
         user = data["userid"]
         symbol = data["StockSymbol"]
-        amount = float(data["amount"])
+        amount = int(data["amount"])  # Number of shares to sell
         cli_data = self.cli_data
 
         if cli_data.rem_stock(user, symbol, amount):
@@ -211,7 +211,7 @@ class TransactionServer:
         AuditLogBuilder("SET_SELL_TRIGGER", self._server_name, AuditCommandType.userCommand).build(data).send()
         user = data["userid"]
         symbol = data["StockSymbol"]
-        price = float(data["amount"])
+        price = float(data["amount"])  # Sell shares at this price or higher
 
         result = self.events.trigger("sel", user, symbol, price)
         return result
@@ -220,9 +220,18 @@ class TransactionServer:
     def display_summary(self, data):
         AuditLogBuilder("DISPLAY_SUMMARY", self._server_name, AuditCommandType.userCommand).build(data).send()
         user = data["userid"]
-        tri = self.events.state(user)
         acc = self.cli_data.get_user_account(user)
-        return {"Triggers": tri, "Account": acc}
+        tri = self.events.state(user)
+        buy_triggers_keys = tri["buy"].keys()
+        sell_triggers_keys = tri["sel"].keys()
+        tri_copy = {"buy": {}, "sel": {}}
+
+        for stock_sym in buy_triggers_keys:
+            tri_copy["buy"][stock_sym] = str(tri["buy"][stock_sym])
+        for stock_sym in sell_triggers_keys:
+            tri_copy["sel"][stock_sym] = str(tri["sel"][stock_sym])
+
+        return {"Account": acc, "Triggers": tri_copy}
 
     # Command entry point
     def transaction(self, conn):
@@ -232,7 +241,7 @@ class TransactionServer:
             return False
 
         # DEBUG
-        print(incoming_data)
+        print(f"TS-Incoming request:{incoming_data}")
 
         try:
             try:
@@ -282,13 +291,13 @@ class TransactionServer:
                     data["Succeeded"] = self.set_sell_trigger(data)
                 elif command == "DISPLAY_SUMMARY":
                     data["Data"] = self.display_summary(data)
-                    buy_triggers_keys = data["Data"]["Triggers"]["buy"].keys()
-                    sell_triggers_keys = data["Data"]["Triggers"]["sel"].keys()
-                    for stock_sym in buy_triggers_keys:
-                        data["Data"]["Triggers"]["buy"][stock_sym][0] = str(data["Data"]["Triggers"]["buy"][stock_sym][0])
-                    for stock_sym in sell_triggers_keys:
-                        data["Data"]["Triggers"]["sel"][stock_sym][0] = str(data["Data"]["Triggers"]["sel"][stock_sym][0])
-                    print(data)
+                    # buy_triggers_keys = data["Data"]["Triggers"]["buy"].keys()
+                    # sell_triggers_keys = data["Data"]["Triggers"]["sel"].keys()
+                    # for stock_sym in buy_triggers_keys:
+                    #     data["Data"]["Triggers"]["buy"][stock_sym][0] = json.dumps(data["Data"]["Triggers"]["buy"][stock_sym][0])
+                    # for stock_sym in sell_triggers_keys:
+                    #     data["Data"]["Triggers"]["sel"][stock_sym][0] = json.dumps(data["Data"]["Triggers"]["sel"][stock_sym][0])
+                    print(f"data:{data}")
                 # Echo back JSON with new attributes
                 conn.send(str.encode(json.dumps(data, cls=Currency)))
 
