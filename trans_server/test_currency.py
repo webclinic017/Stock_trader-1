@@ -190,4 +190,4 @@ def test_currency_json_encoding():
     unencoded = Currency(12.34)
     user_dict = {"acc": unencoded, "stk": 34.56, "empty_list": []}
 
-    assert json.dumps(user_dict, cls=Currency) == '{"acc": "12.34", "stk": 34.56, "empty_list": []}'
+    assert json.dumps(user_dict, cls=Currency) == '{"acc": 12.34, "stk": 34.56, "empty_list": []}'
