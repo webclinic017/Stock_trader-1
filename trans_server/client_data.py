@@ -17,7 +17,7 @@ class ClientData:
         self.lock = threading.Lock()
         self.cli_data = dict()
 
-    def new_user(self, user, amount=0.0, stock={}, buys=[], sells=[]):
+    def new_user(self, user, amount, stock, buys, sells):
         # acc -> float, account balance
         # stk -> dictionary[symbol] -> int, number of stocks of "symbol" owned
         # buy -> stack of pending buys
@@ -32,7 +32,7 @@ class ClientData:
         try:
             account = self.cli_data[user]
         except KeyError:
-            account = self.new_user(user=user)
+            account = self.new_user(user=user, amount=0.0, stock={}, buys=[], sells=[])
         self.lock.release()
         print(f"Lock released: get_user_account |{user}")
         return account
@@ -46,7 +46,7 @@ class ClientData:
         try:
             funds = self.cli_data[user]["acc"]
         except KeyError:
-            self.new_user(user=user)
+            self.new_user(user=user, amount=0.0, stock={}, buys=[], sells=[])
             funds = 0.0
         self.lock.release()
         print(f"Lock released: check_money |{user}")
@@ -60,7 +60,7 @@ class ClientData:
             amount = float(amount)
             self.cli_data[user]["acc"] += amount
         except KeyError:
-            self.new_user(user=user, amount=amount)
+            self.new_user(user=user, amount=amount, stock={}, buys=[], sells=[])
         self.lock.release()
         print(f"Lock released: add_money |{user}|{amount}")
 
@@ -87,7 +87,7 @@ class ClientData:
                 self.cli_data[user]["acc"] -= amount
                 succeeded = True
         except KeyError:
-            self.new_user(user=user)
+            self.new_user(user=user, amount=0.0, stock={}, buys=[], sells=[])
         self.lock.release()
         print(f"Lock released: rem_money |{user}|{amount}")
 
@@ -114,7 +114,7 @@ class ClientData:
             except KeyError:
                 pass
         except KeyError:
-            self.new_user(user=user)
+            self.new_user(user=user, amount=0.0, stock={}, buys=[], sells=[])
         self.lock.release()
         print(f"Lock released: get_stock_held |{user}|{symbol}")
         return num_shares
@@ -131,7 +131,7 @@ class ClientData:
             except KeyError:
                 stocks[stock] = count
         except KeyError:
-            self.new_user(user=user, stock={stock: count})
+            self.new_user(user=user, amount=0.0, stock={stock: count}, buys=[], sells=[])
         self.lock.release()
         print(f"Lock released: add_stock |{user}|{stock}|{count}")
 
@@ -158,7 +158,7 @@ class ClientData:
             except KeyError:
                 stocks[stock] = 0
         except KeyError:
-            self.new_user(user=user)
+            self.new_user(user=user, amount=0.0, stock={}, buys=[], sells=[])
         self.lock.release()
         print(f"Lock released: rem_stock |{user}|{stock}|{count}")
 
@@ -184,7 +184,7 @@ class ClientData:
 
     def push(self, user, symbol, amount, key):
         print(f"Lock Wait: push |{user}|{symbol}|{amount}|{key}")
-        self.lock.acquire()  # TODO: Can we have have user specific locks instead of locking all client data?
+        self.lock.acquire()
         print(f"Lock acquired: push |{user}|{symbol}|{amount}|{key}")
         # TR-Remove any pre-existing buy/sell order for the same stock for the given user
         filtered_client_data = [order for order in self.cli_data[user][key] if order[0] != symbol]

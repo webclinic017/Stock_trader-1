@@ -19,7 +19,7 @@ class TransactionServer:
         self.events = events
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((addr, port))
-        self.server.listen(4)
+        self.server.listen(10)
 
     ##### Base Commands #####
     def add(self, data):
@@ -184,7 +184,7 @@ class TransactionServer:
         succeeded = False
         user = data["userid"]
         symbol = data["StockSymbol"]
-        amount = int(data["amount"])  # Number of shares to sell
+        amount = int(float(data["amount"]))  # Number of shares to sell
         cli_data = self.cli_data
 
         if cli_data.rem_stock(user, symbol, amount):
@@ -291,12 +291,13 @@ class TransactionServer:
                     data["Succeeded"] = self.set_sell_trigger(data)
                 elif command == "DISPLAY_SUMMARY":
                     data["Data"] = self.display_summary(data)
+                    # TR-The lower section was overwriting the actual triggers
                     # buy_triggers_keys = data["Data"]["Triggers"]["buy"].keys()
                     # sell_triggers_keys = data["Data"]["Triggers"]["sel"].keys()
                     # for stock_sym in buy_triggers_keys:
-                    #     data["Data"]["Triggers"]["buy"][stock_sym][0] = json.dumps(data["Data"]["Triggers"]["buy"][stock_sym][0])
+                    #     data["Data"]["Triggers"]["buy"][stock_sym][0] = str(data["Data"]["Triggers"]["buy"][stock_sym][0])
                     # for stock_sym in sell_triggers_keys:
-                    #     data["Data"]["Triggers"]["sel"][stock_sym][0] = json.dumps(data["Data"]["Triggers"]["sel"][stock_sym][0])
+                    #     data["Data"]["Triggers"]["sel"][stock_sym][0] = str(data["Data"]["Triggers"]["sel"][stock_sym][0])
                     print(f"data:{data}")
                 # Echo back JSON with new attributes
                 conn.send(str.encode(json.dumps(data, cls=Currency)))

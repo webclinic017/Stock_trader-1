@@ -109,6 +109,9 @@ class Currency(JSONEncoder):
     def __str__(self):
         return '{0:.2f}'.format(self.__float__())
 
+    def __repr__(self):
+        return '{0:.2f}'.format(self.__float__())
+
     def __float__(self):
         return float(self.dollars) + (float(self.cents) / 100.0)
 
