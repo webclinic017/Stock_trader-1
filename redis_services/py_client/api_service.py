@@ -22,6 +22,7 @@ def get_next_transaction_num():
 def insert_log():
     data = request.json
     response = logger_instance.insert_log(data)
+    logger_instance.increment_transaction_num()
     return json.dumps(response)
 
 @app.route("/dumpLog", methods=["POST"])
