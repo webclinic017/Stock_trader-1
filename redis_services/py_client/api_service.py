@@ -16,13 +16,13 @@ def get_current_transaction_num():
 @app.route("/getNextTransactionNum", methods=["POST"])
 def get_next_transaction_num():
     next_transaction_num = logger_instance.get_next_transaction_num()
+    logger_instance.increment_transaction_num()
     return json.dumps({"status": "SUCCESS", "data": next_transaction_num})
 
 @app.route("/auditLog", methods=["POST"])
 def insert_log():
     data = request.json
     response = logger_instance.insert_log(data)
-    logger_instance.increment_transaction_num()
     return json.dumps(response)
 
 @app.route("/dumpLog", methods=["POST"])
