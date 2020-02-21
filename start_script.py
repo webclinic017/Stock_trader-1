@@ -23,8 +23,9 @@ def cleanup():
 if __name__ == "__main__":
     try:
         parsed_args = arg_parser.parse_args()
-
-        start_service("redis_services/py_client/api_service.py")
+        start_service("models/audit_log_service/logger_api.py")
+        start_service("models/user_model/user_api.py")
+        start_service("models/events_service/events_api.py")
         start_service("trans_server/driver_transserver.py", ["--QuoteServer", str(parsed_args.QuoteServer)])
         start_service("web_server/driver_webserver.py")
         while (True):
