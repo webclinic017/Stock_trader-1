@@ -5,6 +5,8 @@ app = Flask(__name__)
 
 audit_log_server_ip = "localhost"
 audit_log_server_port = 44416
+redis_host = "127.0.0.1"
+redis_port = 6379
 
 logger_instance = None
 
@@ -37,5 +39,5 @@ def debug():
     return json.dumps({"status": "SUCCESS", "data": audit_log})
 
 if __name__ == "__main__":
-    logger_instance = logger()
+    logger_instance = logger(redis_host=redis_host, redis_port=redis_port)
     app.run(host=audit_log_server_ip, port=audit_log_server_port)

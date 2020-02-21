@@ -6,10 +6,9 @@ import json
 import redis
 import re
 server_name = "audit_log_server"
-redis_host = "127.0.0.1"
-redis_port = 6379
+
 class logger:
-    def __init__(self):
+    def __init__(self, redis_host, redis_port):
         self.r = redis.Redis(host=redis_host, port=redis_port, db=0)
 
     def increment_transaction_num(self):
@@ -81,7 +80,6 @@ class logger:
         for key in matching_keys:
             if (not pattern.match(key)):
                 continue
-            print(key)
             log = self.r.hgetall(key)
             commandType = str(log[list(log.keys())[0]], encoding='utf-8')
             del log[list(log.keys())[0]]
