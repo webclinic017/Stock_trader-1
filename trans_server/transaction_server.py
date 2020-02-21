@@ -8,7 +8,6 @@ from currency import Currency
 
 BUFFER_SIZE = 4096
 
-
 # noinspection PyRedundantParentheses
 class TransactionServer:
     # Create a server socket then bind and listen the socket
@@ -42,41 +41,34 @@ class TransactionServer:
         AuditLogBuilder("BUY", self._server_name, AuditCommandType.userCommand).build(data).send()
         succeeded = False
         user = data["userid"]
-        amount = float(data["amount"])
-        cli_data = self.cli_data
 
-        if cli_data.check_money(user) >= amount:
-            cli_data.push(user, data["StockSymbol"], amount, "buy")
+        amount = data["amount"]
+        if ((self.cli_data.check_money(user) - amount) > 0):
+            self.cli_data.push(user, data["StockSymbol"], float(amount), "buy")
             succeeded = True
-        self.cli_data = cli_data
         return succeeded
 
     def commit_buy(self, data):
         AuditLogBuilder("COMMIT_BUY", self._server_name, AuditCommandType.userCommand).build(data).send()
         succeeded = False
         user = data["userid"]
-        cli_data = self.cli_data
-
         try:
-            buy_data = cli_data.pop(user, "buy")
+            buy_data = self.cli_data.pop(user, "buy")
+            stock_symbol = buy_data[0]
             price = self.cache.quote(buy_data[0], user)[0]
             count = int(buy_data[1] / price)
-            # Remove the cost of stock from user's account
-            cli_data.rem_money(user, round((count * price), 2))
-            # Update stock ownership records
-            cli_data.add_stock(user, buy_data[0], count)
+            # Return the delta of the transaction to user's account
+            self.cli_data.commit_buy(user, stock_symbol, price, count)
             succeeded = True
         except Exception as e:
             print(e)
             pass
-        self.cli_data = cli_data
         return succeeded
 
     def cancel_buy(self, data):
         AuditLogBuilder("CANCEL_BUY", self._server_name, AuditCommandType.userCommand).build(data).send()
         succeeded = False
         user = data["userid"]
-
         try:
             self.cli_data.pop(user, "buy")
             succeeded = True
@@ -91,17 +83,15 @@ class TransactionServer:
         user = data["userid"]
         dollar_amt_to_sell = float(data["amount"])
         symbol = data["StockSymbol"]
-        cli_data = self.cli_data
-
         try:
             price = self.cache.quote(symbol, user)[0]
             shares_to_sell = int(dollar_amt_to_sell / price)
-            if 0 < shares_to_sell <= cli_data.get_stock_held(user, symbol):
-                cli_data.push(user, symbol, (dollar_amt_to_sell, shares_to_sell), "sel")
+            stocks_on_hand = self.cli_data.get_stock_held(user, symbol)
+            if stocks_on_hand > 0:
+                self.cli_data.push(user, symbol, (dollar_amt_to_sell, shares_to_sell), "sel")
                 succeeded = True
         except Exception:
             pass
-        self.cli_data = cli_data
         return succeeded
 
     def commit_sell(self, data):
@@ -118,8 +108,7 @@ class TransactionServer:
             price = self.cache.quote(symbol, user)[0]
             shares_to_sell = int(dollar_amt_to_sell / price)
             if shares_to_sell <= shares_on_hand:
-                cli_data.rem_stock(user, symbol, shares_to_sell)
-                cli_data.add_money(user, round(shares_to_sell * price, 2))
+                cli_data.commit_sell(user, symbol, price, shares_to_sell)
             succeeded = True
         except Exception:
             pass
@@ -130,14 +119,11 @@ class TransactionServer:
         AuditLogBuilder("CANCEL_SELL", self._server_name, AuditCommandType.userCommand).build(data).send()
         succeeded = False
         user = data["userid"]
-        cli_data = self.cli_data
-
         try:
-            cli_data.pop(user, "sel")
+            self.cli_data.pop(user, "sel")
             succeeded = True
         except Exception:
             pass
-        self.cli_data = cli_data
         return succeeded
 
     ###### Buy Trigger Commands #####
@@ -147,14 +133,9 @@ class TransactionServer:
         user = data["userid"]
         symbol = data["StockSymbol"]
         amount = float(data["amount"])
-        cli_data = self.cli_data
 
-        if cli_data.rem_money(user, amount):
-            if self.events.register("buy", user, symbol, amount):
-                succeeded = True
-            else:
-                cli_data.add_money(user, amount)
-        self.cli_data = cli_data
+        if self.events.register("buy", user, symbol, amount):
+            succeeded = True
         return succeeded
 
     def cancel_set_buy(self, data):
@@ -163,10 +144,7 @@ class TransactionServer:
         user = data["userid"]
         symbol = data["StockSymbol"]
 
-        amount = self.events.cancel("buy", user, symbol)
-        if amount >= 0:
-            if self.cli_data.add_money(user, amount):
-                succeeded = True
+        self.events.cancel("buy", user, symbol)
         return succeeded
 
     def set_buy_trigger(self, data):
@@ -184,15 +162,10 @@ class TransactionServer:
         succeeded = False
         user = data["userid"]
         symbol = data["StockSymbol"]
-        amount = int(float(data["amount"]))  # Number of shares to sell
-        cli_data = self.cli_data
+        amount = int(float(data["amount"]))
 
-        if cli_data.rem_stock(user, symbol, amount):
-            if self.events.register("sel", user, symbol, amount):
-                succeeded = True
-            else:
-                cli_data.add_stock(user, symbol, amount)
-        self.cli_data = cli_data
+        if self.events.register("sel", user, symbol, amount):
+            succeeded = True
         return succeeded
 
     def cancel_set_sell(self, data):
@@ -201,10 +174,7 @@ class TransactionServer:
         user = data["userid"]
         symbol = data["StockSymbol"]
 
-        amount = self.events.cancel("sel", user, symbol)
-        if amount > 0:
-            if self.cli_data.add_stock(user, symbol, amount):
-                succeeded = True
+        self.events.cancel("sel", user, symbol)
         return succeeded
 
     def set_sell_trigger(self, data):

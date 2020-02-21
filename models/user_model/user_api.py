@@ -15,8 +15,8 @@ def current_funds(username):
     response = user_instance.user_funds(username)
     return json.dumps(response) # {username: string, dollars: int, cents: int}
 
-@app.route("/current_stock/<string:username/<string:stock_symbol>", methods=["GET"])
-def current_stock(username, stock_symbol):
+@app.route("/get_stock_held/<string:username/<string:stock_symbol>", methods=["GET"])
+def get_stock_held(username, stock_symbol):
     response = user_instance.number_of_stocks(username, stock_symbol)
     return json.dumps(response)
 
