@@ -54,7 +54,7 @@ class EventServer:
 		self.cache = cache
 		self.cli_data = cli_data
 
-	# TransactionServer must deducted the amount returned from account balance
+	# TransactionServer must deduct the amount returned from account balance
 	def register(self, ver, user, symbol, amount):
 		succeeded = False
 		try:
@@ -82,14 +82,13 @@ class EventServer:
 			try:
 				event = curr[symbol]
 				try:
-					if (not event[0] is None):
+					if event[0] is not None:
 						if event[0].is_alive():
 							# Kill QuoteThread if running
 							event[0].join()
-							event[0] = None
 						else:
-							event[0] = None
 							event[1] = 0
+						event[0] = None
 						amount = event[1]
 					elif event[1] > 0:
 						amount = event[1]
@@ -101,9 +100,11 @@ class EventServer:
 						"errorMessage": str(e)
 					}).send()
 			except KeyError:
-				curr[symbol] = [None, 0, 0]
+				pass  # TR-added
+				# curr[symbol] = [None, 0, 0]  # TR-This line makes no sense, why add an empty trigger?
 		except KeyError:
-			self.timers[ver][user] = {symbol: [None, 0, 0]}
+			pass  # TR-added
+			# self.timers[ver][user] = {symbol: [None, 0, 0]}  # TR-This line also makes no sense to execute
 		return amount
 
 	def trigger(self, ver, user, symbol, price):
@@ -119,9 +120,11 @@ class EventServer:
 					event[0].start()
 					succeeded = True
 			except Exception:
-				curr[symbol] = [None, 0, 0]
+				pass  # TR-added
+				# curr[symbol] = [None, 0, 0]  # TR-This line makes no sense, why add an empty trigger?
 		except KeyError:
-			self.timers[ver][user] = {symbol: [None, 0, 0]}
+			pass  # TR-added
+			# self.timers[ver][user] = {symbol: [None, 0, 0]}  # TR-This line also makes no sense to execute
 		return succeeded
 
 	def state(self, user):
