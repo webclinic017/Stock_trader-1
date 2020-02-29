@@ -6,42 +6,18 @@ import socket
 import sys
 BUFFER_SIZE = 4096
 
-# Create the socket for transaction server communication
-# sckt_trans = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# Create the socket for audit server communication
-# sckt_audit = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
 protocol = "http"
 server_name = "web server"
 
-# transaction_server_ip = "192.168.1.178"  # IP on comp 05
+# transaction_server_ip = "192.168.1.229"  # IP on comp 17
 transaction_server_ip = audit_log_server_ip = "localhost"  # IP on home comp
 transaction_server_port = 44415
 audit_log_server_port = 44416
 
 port_range = (44415, 44420)  # (inclusive,exclusive)
-# transaction_server_stubbed = False
-# audit_server_stubbed = False
-
-# Attempt connections to transaction and audit servers
-# try:
-#     sckt_trans.connect((transaction_server_ip, transaction_server_port))
-# except ConnectionRefusedError as e:
-#     transaction_server_stubbed = True
-# try:
-#     sckt_audit.connect((audit_log_server_ip, audit_log_server_port))
-# except ConnectionRefusedError as e:
-#     audit_server_stubbed = True
 
 
 def forward_request_tserver(request_dict):
-    # if transaction_server_stubbed:
-    #     return str(request_dict)
-    # else:
-    # TODO: create sockets for each unique user
-    # Get userid from request
-    # Get user specific socket if one has been created yet
-    # Create a thread which creates a socket
 
     sckt_trans = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sckt_trans.connect((transaction_server_ip, transaction_server_port))
@@ -53,15 +29,6 @@ def forward_request_tserver(request_dict):
     trans_response = sckt_trans.recv(BUFFER_SIZE).decode()
     print("--RESPONSE:" + str(trans_response))
     sckt_trans.close()
-
-    # if not audit_server_stubbed:
-    #     # TODO: send client REQUEST LOG to the audit server
-    #     # sckt_audit.sendall(str.encode(request_dict))
-    #
-    #     # TODO: send transaction server RESPONSE LOG to the audit server
-    #     # sckt_audit.sendall(str.encode(response))
-    #     # audit_response = sckt_audit.recv(BUFFER_SIZE).decode()
-    #     # print("RESPONSE:" + str(audit_response))
 
     return trans_response
 
@@ -193,12 +160,8 @@ def setSellTrigger():
 @app.route('/dumpLog', methods=["POST"])
 def dumpLog():
     data = json.dumps(request.form.to_dict(flat=True))
-    return str(data)
-    # if transaction_server_stubbed or audit_server_stubbed:
-    #     return str(data)
-    # else:
-    # response = requests.post(f"{protocol}://{audit_log_server_ip}:{audit_log_server_port}/dumpLog", json=data).json()
-    # return json.dumps(response)
+    response = requests.post(f"{protocol}://{audit_log_server_ip}:{audit_log_server_port}/dumpLog", json=data).json()
+    return json.dumps(response)
 
 @app.route('/displaySummary', methods=["POST"])
 def displaySummary():
