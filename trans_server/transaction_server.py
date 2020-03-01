@@ -22,8 +22,8 @@ class TransactionServer:
 
     ##### Base Commands #####
     def add(self, data):
-        AuditLogBuilder("ADD", self._server_name, AuditCommandType.userCommand).build(data).send()
         user = data["userid"]
+        AuditLogBuilder("ADD", self._server_name, AuditCommandType.userCommand).build(data).send()
         amount = data["amount"]
         return self.cli_data.add_money(user, amount)
 
@@ -39,12 +39,21 @@ class TransactionServer:
     ###### Buy Commands #####
     def buy(self, data):
         AuditLogBuilder("BUY", self._server_name, AuditCommandType.userCommand).build(data).send()
+
         succeeded = False
         user = data["userid"]
 
-        amount = data["amount"]
-        if ((self.cli_data.check_money(user) - amount) > 0):
+        amount = Currency(data["amount"])
+        print("trace....1")
+        user_funds = self.cli_data.check_money(user)
+        print("trace...2")
+
+        print(user_funds)
+        print(amount)
+        if ((user_funds - amount) > 0):
+
             self.cli_data.push(user, data["StockSymbol"], float(amount), "buy")
+
             succeeded = True
         return succeeded
 
@@ -54,9 +63,10 @@ class TransactionServer:
         user = data["userid"]
         try:
             buy_data = self.cli_data.pop(user, "buy")
-            stock_symbol = buy_data[0]
-            price = self.cache.quote(buy_data[0], user)[0]
-            count = int(buy_data[1] / price)
+            stock_symbol = buy_data["stock_symbol"]
+            price = self.cache.quote(stock_symbol, user)[0]
+            amount = Currency(buy_data["dollars"]) + Currency(buy_data["cents"])
+            count = int(amount / price)
             # Return the delta of the transaction to user's account
             self.cli_data.commit_buy(user, stock_symbol, price, count)
             succeeded = True
@@ -88,7 +98,7 @@ class TransactionServer:
             shares_to_sell = int(dollar_amt_to_sell / price)
             stocks_on_hand = self.cli_data.get_stock_held(user, symbol)
             if stocks_on_hand > 0:
-                self.cli_data.push(user, symbol, (dollar_amt_to_sell, shares_to_sell), "sel")
+                self.cli_data.push(user, symbol, (dollar_amt_to_sell, shares_to_sell), "sell")
                 succeeded = True
         except Exception:
             pass
@@ -101,10 +111,10 @@ class TransactionServer:
         cli_data = self.cli_data
 
         try:
-            sell_data = cli_data.pop(user, "sel")
+            sell_data = cli_data.pop(user, "sell")
             symbol = sell_data[0]
             shares_on_hand = cli_data.get_stock_held(user, symbol)
-            dollar_amt_to_sell = sell_data[1][0]
+            dollar_amt_to_sell = sell_data["dollars"]
             price = self.cache.quote(symbol, user)[0]
             shares_to_sell = int(dollar_amt_to_sell / price)
             if shares_to_sell <= shares_on_hand:
@@ -120,7 +130,7 @@ class TransactionServer:
         succeeded = False
         user = data["userid"]
         try:
-            self.cli_data.pop(user, "sel")
+            self.cli_data.pop(user, "sell")
             succeeded = True
         except Exception:
             pass
@@ -188,10 +198,13 @@ class TransactionServer:
 
     ##### Audit Commands #####
     def display_summary(self, data):
-        AuditLogBuilder("DISPLAY_SUMMARY", self._server_name, AuditCommandType.userCommand).build(data).send()
+
         user = data["userid"]
-        acc = self.cli_data.get_user_account(user)
+
+        acc = self.cli_data.get_user(user)
+
         tri = self.events.state(user)
+
         buy_triggers_keys = tri["buy"].keys()
         sell_triggers_keys = tri["sel"].keys()
         tri_copy = {"buy": {}, "sel": {}}
@@ -200,6 +213,12 @@ class TransactionServer:
             tri_copy["buy"][stock_sym] = str(tri["buy"][stock_sym])
         for stock_sym in sell_triggers_keys:
             tri_copy["sel"][stock_sym] = str(tri["sel"][stock_sym])
+
+        log_data = acc.copy()
+        log_data["userid"] = data["userid"]
+        log_data["Command"] = "DISPLAY_SUMMARY"
+        print("log data payload:")
+        AuditLogBuilder("DISPLAY_SUMMARY", self._server_name, AuditCommandType.userCommand).build(log_data).send()
 
         return {"Account": acc, "Triggers": tri_copy}
 

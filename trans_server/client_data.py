@@ -1,16 +1,10 @@
 import time
 import threading
 from currency import Currency
-from audit_logger.AuditLogBuilder import AuditLogBuilder
-from audit_logger.AuditCommandType import AuditCommandType
-
+import threading
 import requests
 
-# Surrogate for client database
-# Provides API for actions on client records
-
-class ClientData:
-	class UserUrls():
+class UserUrls:
 		CURRENT_FUNDS = "current_funds"
 		COMMIT_BUY = "commit_buy"
 		COMMIT_SELL = "commit_sell"
@@ -19,21 +13,24 @@ class ClientData:
 		SET_BUY_TRIGGER = "set_buy_trigger"
 		SET_SELL_TRIGGER = "set_sell_trigger"
 		GET_STOCKS_HELD = "get_stocks_held"
+		PUSH_COMMAND = "push_command"
+		POP_COMMAND = "pop_command"
 
-	_commandType = AuditCommandType.accountTransaction
+class ClientData:
 
 	# Could be extended to load users on init
 	def __init__(self, server_name, protocol, user_db_host, user_db_port):
 		self._server_name = server_name
 		self.lock = threading.Lock()
-		self.user_server_url = f"{protocol}://{user_db_host}/{user_db_port}"
+		self.user_server_url = f"{protocol}://{user_db_host}:{user_db_port}"
+		self.cli_data = {"buy": [], "sel": []}
 
 	def get_current_funds(self, username):
-		data = requests.get(f"{self.user_server_url}/{UserUrls.CURRENT_FUNDS}")["data"]
-		return Currency(data["dollars"]) + Currency(data["cents"] / 100)
+		data = requests.get(f"{self.user_server_url}/{UserUrls.CURRENT_FUNDS}/{username}").json()
+		return Currency(data["dollars"]) + Currency(int(data["cents"]) / 100)
 
 	def persist(self, endpoint, data_dict):
-		return requests.post(f"{user_server_url}/{endpoint}", json=data_dict)
+		return requests.post(f"{self.user_server_url}/{endpoint}", json=data_dict).json()
 
 	def new_user(self, username):
 		# acc -> float, account balance
@@ -41,23 +38,23 @@ class ClientData:
 		# buy -> stack of pending buys 
 		# sel -> stack of pending sells
 		
-		#self.cli_data[user] = {"acc": amount, "stk": stock, "buy": buys, "sel": sells}
 		assert type(username) == str
 		return self.persist(UserUrls.CREATE_NEW_USER, {"username": username})
 
+	def get_user(self, username):
+		assert type(username) == str
+		response = requests.get(f"{self.user_server_url}/get_user/{username}").json()
+		return response
+
 	##### Account Commands #####
 	def check_money(self, user):
-		account = -1.0  # TODO: What is this var set here for? I believe except handles it properly
-		print(f"Lock Wait: check_money |{user}")
-		self.lock.acquire()
-		print(f"Lock acquired: check_money |{user}")
 		try:
 			account = self.get_current_funds(user)
 		except KeyError:
+
 			response = self.new_user(user)
-			account = Currency(response["data"]["dollars"]) + Currency(response["data"]["cents"] / 100)
-		finally:
-			self.lock.release()
+
+			account = Currency(0.0)
 		print(f"Lock released: check_money |{user}")
 		return account
 
@@ -65,29 +62,12 @@ class ClientData:
 		return requests.get(f"{self.user_server_url}/{UserUrls.GET_STOCKS_HELD}/{user}/{stock_symbol}")
 
 	def add_money(self, user, amount):
-		print(f"Lock Wait: add_money |{user}|{amount}")
-		self.lock.acquire()
-		print(f"Lock acquired: add_money |{user}|{amount}")
 		try:
-			amount = Currency(amount)
-			dollars= amount.dollars
-			cents = amount.cents
 			assert type(user) == str
-			self.persist(UserUrls.ADD_FUNDS, {"username": user, "dollars": dollars, "cents": cents})
+			amount = Currency(amount)
+			self.persist(UserUrls.ADD_FUNDS, {"username": user, "dollars": amount.dollars, "cents": amount.cents})
 		except KeyError:
 			self.new_user(user)
-		finally:
-			self.lock.release()
-		print(f"Lock released: add_money |{user}|{amount}")
-
-		# DEBUG
-		print("ADD MONEY: " + user + "\t" + str(self.cli_data[user]["acc"]) + "\t" + str(True))
-		AuditLogBuilder("ADD", self._server_name, self._commandType).build({
-			"server": self._server_name,
-			"userid": user,
-			"action": "ADD",
-			"amount": amount 
-		}).send()
 
 		return True
 
@@ -95,6 +75,9 @@ class ClientData:
 		total = price * count
 		stock_price = Currency(price)
 		cost = stock_price * count
+
+		#TODO: temporarily keep stack of buy commands in memory
+		self.cli_data[username]
 		self.persist(
 			UserUrls.COMMIT_BUY, 
 			{
@@ -123,117 +106,46 @@ class ClientData:
 			}
 		)
 
-	#def rem_money(self, user, amount):
-	#	succeeded = False
-	#	self.clear_old(user, "buy", time.time())
-	#	print(f"Lock Wait: rem_money |{user}|{amount}")
-	#	self.lock.acquire()
-	#	print(f"Lock acquired: rem_money |{user}|{amount}")
-	#	try:
-	#		amount = float(amount)
-	#		funds = self.get_current_funds(user)
-	#		if funds >= amount:
-	#			self.persist(UserUrls.ADD_FUNDS)
-	#			succeeded = True
-	#	except KeyError:
-	#		self.new_user(user)
-	#	finally:
-	#		self.lock.release()
-	#	print(f"Lock released: rem_money |{user}|{amount}")
-#
-	#	# DEBUG
-	#	print("REM MONEY: " + user + "\t" + str(self.cli_data[user]["acc"]) + "\t" + str(succeeded))
-	#	AuditLogBuilder("REMOVE", self._server_name, self._commandType).build({
-	#		"server": self._server_name,
-	#		"userid": user,
-	#		"action": "REMOVE",
-	#		"amount": amount 
-	#	}).send()
-	#	return succeeded
-
-	##### Portfolio Commands #####
-#	def add_stock(self, user, stock, count):
-#		print(f"Lock Wait: add_stock |{user}|{stock}|{count}")
-#		self.lock.acquire()
-#		print(f"Lock acquired: add_stock |{user}|{stock}|{count}")
-#		try:
-#			count = int(count)
-#			stocks = self.cli_data[user]["stk"]
-#			try:
-#				stocks[stock] += count
-#			except KeyError:
-#				stocks[stock] = count
-#		except KeyError:
-#			self.new_user(user)
-#		finally:
-#			self.lock.release()
-#		print(f"Lock released: add_stock |{user}|{stock}|{count}")
-#
-#		# DEBUG
-#		print("ADD STOCK: " + user + "\t" + str(self.cli_data[user]["stk"]) + "\t" + str(True))
-#
-#		return True
-#
-#	def rem_stock(self, user, stock, count):
-#		succeeded = False
-#		self.clear_old(user, "sel", time.time())
-#		print(f"Lock Wait: rem_stock |{user}|{stock}|{count}")
-#		self.lock.acquire()
-#		print(f"Lock acquired: rem_stock |{user}|{stock}|{count}")
-#		try:
-#			count = int(count)
-#			stocks = self.cli_data[user]["stk"]
-#			try:
-#				if stocks[stock] >= count:
-#					stocks[stock] -= count
-#					succeeded = True
-#					if stocks[stock] <= 0:
-#						self.cli_data[user]["stk"].pop(stock)
-#			except KeyError:
-#				stocks[stock] = 0
-#		except KeyError:
-#			self.new_user(user)
-#		finally:
-#			self.lock.release()
-#		print(f"Lock released: rem_stock |{user}|{stock}|{count}")
-#
-#		# DEBUG
-#		print("REM STOCK: " + user + "\t" + str(self.cli_data[user]["stk"]) + "\t" + str(succeeded))
-#
-#		return succeeded
-
 	##### Buy and Sell Commands #####
 	def clear_old(self, user, key, curr):
 		filtered = []
 		command_stack = self.cli_data[user][key]
-
-		for cmd in command_stack:
-			if curr - cmd[2] >= 60:
-				if key == "buy":
-					self.add_money(user, cmd[1])
-				else:
-					self.add_stock(user, cmd[0], cmd[1][1])
-			else:
-				filtered.append(cmd)
-		self.cli_data[user][key] = filtered
-
-	def push(self, user, symbol, amount, key):
-		print(f"Lock Wait: push |{user}|{symbol}|{amount}|{key}")
 		self.lock.acquire()
-		print(f"Lock acquired: push |{user}|{symbol}|{amount}|{key}")
-		self.cli_data[user][key].append((symbol, amount, time.time()))
-		self.lock.release()
-		print(f"Lock released: push |{user}|{symbol}|{amount}|{key}")
+		try:
+			for cmd in command_stack:
+				if curr - cmd[2] >= 60:
+					if key == "buy":
+						self.add_money(user, cmd[1])
+					else:
+						self.add_stock(user, cmd[0], cmd[1][1])
+				else:
+					filtered.append(cmd)
+			self.cli_data[user][key] = filtered
+		finally:
+			self.lock.release()
+
+	def push(self, user, symbol, amount, command):
+		self.lock.acquire()
+		try:
+			currencyAmount = Currency(amount)
+			data = {
+				"username": user, 
+				"stock_symbol": symbol, 
+				"dollars": currencyAmount.dollars, 
+				"cents": currencyAmount.cents, 
+				"command": command, 
+				"timestamp": time.time()
+			}
+			requests.post(f"{self.user_server_url}/{UserUrls.PUSH_COMMAND}", json=data)
+		finally:
+			self.lock.release()
 
 	def pop(self, user, key):
 		self.clear_old(user, key, time.time())
-		print(f"Lock Wait: pop |{user}|{key}")
 		self.lock.acquire()
-		print(f"Lock acquired: pop |{user}|{key}")
 		record = ()  # not sure about this
 		try:
-			record = self.cli_data[user][key].pop()
+			record = requests.get(f"{self.user_server_url}/{user}/{UserUrls.POP_COMMAND}")
 		finally:
 			self.lock.release()
-		print(f"Lock released: pop |{user}|{key}")
 		return record

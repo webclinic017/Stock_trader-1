@@ -5,8 +5,8 @@ app = Flask(__name__)
 
 redis_host = "127.0.0.1"
 redis_port = 6379
-user_persist_ip = "localhost"
-user_persist_port = 44417
+user_db_host = "localhost"
+user_db_port = 44417
 
 user_instance = None
 
@@ -15,7 +15,12 @@ def current_funds(username):
     response = user_instance.user_funds(username)
     return json.dumps(response) # {username: string, dollars: int, cents: int}
 
-@app.route("/get_stock_held/<string:username/<string:stock_symbol>", methods=["GET"])
+@app.route("/get_user/<string:username>", methods=["GET"])
+def get_user(username):
+    response = user_instance.get_user(username)
+    return json.dumps(response)
+
+@app.route("/get_stock_held/<string:username>/<string:stock_symbol>", methods=["GET"])
 def get_stock_held(username, stock_symbol):
     response = user_instance.number_of_stocks(username, stock_symbol)
     return json.dumps(response)
@@ -31,6 +36,23 @@ def commit_buy():
     cents_delta = -1 * data["cents_delta"]
     response = user_instance.stock_delta(data)
     return json.dumps(response)
+
+@app.route("/push_command", methods=["POST"])
+def push_command():
+    data = request.json
+    username = data["username"]
+    stock_symbol = data["stock_symbol"]
+    dollars = data["dollars"]
+    cents = data["cents"]
+    command = data["command"]
+    timestamp = data["timestamp"]
+    user = user_instance.push_command(username=username, stock_symbol=stock_symbol, dollars=dollars, cents=cents, command=command, timestamp=timestamp)
+    return json.dumps(user)
+
+@app.route("/pop_command/<string:username>/<string:command>", methods=["GET"])
+def pop_command(username, command):
+    popped_command = user_instance.pop_command(username, command)
+    return json.dumps(popped_command)
 
 @app.route("/commit_sell", methods=["POST"])
 def commit_sell():
@@ -51,9 +73,9 @@ def add_funds():
     dollars = data["dollars"]
     cents = data["cents"]
     response = user_instance.add_funds_delta(username, dollars, cents)
-    return response
+    return json.dumps(response)
 
-@app.route("/create_new_user", methods="POST")
+@app.route("/create_new_user", methods=["POST"])
 def create_new_user():
     data = request.json
     username = data["username"]
@@ -71,7 +93,7 @@ def set_buy_trigger():
     return json.dumps(response)
 
 @app.route("/set_sell_trigger", methods=["POST"])
-def set_buy_trigger():
+def set_sell_trigger():
     data = request.json
     username = data["username"]
     stock_symbol = data["stock_symbol"]
@@ -82,4 +104,4 @@ def set_buy_trigger():
 
 if __name__ == "__main__":
     user_instance = user(redis_host=redis_host, redis_port=redis_port)
-    app.run(host=user_persist_ip, port=user_persist_port)
+    app.run(host=user_db_host, port=user_db_port)

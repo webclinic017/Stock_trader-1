@@ -4,7 +4,7 @@ import uuid
 import re
 import threading
 
-class event_messenger():
+class event_messenger:
     # pending indicates that the event has not yet been fulfilled (the stock has not reached the buy or sell amount yet)
     PENDING = "pending"
 
@@ -14,7 +14,7 @@ class event_messenger():
     # fulfilled indicates that the event has been fulfilled by the transaction server, and should be removed
     FULFILLED = "fulfilled"
 
-    class EventTypes():
+    class EventTypes:
         BUY = "buy"
         SELL = "sell"
 
@@ -25,7 +25,8 @@ class event_messenger():
     def set_event(self, event_id, event_type, status, username, stock_symbol, target_dollars, target_cents):
         assert (event_type == EventTypes.BUY or event_type == EventTypes.SELL)
         key = f"{event_type}_{event_id}_{status}"
-        self.r.hset(key, "event_id", event_id, "event_type", event_type, "status", status, "username", username, "stock_symbol", stock_symbol, "target_dollars", target_dollars, "target_cents", target_cents)
+
+        self.r.hmset(key, {"event_id": event_id, "event_type": event_type, "status": status, "username": username, "stock_symbol": stock_symbol, "target_dollars": target_dollars, "target_cents": target_cents})
         return {"status": "SUCCESS", "event_id": event_id}
 
     def get_all_pending_events(self):

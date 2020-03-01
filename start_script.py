@@ -6,7 +6,7 @@ import argparse
 import os
 import time
 arg_parser = argparse.ArgumentParser()
-arg_parser.add_argument("--QuoteServer", "-qs", type=int, default=1, help="set to 0 to indicate if quote server connection is not available (should be stubbed out), default value is 1 (expects real quote server to connect to)")
+arg_parser.add_argument("--QuoteServer", "-qs", type=int, default=0, help="set to 0 to indicate if quote server connection is not available (should be stubbed out), default value is 1 (expects real quote server to connect to)")
 subprocesses = []
 
 def start_service(path_to_entrypoint, script_args=[]):
@@ -25,6 +25,7 @@ if __name__ == "__main__":
         parsed_args = arg_parser.parse_args()
         start_service("models/audit_log_service/logger_api.py")
         start_service("models/user_model/user_api.py")
+        start_service("models/quote_cache/quote_cache_api.py")
         start_service("models/events_service/events_api.py")
         start_service("trans_server/driver_transserver.py", ["--QuoteServer", str(parsed_args.QuoteServer)])
         start_service("web_server/driver_webserver.py")

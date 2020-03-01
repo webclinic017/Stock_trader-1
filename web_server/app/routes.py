@@ -23,16 +23,8 @@ port_range = (44415, 44420)  # (inclusive,exclusive)
 transaction_server_stubbed = False
 audit_server_stubbed = False
 
-# Create connection an any available ports
-# find_open_socket(transaction_server_ip, port_range)
-try:
-    sckt_trans.connect((transaction_server_ip, transaction_server_port))
-except ConnectionRefusedError as e:
-    transaction_server_stubbed = True
-try:
-    sckt_audit.connect((audit_log_server_ip, audit_log_server_port))
-except ConnectionRefusedError as e:
-    audit_server_stubbed = True
+sckt_trans.connect((transaction_server_ip, transaction_server_port))
+sckt_audit.connect((audit_log_server_ip, audit_log_server_port))
 
 # TODO: We should consider creating a queue for all incoming requests and responses
 #  and try to create a completely asynchronous system
@@ -69,7 +61,8 @@ def addFunds():
     request_dict = json.dumps(request.form.to_dict(flat=True))
     print("--REQUEST:" + request_dict)
 
-    return forward_request_tserver(request_dict)
+    response = forward_request_tserver(request_dict)
+    return response
 
 @app.route('/getQuote', methods=["POST"])
 def getQuote():

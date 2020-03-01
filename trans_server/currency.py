@@ -121,6 +121,13 @@ class Currency(JSONEncoder):
     def __rmul__(self, other):
         return self.__mul__(other)
 
+    def __truediv__(self, other):
+        if (type(other) == Currency):
+            result = Currency(self.dollars / other.dollars) + Currency(self.cents / other.cents)
+        else:
+            result = Currency(self.dollars / other) + Currency(self.cents / other)
+        return result
+
     def default(self, o):
         if isinstance(o, Currency):
             return o.__float__()

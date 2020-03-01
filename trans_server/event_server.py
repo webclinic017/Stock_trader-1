@@ -10,13 +10,14 @@ class QuoteThread(threading.Thread):
 		self.cache = cache
 		self.user = user
 		self.symbol = symbol
-		self.amount = amount
-		self.price = price
+		self.amount = float(amount)
+		self.price = float(price)
 		self.stopevent = threading.Event()
 
 	def run(self):
 		while not self.stopevent.isSet():
-			quote = self.cache.quote(self.symbol, self.user)[0]
+			quote = float(self.cache.quote(self.symbol, self.user)[0])
+
 			if self.ver == "buy" and quote <= self.price:
 				count = int(self.amount / quote)
 				delta = self.amount - (count * quote)
