@@ -20,8 +20,6 @@ class QuoteCache:
 
 
     def new_quote(self, symbol, user):
-        print("NEW_QUOTE TRACE1")
-        print(self._should_stub)
         addr = self._addr
         port = self._port
         if (not self._should_stub):
@@ -74,7 +72,6 @@ class QuoteCache:
                 cryptokey = data["cryptokey"]
                 val = [quote_amount, symbol, user, quote_time, cryptokey]
         except KeyError as e:
-            print("LINE 77 OF trans_server/quote_cache.py")
             raise e
             val = self.new_quote(symbol, user)
         return val

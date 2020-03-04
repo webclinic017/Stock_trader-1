@@ -15,6 +15,7 @@ class UserUrls:
 		GET_STOCKS_HELD = "get_stocks_held"
 		PUSH_COMMAND = "push_command"
 		POP_COMMAND = "pop_command"
+		CLEAR_OLD_COMMANDS = "clear_old_commands"
 
 class ClientData:
 
@@ -23,7 +24,6 @@ class ClientData:
 		self._server_name = server_name
 		self.lock = threading.Lock()
 		self.user_server_url = f"{protocol}://{user_db_host}:{user_db_port}"
-		self.cli_data = {"buy": [], "sel": []}
 
 	def get_current_funds(self, username):
 		data = requests.get(f"{self.user_server_url}/{UserUrls.CURRENT_FUNDS}/{username}").json()
@@ -51,15 +51,13 @@ class ClientData:
 		try:
 			account = self.get_current_funds(user)
 		except KeyError:
-
 			response = self.new_user(user)
-
 			account = Currency(0.0)
-		print(f"Lock released: check_money |{user}")
 		return account
 
 	def get_stock_held(self, user, stock_symbol):
-		return requests.get(f"{self.user_server_url}/{UserUrls.GET_STOCKS_HELD}/{user}/{stock_symbol}")
+		stocks_held = int(requests.get(f"{self.user_server_url}/{UserUrls.GET_STOCKS_HELD}/{user}/{stock_symbol}").json())
+		return stocks_held
 
 	def add_money(self, user, amount):
 		try:
@@ -71,22 +69,16 @@ class ClientData:
 
 		return True
 
-	def commit_buy(self, username, stock_symbol, price, count):
-		total = price * count
-		stock_price = Currency(price)
-		cost = stock_price * count
-
-		#TODO: temporarily keep stack of buy commands in memory
-		self.cli_data[username]
+	def commit_buy(self, username, stock_symbol, price, buy_amount):
 		self.persist(
 			UserUrls.COMMIT_BUY, 
 			{
 				"username": username,
 				"stock_symbol": stock_symbol, 
-				"stock_dollars": stock_price.dollars, 
-				"stock_cents": stock_price.cents, 
-				"dollars_delta": cost.dollars, 
-				"cents_delta": cost.cents
+				"stock_price_dollars": price.dollars, 
+				"stock_price_cents": price.cents, 
+				"dollars_delta": buy_amount.dollars, 
+				"cents_delta": buy_amount.cents
 			}
 		)
 
@@ -99,30 +91,17 @@ class ClientData:
 			{
 				"username": username,
 				"stock_symbol": stock_symbol, 
-				"stock_dollars": stock_price.dollars, 
-				"stock_cents": stock_price.cents, 
+				"stock_price_dollars": stock_price.dollars, 
+				"stock_price_cents": stock_price.cents, 
 				"dollars_delta": cost.dollars, 
 				"cents_delta": cost.cents
 			}
 		)
 
 	##### Buy and Sell Commands #####
-	def clear_old(self, user, key, curr):
-		filtered = []
-		command_stack = self.cli_data[user][key]
-		self.lock.acquire()
-		try:
-			for cmd in command_stack:
-				if curr - cmd[2] >= 60:
-					if key == "buy":
-						self.add_money(user, cmd[1])
-					else:
-						self.add_stock(user, cmd[0], cmd[1][1])
-				else:
-					filtered.append(cmd)
-			self.cli_data[user][key] = filtered
-		finally:
-			self.lock.release()
+	def clear_old(self, user, command, current_time):
+		print("clear old commands")
+		requests.post(f"{self.user_server_url}/{UserUrls.CLEAR_OLD_COMMANDS}", json={"username": user, "command": command, "current_time": current_time})
 
 	def push(self, user, symbol, amount, command):
 		self.lock.acquire()
@@ -136,16 +115,20 @@ class ClientData:
 				"command": command, 
 				"timestamp": time.time()
 			}
+			print(f"push {command} payload:")
+			print(data)
 			requests.post(f"{self.user_server_url}/{UserUrls.PUSH_COMMAND}", json=data)
 		finally:
 			self.lock.release()
 
 	def pop(self, user, key):
-		self.clear_old(user, key, time.time())
+		#self.clear_old(user, key, time.time())
 		self.lock.acquire()
-		record = ()  # not sure about this
+		data = {}
 		try:
-			record = requests.get(f"{self.user_server_url}/{user}/{UserUrls.POP_COMMAND}")
+			data = requests.get(f"{self.user_server_url}/{UserUrls.POP_COMMAND}/{user}/{key}").json()
+			print(f"popped {key} response:")
+			print(data)
 		finally:
 			self.lock.release()
-		return record
+		return data

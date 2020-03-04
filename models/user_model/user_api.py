@@ -20,21 +20,39 @@ def get_user(username):
     response = user_instance.get_user(username)
     return json.dumps(response)
 
-@app.route("/get_stock_held/<string:username>/<string:stock_symbol>", methods=["GET"])
-def get_stock_held(username, stock_symbol):
+@app.route("/get_stocks_held/<string:username>/<string:stock_symbol>", methods=["GET"])
+def get_stocks_held(username, stock_symbol):
     response = user_instance.number_of_stocks(username, stock_symbol)
     return json.dumps(response)
 
 @app.route("/commit_buy", methods=["POST"])
 def commit_buy():
     data = request.json
+    print("commit buy incoming payload:")
+    print(data)
     username = data["username"]
     stock_symbol = data["stock_symbol"]
     stock_price_dollars = data["stock_price_dollars"]
     stock_price_cents = data["stock_price_cents"]
-    dollars_delta = -1 * data["dollars_delta"]
-    cents_delta = -1 * data["cents_delta"]
-    response = user_instance.stock_delta(data)
+    dollars_delta = data["dollars_delta"]
+    cents_delta = data["cents_delta"]
+    response = user_instance.stock_delta(
+        username=username, 
+        stock_symbol=stock_symbol, 
+        stock_price_dollars=stock_price_dollars, 
+        stock_price_cents=stock_price_cents, 
+        dollars_delta=dollars_delta, 
+        cents_delta=cents_delta
+    )
+    return json.dumps(response)
+
+@app.route("/clear_old_commands", methods=["POST"])
+def clear_old_commands():
+    data = request.json
+    username = data["username"]
+    command = data["command"]
+    current_time = data["current_time"]
+    response = user_instance.clear_old_commands(username=username, command=command, current_time=current_time)
     return json.dumps(response)
 
 @app.route("/push_command", methods=["POST"])
@@ -61,8 +79,8 @@ def commit_sell():
     stock_symbol = data["stock_symbol"]
     stock_price_dollars = data["stock_price_dollars"]
     stock_price_cents = data["stock_price_cents"]
-    dollars_delta = data["dollars_delta"]
-    cents_delta = data["cents_delta"]
+    dollars_delta = -1 * data["dollars_delta"]
+    cents_delta = -1 * data["cents_delta"]
     response = user_instance.stock_delta(username, stock_symbol, stock_price_dollars, stock_price_cents, dollars_delta, cents_delta)
     return json.dumps(response)
 

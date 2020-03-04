@@ -30,8 +30,6 @@ class logger:
         return transaction_num
 
     def insert_log(self, data):
-        print("incoming log data:")
-        print(data)
         response = {"status": "ERROR"}
 
         log_key = list(data.keys())[0]
@@ -60,7 +58,6 @@ class logger:
             data = json.loads(data)
         except TypeError:
             pass
-        print("dumplog")
         response = {"status": "ERROR"}
         self._log_dumplog(data)
         logs_root = elementTree.Element("log")

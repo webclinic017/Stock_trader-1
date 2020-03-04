@@ -13,30 +13,24 @@ class quote_cache:
         return sanitized_dict
 
     def cache_quote(self, data):
-        print("quote_cache.cache_quote TRACE1")
         stock_symbol = data["stock_symbol"]
         dollars = data["dollars"]
         cents = data["cents"]
         quote_time = data["quote_time"]
         cryptokey = data["cryptokey"]
         response = {}
-        print("quote_cache.cache_quote TRACE2")
 
         self.mutex.acquire()
-        print("quote_cache.cache_quote MUTEX ACQUIRED")
 
         try:
             bool_result = self.r.hmset(stock_symbol, {"dollars": dollars, "cents": cents, "quote_time": quote_time, "cryptokey": cryptokey})
-            print("quote_cache.cache_quote TRACE3")
             if (bool_result):
                 response["status"] = "SUCCESS"
             else:
                 response["status"] = "ERROR"
-            print("quote_cache.cache_quote TRACE4")
 
         finally:
             self.mutex.release()
-            print("quote_cache.cache_quote MUTEX RELEASED")
 
         return response
 

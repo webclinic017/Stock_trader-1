@@ -44,12 +44,8 @@ class TransactionServer:
         user = data["userid"]
 
         amount = Currency(data["amount"])
-        print("trace....1")
         user_funds = self.cli_data.check_money(user)
-        print("trace...2")
 
-        print(user_funds)
-        print(amount)
         if ((user_funds - amount) > 0):
 
             self.cli_data.push(user, data["StockSymbol"], float(amount), "buy")
@@ -61,18 +57,18 @@ class TransactionServer:
         AuditLogBuilder("COMMIT_BUY", self._server_name, AuditCommandType.userCommand).build(data).send()
         succeeded = False
         user = data["userid"]
-        try:
-            buy_data = self.cli_data.pop(user, "buy")
-            stock_symbol = buy_data["stock_symbol"]
-            price = self.cache.quote(stock_symbol, user)[0]
-            amount = Currency(buy_data["dollars"]) + Currency(buy_data["cents"])
-            count = int(amount / price)
-            # Return the delta of the transaction to user's account
-            self.cli_data.commit_buy(user, stock_symbol, price, count)
-            succeeded = True
-        except Exception as e:
-            print(e)
-            pass
+        buy_data = self.cli_data.pop(user, "buy")
+        if (len(buy_data) == 0):
+            raise Exception("pop() performed on empty buy stack")
+        else:
+            print("popped from NONEMPTY buy stack")
+        stock_symbol = buy_data["stock_symbol"]
+        price = Currency(self.cache.quote(stock_symbol, user)[0])
+        buy_amount = Currency(buy_data["dollars"]) + Currency(buy_data["cents"])
+
+        # Return the delta of the transaction to user's account
+        self.cli_data.commit_buy(user, stock_symbol, price, buy_amount)
+        succeeded = True
         return succeeded
 
     def cancel_buy(self, data):
@@ -93,15 +89,11 @@ class TransactionServer:
         user = data["userid"]
         dollar_amt_to_sell = float(data["amount"])
         symbol = data["StockSymbol"]
-        try:
-            price = self.cache.quote(symbol, user)[0]
-            shares_to_sell = int(dollar_amt_to_sell / price)
-            stocks_on_hand = self.cli_data.get_stock_held(user, symbol)
-            if stocks_on_hand > 0:
-                self.cli_data.push(user, symbol, (dollar_amt_to_sell, shares_to_sell), "sell")
-                succeeded = True
-        except Exception:
-            pass
+        price = self.cache.quote(symbol, user)[0]
+        stocks_on_hand = int(self.cli_data.get_stock_held(user, symbol))
+        if stocks_on_hand > 0:
+            self.cli_data.push(user, data["StockSymbol"], dollar_amt_to_sell, "sell")
+            succeeded = True
         return succeeded
 
     def commit_sell(self, data):
@@ -110,18 +102,19 @@ class TransactionServer:
         user = data["userid"]
         cli_data = self.cli_data
 
-        try:
-            sell_data = cli_data.pop(user, "sell")
-            symbol = sell_data[0]
-            shares_on_hand = cli_data.get_stock_held(user, symbol)
-            dollar_amt_to_sell = sell_data["dollars"]
-            price = self.cache.quote(symbol, user)[0]
-            shares_to_sell = int(dollar_amt_to_sell / price)
-            if shares_to_sell <= shares_on_hand:
-                cli_data.commit_sell(user, symbol, price, shares_to_sell)
-            succeeded = True
-        except Exception:
-            pass
+        sell_data = cli_data.pop(user, "sell")
+        if (len(sell_data) == 0):
+            raise Exception("pop() performed on empty sell stack")
+        symbol = sell_data["stock_symbol"]
+
+        shares_on_hand = cli_data.get_stock_held(user, symbol)
+
+        price = self.cache.quote(symbol, user)[0]
+        shares_to_sell = int(int(sell_data["dollars"]) / price)
+        if shares_to_sell <= shares_on_hand:
+            cli_data.commit_sell(user, symbol, price, shares_to_sell)
+        succeeded = True
+
         self.cli_data = cli_data
         return succeeded
 
@@ -217,7 +210,6 @@ class TransactionServer:
         log_data = acc.copy()
         log_data["userid"] = data["userid"]
         log_data["Command"] = "DISPLAY_SUMMARY"
-        print("log data payload:")
         AuditLogBuilder("DISPLAY_SUMMARY", self._server_name, AuditCommandType.userCommand).build(log_data).send()
 
         return {"Account": acc, "Triggers": tri_copy}
@@ -230,7 +222,6 @@ class TransactionServer:
             return False
 
         # DEBUG
-        print(f"TS-Incoming request:{incoming_data}")
 
         try:
             try:
@@ -287,7 +278,6 @@ class TransactionServer:
                     #     data["Data"]["Triggers"]["buy"][stock_sym][0] = str(data["Data"]["Triggers"]["buy"][stock_sym][0])
                     # for stock_sym in sell_triggers_keys:
                     #     data["Data"]["Triggers"]["sel"][stock_sym][0] = str(data["Data"]["Triggers"]["sel"][stock_sym][0])
-                    print(f"data:{data}")
                 # Echo back JSON with new attributes
                 conn.send(str.encode(json.dumps(data, cls=Currency)))
 
@@ -309,10 +299,17 @@ class TransactionServer:
                         conn, addr = self.server.accept()
                         open_sockets.append(conn)
                     else:
-                        if not self.transaction(s):
-                            s.shutdown(socket.SHUT_RDWR)
-                            s.close()
-                            open_sockets.remove(s)
+                        try:
+                            if not self.transaction(s):
+                                try:
+                                    s.shutdown(socket.SHUT_RDWR)
+                                    s.close()
+                                except OSError:
+                                    pass
+                                open_sockets.remove(s)
+                        except ConnectionResetError:
+                            print("connection reset by peer")
+                            pass
         except KeyboardInterrupt:
             for s in open_sockets:
                 s.shutdown(socket.SHUT_RDWR)

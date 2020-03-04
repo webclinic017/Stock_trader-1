@@ -219,8 +219,6 @@ class AuditLogBuilder:
 
     def _func_wrapper(self, build_func):
         def func(data):
-            # print("AuditLogBuilder.build() input data:")
-            # print(data)
             transactionId = str(uuid.uuid4())
             audit_log = self._audit_log
             transaction_num_response = self._get_appropriate_transaction_num().json()
