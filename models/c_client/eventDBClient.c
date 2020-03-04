@@ -5,7 +5,14 @@
 #include "hiredis.h"
 #include <assert.h>
 
-int numFieldsInEventObject = 5;
+int numFieldsInEventObject = 6;
+
+MoneyAmount * initMoneyAmount(int dollars, int cents) {
+    MoneyAmount * moneyAmount = malloc(sizeof(MoneyAmount));
+    moneyAmount -> dollars = dollars;
+    moneyAmount -> cents = cents;
+    return moneyAmount;
+}
 
 eventObject * buildEventObject(redisReply * reply, uuid_t eventId) {
     int numElements = reply -> elements;
@@ -14,10 +21,11 @@ eventObject * buildEventObject(redisReply * reply, uuid_t eventId) {
     eventObject * e = malloc(sizeof(eventObject));
      
     char * stockSymbol = reply -> element[1] -> str;
-    int targetAmount = atoi(reply -> element[3] -> str);
-    enum commandType type = atoi(reply -> element[5] -> str);
-    char * username = reply -> element[7] -> str;
-    enum eventStatus status = atoi(reply -> element[9] -> str);
+    int dollars = atoi(reply -> element[3] -> str);
+    int cents = atoi(reply -> element[5] -> str);
+    enum commandType type = atoi(reply -> element[7] -> str);
+    char * username = reply -> element[9] -> str;
+    enum eventStatus status = atoi(reply -> element[11] -> str);
     int sizeUuid = sizeof(uuid_t);
     e -> eventId = (unsigned char *) malloc(sizeUuid);
     memset(e -> eventId, 0, sizeUuid);
@@ -26,7 +34,7 @@ eventObject * buildEventObject(redisReply * reply, uuid_t eventId) {
     }
     e -> stockSymbol = malloc(sizeof(stockSymbol));
     strcpy(e -> stockSymbol, stockSymbol);
-    e -> targetAmount = targetAmount;
+    e -> moneyAmount = initMoneyAmount(dollars, cents);
     e -> type = type;
     e -> username = malloc(sizeof(username));
     strcpy(e -> username, username);
@@ -37,18 +45,18 @@ eventObject * buildEventObject(redisReply * reply, uuid_t eventId) {
 eventObject * buildEmptyEventObject() {
     eventObject * e = malloc(sizeof(eventObject));
     e -> eventId = NULL;
+    e -> moneyAmount = malloc(sizeof(MoneyAmount));
     return e;
 }
 
-int setEvent(redisContext * c, uuid_t eventId, char * stockSymbol, int targetAmount, enum commandType type, char * username) {
+int setEvent(redisContext * c, uuid_t eventId, char * stockSymbol, MoneyAmount * targetAmount, enum commandType type, char * username) {
     if (c == NULL) {
         printf("Error: must open client connection to redis server before invoking cacheQuote()\n");
         return 0;
     }
 
     enum eventStatus status = PENDING;
-    redisReply *reply  = redisCommand(c, "HSET %s stockSymbol %s targetAmount %d commandType %d username %s status %d", eventId, stockSymbol, targetAmount, type, username, status);
-
+    redisReply *reply  = redisCommand(c, "HSET %s stockSymbol %s dollars %d cents %d commandType %d username %s status %d", eventId, stockSymbol, targetAmount -> dollars, targetAmount -> cents, type, username, status);
     int result = reply -> integer == numFieldsInEventObject;
     freeReplyObject(reply);
     return result;
@@ -98,5 +106,6 @@ void freeEventObject(eventObject * e) {
     }
     free(e -> username);
     free(e -> stockSymbol);
+    free(e -> moneyAmount);
     free(e);
 }

@@ -25,7 +25,7 @@ class AuditLogBuilder:
         log["commandType"] = self._commandType
         log["data_fields"] = {
             "username": data["userid"],
-            "funds": data["amount"]
+            "funds": str(data["amount"])
         }
         if (self._commandType == AuditCommandType.userCommand):
             log["data_fields"]["command"] = data["Command"]
@@ -43,7 +43,7 @@ class AuditLogBuilder:
         if (self._commandType == AuditCommandType.userCommand):
             log["data_fields"]["command"] = data["Command"]
         else:
-            log["data_fields"]["price"] = data["Quote"]
+            log["data_fields"]["price"] = str(data["Quote"])
             log["data_fields"]["quoteServerTime"] = int(data["quoteServerTime"])
             log["data_fields"]["cryptokey"] = data["cryptokey"]
         return log
@@ -55,7 +55,7 @@ class AuditLogBuilder:
             "command": data["Command"],
             "username": data["userid"],
             "stockSymbol": data["StockSymbol"],
-            "funds": data["amount"]
+            "funds": str(data["amount"])
         }
         return log
 
@@ -84,7 +84,7 @@ class AuditLogBuilder:
             "command": data["Command"],
             "username": data["userid"],
             "stockSymbol": data["StockSymbol"],
-            "funds": data["amount"]
+            "funds": str(data["amount"])
         }
         return log
 
@@ -113,7 +113,7 @@ class AuditLogBuilder:
             "command": data["Command"],
             "username": data["userid"],
             "stockSymbol": data["StockSymbol"],
-            "funds": data["amount"]
+            "funds": str(data["amount"])
         }
         return log
 
@@ -133,7 +133,7 @@ class AuditLogBuilder:
             "command": data["Command"],
             "username": data["userid"],
             "stockSymbol": data["StockSymbol"],
-            "funds": data["amount"]
+            "funds": str(data["amount"])
         }
         return log
 
@@ -144,7 +144,7 @@ class AuditLogBuilder:
             "command": data["Command"],
             "username": data["userid"],
             "stockSymbol": data["StockSymbol"],
-            "funds": data["amount"]
+            "funds": str(data["amount"])
         }
         return log
 
@@ -155,7 +155,7 @@ class AuditLogBuilder:
             "command": data["Command"],
             "username": data["userid"],
             "stockSymbol": data["StockSymbol"],
-            "funds": data["amount"]
+            "funds": str(data["amount"])
         }
         return log
 
@@ -184,7 +184,13 @@ class AuditLogBuilder:
         log["commandType"] = self._commandType
         log["data_fields"] = {
             "command": data["Command"],
-            "username": data["userid"]
+            "username": data["userid"],
+            "dollars": data["dollars"],
+            "cents": data["cents"],
+            "buy_triggers": data["buy_triggers"],
+            "sell_triggers": data["sell_triggers"],
+            "buy_stack": data["buy_stack"],
+            "sell_stack": data["sell_stack"]
         }
         return log
 
@@ -192,7 +198,6 @@ class AuditLogBuilder:
         log = {}
         log["commandType"] =  self._commandType
         log["data_fields"] = {
-            "command": data["Command"],
             "errorMessage": data["errorMessage"]
         }
         return log
@@ -214,8 +219,6 @@ class AuditLogBuilder:
 
     def _func_wrapper(self, build_func):
         def func(data):
-            # print("AuditLogBuilder.build() input data:")
-            # print(data)
             transactionId = str(uuid.uuid4())
             audit_log = self._audit_log
             transaction_num_response = self._get_appropriate_transaction_num().json()

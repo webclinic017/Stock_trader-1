@@ -7,18 +7,20 @@
 #include <string.h>
 
 uuid_t eventId;
-int targetAmount = 100;
 char * stockSymbol = "someStock";
 enum commandType type = BUY;
 
 void setEvent_shouldSetEvent() {
+    MoneyAmount * targetAmount = initMoneyAmount(100, 63);  
     char * username = "someUser";
     uuid_generate(eventId);
     int result = setEvent(c, eventId, stockSymbol, targetAmount, type, username);
     assert(result == 1);
+    free(targetAmount);
 }
 
 void getEvent_shouldGetEvent() {
+    MoneyAmount * targetAmount = initMoneyAmount(100, 63);
     char * username = "someUser";
     eventObject * e = getEvent(c, eventId);
     assert(e != NULL);
@@ -29,9 +31,11 @@ void getEvent_shouldGetEvent() {
     assert(e -> type == type);
     assert(strcmp(e -> username, username) == 0);
     assert(strcmp(e -> stockSymbol, stockSymbol) == 0);
-    assert(e -> targetAmount == targetAmount);
+    assert(e -> moneyAmount -> dollars == targetAmount -> dollars);
+    assert(e -> moneyAmount -> cents == targetAmount -> cents);
     assert(e -> status == PENDING);
     freeEventObject(e);
+    free(targetAmount);
 }
 
 void updateEvent_shouldUpdateEvent() {

@@ -184,6 +184,10 @@ def test_currency_equivalence_random_negative():
     assert float(neg_rndm_bound5) == -0.01
     assert 0.0 > neg_rndm_bound5 > -0.02
 
+def test_currency_multiplication():
+    assert Currency(12.34) * 5 == Currency(12.34 * 5)
+    assert 5 * Currency(12.34) == Currency(5 * 12.34)
+
 # 'currency' json encoder testing --------------------------------------------------------------------------------------
 def test_currency_json_encoding():
     import json

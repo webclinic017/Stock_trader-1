@@ -1,7 +1,7 @@
 import threading
 from audit_logger.AuditLogBuilder import AuditLogBuilder
 from audit_logger.AuditCommandType import AuditCommandType
-
+from currency import Currency
 class QuoteThread(threading.Thread):
 	def __init__(self, cli_data, cache, ver, user, symbol, amount, price):
 		super().__init__()
@@ -10,25 +10,20 @@ class QuoteThread(threading.Thread):
 		self.cache = cache
 		self.user = user
 		self.symbol = symbol
-		self.amount = amount
-		self.price = price
+		self.amount = Currency(amount)
+		self.price = Currency(price)
 		self.stopevent = threading.Event()
 
 	def run(self):
 		while not self.stopevent.isSet():
-			quote = self.cache.quote(self.symbol, self.user)[0]
+			quote = Currency(self.cache.quote(self.symbol, self.user)[0])
+
 			if self.ver == "buy" and quote <= self.price:
-				count = int(self.amount / quote)
-				delta = self.amount - (count * quote)
-				# Add bought stock to portfolio
-				self.cli_data.add_stock(self.user, self.symbol, count)
-				# Add delta of transaction back to balance
-				self.cli_data.add_money(self.user, delta)
+				self.cli_data.commit_buy(username=self.user, stock_symbol=self.symbol, price=quote, buy_amount=self.amount)
 				break
 			elif self.ver == "sel" and quote >= self.price:
-				value = quote * self.amount
-				# Add sell amount to balance
-				self.cli_data.add_money(self.user, value)
+				count = int(self.price.dollars / quote.dollars)
+				self.cli_data.commit_sell(username=self.user, stock_symbol=self.symbol, price=quote, count=count)
 				break
 			self.stopevent.wait(60.0)
 
@@ -54,7 +49,6 @@ class EventServer:
 		self.cache = cache
 		self.cli_data = cli_data
 
-	# TransactionServer must deduct the amount returned from account balance
 	def register(self, ver, user, symbol, amount):
 		succeeded = False
 		try:
@@ -74,7 +68,6 @@ class EventServer:
 			succeeded = True
 		return succeeded
 
-	# TransactionServer must add the amount returned to account balance
 	def cancel(self, ver, user, symbol):
 		amount = -1
 		try:

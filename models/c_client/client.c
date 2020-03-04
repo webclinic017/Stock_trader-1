@@ -3,7 +3,7 @@
 #include "quoteCacheTests.h"
 #include "userDBTests.h"
 #include "eventDBClientTests.h"
-#include "transactionDBClientTests.h"
+#include "auditLogDBClientTests.h"
 
 redisContext *c = NULL;
 
@@ -33,7 +33,11 @@ void closeConnection() {
 
 int main(int argc, char **argv) {
     runQuoteCacheTests();
+    printf("all quote db tests passed.\n");
     runUserDBTests();
+    printf("all user db tests passed.\n");
     runEventDBTests();
-    runTransactionDBTests();
+    printf("all event db tests passed.\n");
+    runAuditLogDBTests();
+    printf("all audit log db tests passed.\n");
 }
