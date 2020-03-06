@@ -10,7 +10,7 @@ protocol = "http"
 server_name = "web server"
 
 # transaction_server_ip = "192.168.1.229"  # IP on comp 17
-transaction_server_ip = audit_log_server_ip = "localhost"  # IP on home comp
+transaction_server_ip = audit_log_server_ip = "172.18.0.4"  # IP on home comp
 transaction_server_port = 44415
 audit_log_server_port = 44416
 
@@ -21,7 +21,7 @@ def forward_request_tserver(request_dict):
 
     sckt_trans = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sckt_trans.connect((transaction_server_ip, transaction_server_port))
-
+    print
     # Forward request
     sckt_trans.sendall(str.encode(request_dict))
 

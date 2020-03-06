@@ -1,11 +1,3 @@
-#FROM python:3
-
-#ADD requirements.txt /
-#RUN pip install -r requirements.txt
-
-#ADD driver_webserver.py /
-
-#CMD ["python", "./driver_webserver.py"]
 FROM ubuntu:16.04
 
 RUN apt-get update && apt-get install -y software-properties-common && add-apt-repository ppa:deadsnakes/ppa && \
@@ -15,11 +7,17 @@ RUN ln -sfn /usr/bin/python3.6 /usr/bin/python3 && ln -sfn /usr/bin/python3 /usr
 
 RUN pip install --upgrade pip
 
-ADD ./ web_server/
-WORKDIR web_server
-ADD requirements.txt /
-RUN pip install -r requirements.txt
-ADD driver_webserver.py /
-ADD app /
+ADD ./ trans_server/
+WORKDIR trans_server
+# ADD random_test.py /
+ADD driver_transserver.py /
+ADD transaction_server.py /
 
-CMD ["python", "driver_webserver.py"]
+COPY ./requirements.txt requirements.txt
+
+RUN pip install -r requirements.txt
+
+# 0 for stubing out the quote seerver
+#CMD ["python", "random_test.py"]
+#CMD ["python", "transaction_server.py"]
+CMD ["python", "driver_transserver.py", "--QuoteServer","0" ]

@@ -1,0 +1,24 @@
+version: '3'
+services:
+  trans:
+    image: jkelly45/seng_468_project:trans_server2
+    expose:
+    - "44415"
+    - "44416"
+    - "44417"
+    networks:
+      - stock_trader
+  web:
+    image: jkelly45/seng_468_project:web
+    ports:
+      - "8000:5000"
+    networks:
+      - stock_trader
+  redis:
+    image: jkelly45/seng_468_project:redis_server
+    networks:
+      - stock_trader
+networks:
+  stock_trader:
+    external:
+      name: stock_trader
