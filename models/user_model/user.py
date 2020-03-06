@@ -242,7 +242,9 @@ class user:
                 for i in range(len(stack)):
                     item = stack[i]
                     try:
-                        if (int(float(item["timestamp"])) - int(float(current_time)) < 60):
+                        if (int(float(current_time)) - int(float(item["timestamp"])) < 60):
+                            item["dollars"] = int(item["dollars"])
+                            item["cents"] = int(item["cents"])
                             cleared_stack.append(item)
                     except ValueError:
                         pass
