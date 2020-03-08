@@ -2,6 +2,8 @@ import threading
 from audit_logger.AuditLogBuilder import AuditLogBuilder
 from audit_logger.AuditCommandType import AuditCommandType
 
+LOG_ENABLED = False
+
 class QuoteThread(threading.Thread):
 	def __init__(self, cli_data, cache, ver, user, symbol, amount, price):
 		super().__init__()
@@ -95,7 +97,7 @@ class EventServer:
 					event[1] = 0
 					self.timers[ver][user].pop(symbol)
 				except Exception as e:
-					AuditLogBuilder("ERROR", "event_server", AuditCommandType.errorEvent).build({
+					if LOG_ENABLED: AuditLogBuilder("ERROR", "event_server", AuditCommandType.errorEvent).build({
 						"Command": "CANCEL_SET_BUY",
 						"errorMessage": str(e)
 					}).send()

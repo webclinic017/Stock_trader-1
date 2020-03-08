@@ -1,4 +1,5 @@
 import sys
+import time
 import requests
 from enum_utils import CommandURLs
 
@@ -108,10 +109,11 @@ def run_commands(file_obj):
         server_response = requests.post((base_url + CommandURLs[command].value), data=next_command)
         print(f"#{i + 1} action:{action} response:{server_response}")
 
-        try:
-            process_dumplog(next_command["filename"], server_response)
-        except KeyError:
-            pass
+        if command is "DUMPLOG":
+            try:
+                process_dumplog(next_command["filename"], server_response)
+            except KeyError:
+                pass
 
 
 # TEMPORARY: for dumplog development--------
@@ -136,6 +138,11 @@ def run_commands(file_obj):
 # 	#-------------------------------------------
 
 if __name__ == "__main__":
+    startT = time.time()
     file_index = sys.argv[1]
     file_object = open(workload_paths[file_index])
     run_commands(file_object)
+    endT = time.time()
+    print(f"runtime: {endT - startT}")
+    endT = time.time()
+    print(f"runtime: {endT - startT}")

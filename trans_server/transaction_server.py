@@ -1,15 +1,19 @@
 import select
 import socket
 import json
-from event_server import QuoteThread
+from concurrent.futures import ThreadPoolExecutor
+import threading
+from threading import Thread
+from _thread import start_new_thread
 from audit_logger.AuditLogBuilder import AuditLogBuilder
 from audit_logger.AuditCommandType import AuditCommandType
 from currency import Currency
 
 BUFFER_SIZE = 4096
+LOG_ENABLED = False
+PRINT_ENABLED = False
 
 
-# noinspection PyRedundantParentheses
 class TransactionServer:
     # Create a server socket then bind and listen the socket
     def __init__(self, cli_data, cache, events, addr, port, server_name):
@@ -19,17 +23,18 @@ class TransactionServer:
         self.events = events
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((addr, port))
-        self.server.listen(10)
+        self.server.listen(100)
+        self.open_sockets = [self.server]
 
     ##### Base Commands #####
     def add(self, data):
-        AuditLogBuilder("ADD", self._server_name, AuditCommandType.userCommand).build(data).send()
+        if LOG_ENABLED: AuditLogBuilder("ADD", self._server_name, AuditCommandType.userCommand).build(data).send()
         user = data["userid"]
         amount = data["amount"]
         return self.cli_data.add_money(user, amount)
 
     def quote(self, data):
-        AuditLogBuilder("QUOTE", self._server_name, AuditCommandType.userCommand).build(data).send()
+        if LOG_ENABLED: AuditLogBuilder("QUOTE", self._server_name, AuditCommandType.userCommand).build(data).send()
         quote_data = self.cache.quote(data["StockSymbol"], data["userid"])
         data["Quote"] = quote_data[0]
         data["quoteServerTime"] = quote_data[3]
@@ -39,7 +44,7 @@ class TransactionServer:
 
     ###### Buy Commands #####
     def buy(self, data):
-        AuditLogBuilder("BUY", self._server_name, AuditCommandType.userCommand).build(data).send()
+        if LOG_ENABLED: AuditLogBuilder("BUY", self._server_name, AuditCommandType.userCommand).build(data).send()
         succeeded = False
         user = data["userid"]
         amount = float(data["amount"])
@@ -52,7 +57,8 @@ class TransactionServer:
         return succeeded
 
     def commit_buy(self, data):
-        AuditLogBuilder("COMMIT_BUY", self._server_name, AuditCommandType.userCommand).build(data).send()
+        if LOG_ENABLED: AuditLogBuilder("COMMIT_BUY", self._server_name, AuditCommandType.userCommand).build(
+            data).send()
         succeeded = False
         user = data["userid"]
         cli_data = self.cli_data
@@ -61,11 +67,12 @@ class TransactionServer:
             buy_data = cli_data.pop(user, "buy")
             price = self.cache.quote(buy_data[0], user)[0]
             count = int(buy_data[1] / price)
-            # Remove the cost of stock from user's account
-            cli_data.rem_money(user, round((count * price), 2))
-            # Update stock ownership records
-            cli_data.add_stock(user, buy_data[0], count)
-            succeeded = True
+            if count > 0:
+                # Remove the cost of stock from user's account
+                cli_data.rem_money(user, round((count * price), 2))
+                # Update stock ownership records
+                cli_data.add_stock(user, buy_data[0], count)
+                succeeded = True
         except Exception as e:
             print(e)
             pass
@@ -73,7 +80,8 @@ class TransactionServer:
         return succeeded
 
     def cancel_buy(self, data):
-        AuditLogBuilder("CANCEL_BUY", self._server_name, AuditCommandType.userCommand).build(data).send()
+        if LOG_ENABLED: AuditLogBuilder("CANCEL_BUY", self._server_name, AuditCommandType.userCommand).build(
+            data).send()
         succeeded = False
         user = data["userid"]
 
@@ -86,7 +94,7 @@ class TransactionServer:
 
     ###### Sell Commands #####
     def sell(self, data):
-        AuditLogBuilder("SELL", self._server_name, AuditCommandType.userCommand).build(data).send()
+        if LOG_ENABLED: AuditLogBuilder("SELL", self._server_name, AuditCommandType.userCommand).build(data).send()
         succeeded = False
         user = data["userid"]
         dollar_amt_to_sell = float(data["amount"])
@@ -105,7 +113,8 @@ class TransactionServer:
         return succeeded
 
     def commit_sell(self, data):
-        AuditLogBuilder("COMMIT_SELL", self._server_name, AuditCommandType.userCommand).build(data).send()
+        if LOG_ENABLED: AuditLogBuilder("COMMIT_SELL", self._server_name, AuditCommandType.userCommand).build(
+            data).send()
         succeeded = False
         user = data["userid"]
         cli_data = self.cli_data
@@ -127,7 +136,8 @@ class TransactionServer:
         return succeeded
 
     def cancel_sell(self, data):
-        AuditLogBuilder("CANCEL_SELL", self._server_name, AuditCommandType.userCommand).build(data).send()
+        if LOG_ENABLED: AuditLogBuilder("CANCEL_SELL", self._server_name, AuditCommandType.userCommand).build(
+            data).send()
         succeeded = False
         user = data["userid"]
         cli_data = self.cli_data
@@ -142,7 +152,8 @@ class TransactionServer:
 
     ###### Buy Trigger Commands #####
     def set_buy_amount(self, data):
-        AuditLogBuilder("SET_BUY_AMOUNT", self._server_name, AuditCommandType.userCommand).build(data).send()
+        if LOG_ENABLED: AuditLogBuilder("SET_BUY_AMOUNT", self._server_name, AuditCommandType.userCommand).build(
+            data).send()
         succeeded = False
         user = data["userid"]
         symbol = data["StockSymbol"]
@@ -158,7 +169,8 @@ class TransactionServer:
         return succeeded
 
     def cancel_set_buy(self, data):
-        AuditLogBuilder("CANCEL_SET_BUY", self._server_name, AuditCommandType.userCommand).build(data).send()
+        if LOG_ENABLED: AuditLogBuilder("CANCEL_SET_BUY", self._server_name, AuditCommandType.userCommand).build(
+            data).send()
         succeeded = False
         user = data["userid"]
         symbol = data["StockSymbol"]
@@ -170,7 +182,8 @@ class TransactionServer:
         return succeeded
 
     def set_buy_trigger(self, data):
-        AuditLogBuilder("SET_BUY_TRIGGER", self._server_name, AuditCommandType.userCommand).build(data).send()
+        if LOG_ENABLED: AuditLogBuilder("SET_BUY_TRIGGER", self._server_name, AuditCommandType.userCommand).build(
+            data).send()
         user = data["userid"]
         symbol = data["StockSymbol"]
         price = float(data["amount"])
@@ -180,7 +193,8 @@ class TransactionServer:
 
     ###### Sell Trigger Commands #####
     def set_sell_amount(self, data):
-        AuditLogBuilder("SET_SELL_AMOUNT", self._server_name, AuditCommandType.userCommand).build(data).send()
+        if LOG_ENABLED: AuditLogBuilder("SET_SELL_AMOUNT", self._server_name, AuditCommandType.userCommand).build(
+            data).send()
         succeeded = False
         user = data["userid"]
         symbol = data["StockSymbol"]
@@ -196,7 +210,8 @@ class TransactionServer:
         return succeeded
 
     def cancel_set_sell(self, data):
-        AuditLogBuilder("CANCEL_SET_SELL", self._server_name, AuditCommandType.userCommand).build(data).send()
+        if LOG_ENABLED: AuditLogBuilder("CANCEL_SET_SELL", self._server_name, AuditCommandType.userCommand).build(
+            data).send()
         succeeded = False
         user = data["userid"]
         symbol = data["StockSymbol"]
@@ -208,7 +223,8 @@ class TransactionServer:
         return succeeded
 
     def set_sell_trigger(self, data):
-        AuditLogBuilder("SET_SELL_TRIGGER", self._server_name, AuditCommandType.userCommand).build(data).send()
+        if LOG_ENABLED: AuditLogBuilder("SET_SELL_TRIGGER", self._server_name, AuditCommandType.userCommand).build(
+            data).send()
         user = data["userid"]
         symbol = data["StockSymbol"]
         price = float(data["amount"])  # Sell shares at this price or higher
@@ -218,7 +234,8 @@ class TransactionServer:
 
     ##### Audit Commands #####
     def display_summary(self, data):
-        AuditLogBuilder("DISPLAY_SUMMARY", self._server_name, AuditCommandType.userCommand).build(data).send()
+        if LOG_ENABLED: AuditLogBuilder("DISPLAY_SUMMARY", self._server_name, AuditCommandType.userCommand).build(
+            data).send()
         user = data["userid"]
         acc = self.cli_data.get_user_account(user)
         tri = self.events.state(user)
@@ -241,7 +258,7 @@ class TransactionServer:
             return False
 
         # DEBUG
-        print(f"TS-Incoming request:{incoming_data}")
+        if PRINT_ENABLED: print(f"TS-Incoming request:{incoming_data}")
 
         try:
             try:
@@ -291,40 +308,104 @@ class TransactionServer:
                     data["Succeeded"] = self.set_sell_trigger(data)
                 elif command == "DISPLAY_SUMMARY":
                     data["Data"] = self.display_summary(data)
-                    # TR-The lower section was overwriting the actual triggers
-                    # buy_triggers_keys = data["Data"]["Triggers"]["buy"].keys()
-                    # sell_triggers_keys = data["Data"]["Triggers"]["sel"].keys()
-                    # for stock_sym in buy_triggers_keys:
-                    #     data["Data"]["Triggers"]["buy"][stock_sym][0] = str(data["Data"]["Triggers"]["buy"][stock_sym][0])
-                    # for stock_sym in sell_triggers_keys:
-                    #     data["Data"]["Triggers"]["sel"][stock_sym][0] = str(data["Data"]["Triggers"]["sel"][stock_sym][0])
-                    print(f"data:{data}")
+                    if PRINT_ENABLED: print(f"data:{data}")
                 # Echo back JSON with new attributes
                 conn.send(str.encode(json.dumps(data, cls=Currency)))
+                # TODO: 3 statements below are temporary as webserver doesn't hold each user connection open
+                conn.shutdown(socket.SHUT_RDWR)
+                conn.close()
+                self.open_sockets.remove(conn)
 
         except Exception as e:
             print(e)
-            AuditLogBuilder("ERROR", self._server_name, AuditCommandType.errorEvent).build({"errorMessage": str(e)}).send()
+            if LOG_ENABLED: AuditLogBuilder("ERROR", self._server_name, AuditCommandType.errorEvent).build(
+                {"errorMessage": str(e)}).send()
             conn.send(str.encode("{\"FAILED\"}"))
+            # TODO: 3 statements below are temporary as webserver doesn't hold each user connection open
+            conn.shutdown(socket.SHUT_RDWR)
+            conn.close()
+            self.open_sockets.remove(conn)
             return False
         return True
 
     # Non-return function launches the server loop
     def launch(self):
-        open_sockets = []
+        # a forever loop until client wants to exit
+        threads = []
         try:
             while True:
-                rlist, wlist, xlisst = select.select([self.server] + open_sockets, [], [])
-                for s in rlist:
-                    if s is self.server:
-                        conn, addr = self.server.accept()
-                        open_sockets.append(conn)
-                    else:
-                        if not self.transaction(s):
-                            s.shutdown(socket.SHUT_RDWR)
-                            s.close()
-                            open_sockets.remove(s)
+                # establish connection with client
+                if PRINT_ENABLED:print("waiting for ws conn")
+                s, addr = self.server.accept()
+                if PRINT_ENABLED:print("conn accepted")
+                self.open_sockets.append(s)
+                # Start a new thread and return its identifier
+                # start_new_thread(self.transaction, (s,))
+                if PRINT_ENABLED:print("split thread for cmd")
+                t = Thread(target=self.transaction, args=(s,))
+                t.start()
+                threads.append(t)
+                if PRINT_ENABLED:print(threading.active_count())
         except KeyboardInterrupt:
-            for s in open_sockets:
+            for s in self.open_sockets:
                 s.shutdown(socket.SHUT_RDWR)
                 s.close()
+
+    # # Non-return function launches the server loop
+    # def launch(self):
+    #     open_sockets = [self.server]
+    #     try:
+    #         while True:
+    #             try:
+    #                 # When select.select detects that a socket has data coming through, it moves it to the rlist
+    #                 rlist, wlist, xlist = select.select(open_sockets, [], [])
+    #             except (select.error, socket.error) as e:
+    #                 print(e)
+    #                 break
+    #             for s in rlist:
+    #                 if s is self.server:    # Accept an incoming socket connection
+    #                     print("new connection")
+    #                     conn, addr = self.server.accept()
+    #                     open_sockets.append(conn)
+    #                 else:                   # Check each active socket for incoming data
+    #                     if not self.transaction(s):
+    #                         s.shutdown(socket.SHUT_RDWR)
+    #                         s.close()
+    #                         open_sockets.remove(s)
+    #     except KeyboardInterrupt:
+    #         for s in open_sockets:
+    #             s.shutdown(socket.SHUT_RDWR)
+    #             s.close()
+
+    # Non-return function launches the server loop
+    # def launch(self):
+    #     try:
+    #         while True:
+    #             try:
+    #                 # When select.select detects that a socket has data coming through, it moves it to the rlist
+    #                 rlist, wlist, xlist = select.select(self.open_sockets, [], [])
+    #             except (select.error, socket.error) as e:
+    #                 print(e)
+    #                 break
+    #             for s in rlist:
+    #                 if s is self.server:  # Accept an incoming socket connection
+    #                     print("new connection")
+    #                     conn, addr = self.server.accept()
+    #                     self.open_sockets.append(conn)
+    #                 else:  # Check each active socket for incoming data
+    #                     if not self.transaction(s):
+    #                         s.shutdown(socket.SHUT_RDWR)
+    #                         s.close()
+    #                         self.open_sockets.remove(s)
+    #                     # start_new_thread(self.transaction, (s,))
+    #                     # for future in futures:
+    #                     #     if future.done():
+    #                     #         if not future.result():
+    #                     #             s.shutdown(socket.SHUT_RDWR)
+    #                     #             s.close()
+    #                     #             open_sockets.remove(s)
+    #                     #         futures.remove(future)
+    #     except KeyboardInterrupt:
+    #         for s in self.open_sockets:
+    #             s.shutdown(socket.SHUT_RDWR)
+    #             s.close()

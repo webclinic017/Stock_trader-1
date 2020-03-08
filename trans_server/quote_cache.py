@@ -4,6 +4,8 @@ import time
 from audit_logger.AuditLogBuilder import AuditLogBuilder
 from audit_logger.AuditCommandType import AuditCommandType
 BUFFER_SIZE = 4096
+LOG_ENABLED = False
+PRINT_ENABLED = False
 
 class QuoteCache:
     def __init__(self, addr, port, should_stub, server_name):
@@ -24,19 +26,25 @@ class QuoteCache:
             try:
                 self.conn.connect((addr, port))
                 self.conn.sendall(str.encode(symbol + ", " + user + "\n"))
-                print("->quote_server 'quote request' sent\n->waiting for response...")
+                if PRINT_ENABLED:print("->quote_server 'quote request' sent\n->waiting for response...")
                 data = self.conn.recv(BUFFER_SIZE).decode().split(",")
                 self.conn.close()
             except Exception as e:
                 print(e)
         else:
+            time.sleep(2)  # testing
             data = ["20.87", symbol, user, time.time(), "QWERTYUIOP"]
 
         # print(data)
         data[0] = float(data[0])
         qtm = time.time()
+
+        # TR-Update the quote cache
+        self.lock.acquire()
         self.quotes[symbol] = (qtm, data)
-        AuditLogBuilder("QUOTE", self._server_name, AuditCommandType.quoteServer).build({
+        self.lock.release()
+
+        if LOG_ENABLED: AuditLogBuilder("QUOTE", self._server_name, AuditCommandType.quoteServer).build({
             "Quote": data[0],
             "StockSymbol": data[1],
             "userid": data[2],
@@ -47,15 +55,15 @@ class QuoteCache:
 
     def quote(self, symbol, user):
         val = []
-        self.lock.acquire()
         try:
+            self.lock.acquire()
             q = self.quotes.get(symbol)  # get previous quote if exists
+            self.lock.release()
             if q is None or time.time() - q[0] >= 60:
                 val = self.new_quote(symbol, user)
             else:
                 val = q[1]
         except KeyError:
             val = self.new_quote(symbol, user)
-        print(str(val))
-        self.lock.release()
+        if PRINT_ENABLED:print(str(val))
         return val
