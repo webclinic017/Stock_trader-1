@@ -1,17 +1,10 @@
-#FROM python:3
+#FROM ubuntu:16.04
 
-#ADD requirements.txt /
-#RUN pip install -r requirements.txt
+#RUN apt-get update && apt-get install -y software-properties-common && add-apt-repository ppa:deadsnakes/ppa && \
+#    apt-get update && apt-get install -y python3.6 python3.6-dev python3-pip
 
-#ADD driver_webserver.py /
-
-#CMD ["python", "./driver_webserver.py"]
-FROM ubuntu:16.04
-
-RUN apt-get update && apt-get install -y software-properties-common && add-apt-repository ppa:deadsnakes/ppa && \
-    apt-get update && apt-get install -y python3.6 python3.6-dev python3-pip
-
-RUN ln -sfn /usr/bin/python3.6 /usr/bin/python3 && ln -sfn /usr/bin/python3 /usr/bin/python && ln -sfn /usr/bin/pip3 /usr/bin/pip
+#RUN ln -sfn /usr/bin/python3.6 /usr/bin/python3 && ln -sfn /usr/bin/python3 /usr/bin/python && ln -sfn /usr/bin/pip3 /usr/bin/pip
+FROM python:alpine3.7
 
 RUN pip install --upgrade pip
 
@@ -22,4 +15,4 @@ RUN pip install -r requirements.txt
 ADD driver_webserver.py /
 ADD app /
 
-CMD ["python", "driver_webserver.py"]
+CMD python ./driver_webserver.py

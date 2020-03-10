@@ -23,10 +23,15 @@ class TransactionServer:
 
     ##### Base Commands #####
     def add(self, data):
-        print("adding")
+        # print("adding")
         user = data["userid"]
-        AuditLogBuilder("ADD", self._server_name, AuditCommandType.userCommand).build(data).send()
+        print("self._server_name = " + str(self._server_name))
+        print("Audit command type = " + str(AuditCommandType.userCommand))
+
+        #AuditLogBuilder("ADD", self._server_name, AuditCommandType.userCommand).build(data).send()
+
         amount = data["amount"]
+        print("after audit logger returning next")
         return self.cli_data.add_money(user, amount)
 
     def quote(self, data):

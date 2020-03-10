@@ -43,5 +43,4 @@ WORKDIR /redis_services
 # Define default command.
 CMD ["redis-server", "/etc/redis/redis.conf"]
 
-# Expose ports.
 EXPOSE 6379

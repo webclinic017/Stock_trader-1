@@ -4,10 +4,11 @@ import requests
 import json
 from audit_logger.AuditCommandType import AuditCommandType
 
+
 class AuditLogBuilder:
     def __init__(self, command, server, commandType):
         self._protocol = "http"
-        self._audit_log_server_ip = "localhost"
+        self._audit_log_server_ip = "172.18.0.4"
         self._audit_log_server_port = 44416
         self._audit_log = {}
         self._server = server
@@ -196,7 +197,7 @@ class AuditLogBuilder:
 
     def _error(self, data):
         log = {}
-        log["commandType"] =  self._commandType
+        log["commandType"] = self._commandType
         log["data_fields"] = {
             "errorMessage": data["errorMessage"]
         }
@@ -209,13 +210,16 @@ class AuditLogBuilder:
             return self._get_current_transaction_num()
 
     def _get_current_transaction_num(self):
-        return requests.post(f"{self._protocol}://{self._audit_log_server_ip}:{self._audit_log_server_port}/getCurrentTransactionNum")
+        return requests.post(
+            f"{self._protocol}://{self._audit_log_server_ip}:{self._audit_log_server_port}/getCurrentTransactionNum")
 
     def _get_next_transaction_num(self):
-        return requests.post(f"{self._protocol}://{self._audit_log_server_ip}:{self._audit_log_server_port}/getNextTransactionNum")
+        return requests.post(
+            f"{self._protocol}://{self._audit_log_server_ip}:{self._audit_log_server_port}/getNextTransactionNum")
 
     def send(self):
-        requests.post(f"{self._protocol}://{self._audit_log_server_ip}:{self._audit_log_server_port}/auditLog", json=self._audit_log)
+        requests.post(f"{self._protocol}://{self._audit_log_server_ip}:{self._audit_log_server_port}/auditLog",
+                      json=self._audit_log)
 
     def _func_wrapper(self, build_func):
         def func(data):
@@ -229,11 +233,13 @@ class AuditLogBuilder:
                 audit_log[transactionId]["data_fields"]["timestamp"] = int(time.time()) * 1000
                 audit_log[transactionId]["data_fields"]["server"] = self._server
             else:
-                raise Exception(f"Error: could not communicate with the audit log server to obtain the transaction number of the current {self._commandType}")
+                raise Exception(
+                    f"Error: could not communicate with the audit log server to obtain the transaction number of the current {self._commandType}")
             self._audit_log = audit_log
             return self
+
         return func
-        
+
     _method = {
         "ADD": _accountUpdate,
         "REMOVE": _accountUpdate,

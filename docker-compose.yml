@@ -1,24 +1,42 @@
 version: '3'
 services:
-  trans:
-    image: jkelly45/seng_468_project:trans_server2
-    expose:
-    - "44415"
-    - "44416"
-    - "44417"
+  redis:
+    container_name: redis
+    image: 'bitnami/redis:5.0'
+    environment:
+      # ALLOW_EMPTY_PASSWORD is recommended only for development.
+      - ALLOW_EMPTY_PASSWORD=yes
+      - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
+    command: /run.sh --maxmemory 200mb
+    # file for data
+    #volumes:
+    #-
+    ports:
+        - '6379:6379'
     networks:
-      - stock_trader
-  web:
+      - backend
+  trans_server:
+    container_name: trans
+    image: jkelly45/seng_468_project:trans_server2
+    depends_on:
+      - redis
+    ports:
+      - "44415:44415"
+      - "44416:44416"
+      - "44417:44417"
+    networks:
+      - backend
+  web_server:
+    container_name: web
     image: jkelly45/seng_468_project:web
     ports:
       - "8000:5000"
+    depends_on:
+      - trans_server
+    links:
+      - trans_server
     networks:
-      - stock_trader
-  redis:
-    image: jkelly45/seng_468_project:redis_server
-    networks:
-      - stock_trader
+      - "backend"
 networks:
-  stock_trader:
-    external:
-      name: stock_trader
+  backend:
+    driver: "bridge"

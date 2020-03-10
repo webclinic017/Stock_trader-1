@@ -4,25 +4,29 @@ from app import app
 import json
 import socket
 import sys
+
 BUFFER_SIZE = 4096
 
 protocol = "http"
 server_name = "web server"
 
 # transaction_server_ip = "192.168.1.229"  # IP on comp 17
-transaction_server_ip = audit_log_server_ip = "172.18.0.4"  # IP on home comp
+transaction_server_ip = "172.18.0.4"
+audit_log_server_ip = "172.18.0.4"  # IP on home comp
 transaction_server_port = 44415
 audit_log_server_port = 44416
-
 port_range = (44415, 44420)  # (inclusive,exclusive)
+
+print("transaction server ip = " + str(transaction_server_ip))
+print("transaction server port = " + str(transaction_server_port))
 
 
 def forward_request_tserver(request_dict):
 
     sckt_trans = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sckt_trans.connect((transaction_server_ip, transaction_server_port))
-    print
     # Forward request
+    print("sending to " + str(transaction_server_ip))
     sckt_trans.sendall(str.encode(request_dict))
 
     # Receive response
@@ -32,9 +36,11 @@ def forward_request_tserver(request_dict):
 
     return trans_response
 
+
 @app.route("/")
 def main_page():
     return render_template("day_trader.html")
+
 
 @app.route('/addFunds', methods=["POST"])
 def addFunds():
@@ -44,6 +50,7 @@ def addFunds():
 
     return forward_request_tserver(request_dict)
 
+
 @app.route('/getQuote', methods=["POST"])
 def getQuote():
     # Receive request from client
@@ -51,6 +58,7 @@ def getQuote():
     print("--REQUEST:" + request_dict)
 
     return forward_request_tserver(request_dict)
+
 
 @app.route('/buyStock', methods=["POST"])
 def buyStock():
@@ -141,6 +149,7 @@ def setSellAmount():
 
     return forward_request_tserver(request_dict)
 
+
 @app.route('/cancelSetSell', methods=["POST"])
 def cancelSetSell():
     # Receive request from client
@@ -148,6 +157,7 @@ def cancelSetSell():
     print("--REQUEST:" + request_dict)
 
     return forward_request_tserver(request_dict)
+
 
 @app.route('/setSellTrigger', methods=["POST"])
 def setSellTrigger():
@@ -157,11 +167,13 @@ def setSellTrigger():
 
     return forward_request_tserver(request_dict)
 
+
 @app.route('/dumpLog', methods=["POST"])
 def dumpLog():
     data = json.dumps(request.form.to_dict(flat=True))
     response = requests.post(f"{protocol}://{audit_log_server_ip}:{audit_log_server_port}/dumpLog", json=data).json()
     return json.dumps(response)
+
 
 @app.route('/displaySummary', methods=["POST"])
 def displaySummary():
