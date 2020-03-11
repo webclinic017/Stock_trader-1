@@ -239,6 +239,9 @@ class TransactionServer:
                     data_payload_list.append(json_data)
 
             for data in data_payload_list:
+                print(data)
+                if (type(data) == str):
+                    data = json.loads(data)
                 command = data["Command"]
 
                 if command == "ADD":

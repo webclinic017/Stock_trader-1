@@ -40,7 +40,7 @@ class Server:
         
 # list of {ip_address, port, socket} dicts for each web server
 servers = [
-    Server("localhost", 44415)
+    Server("localhost", 44419)
 ]
 
 # dict of user/socket key/value pairs
@@ -55,16 +55,24 @@ class ResponsePoller(threading.Thread):
         response_queue = self.response_queue
         conn = self.conn
         while (True):
-            if (response_queue.qsize() > 0):
-                request_q_mutex.acquire()
-                try:
-                    if (response_queue.qsize() > 0): # check again if the queue is nonempty, otherwise there's a chance for get() to block and cause a deadlock if send() needs the mutex
-                        response = response_queue.get() # will block if the queue is empty
-                        print("response:")
-                        print(response)
-                        conn.sendall(str.encode(response))
-                finally:
-                    request_q_mutex.release()
+            try:
+                if (response_queue.qsize() > 0):
+                    print("ResponsePoller: waiting to acquire response queue mutex")
+                    response_q_mutex.acquire()
+                    print("ResponsePoller: acquired response queue mutex")
+                    try:
+                        if (response_queue.qsize() > 0): # check again if the queue is nonempty, otherwise there's a chance for get() to block and cause a deadlock if send() needs the mutex
+                            response = response_queue.get() # will block if the queue is empty
+                            print("response:")
+                            print(response)
+                            conn.sendall(str.encode(response))
+                    finally:
+                        response_q_mutex.release()
+                        print("ResponsePoller: response queue mutex released")
+            except Exception as e:
+                print("Exception raised in ResponsePoller")
+                print(e)
+                break
 
 class RequestPoller(threading.Thread):
     def __init__(self, conn, request_queue):
@@ -77,13 +85,18 @@ class RequestPoller(threading.Thread):
         while (True):
             try:
                 incoming_request = conn.recv(BUFFER_SIZE).decode()
-                if (incoming_request != ""):
+                if (len(incoming_request) > 0):
                     print("load balancer has received an incoming request:")
                     print(incoming_request)
                     request_q_mutex.acquire()
-                    request_queue.put(incoming_request)
-            finally:
-                request_q_mutex.release()
+                    try:
+                        request_queue.put(incoming_request)
+                    finally:
+                        request_q_mutex.release()
+            except Exception as e:
+                print("Exception raised in RequestPoller")
+                print(e)
+                break
 
 def initialize():
     [server.connect_socket() for server in servers]
@@ -114,26 +127,41 @@ def send(data, username, response_queue):
     while (response == ""):
         response = server.recv()
     print(f"received response from {str(server)}: {response}")
+    print("send(): waiting to acquire response queue mutex")
     response_q_mutex.acquire()
+    print("send(): response queue mutex aquired")
     try:
         response_queue.put(response)
     finally:
         response_q_mutex.release()
+        print("send(): response queue mutex released")
 
 def set_user_relay(username):
     server = next_available_server()
     users[username] = server
     print(f"{username} assigned to server: {str(server)}")
 
-def get_username(message):
-    message_lines = message.split("\n")
-    data = message_lines[-1]
-    args = data.split("&")
-    username_arg = [arg for arg in args if "userid=" in arg]
+def get_username_from_query_string(self, query_str):
+    args = query_str.split("&")
+    username_arg = [arg for arg in args if query_str in arg]
     if (len(username_arg) == 0):
         username = None
     else:
         username = username_arg[0].split("=")[-1]
+
+def get_username_from_json(json_str):
+    try:
+        print("trace1")
+        username = json.loads(json_str)["userid"]
+        print("trace2")
+    except KeyError:
+        username = None
+    return username
+
+def get_username(message):
+    message_lines = message.split("\n")
+    query = message_lines[-1]
+    username = get_username_from_json(query)
     return username
 
 def relay(message, response_queue):
@@ -147,7 +175,7 @@ def relay(message, response_queue):
         print("EXCEPTION OCCURRED:")
         print(e)
 
-def listen(conn, request_queue, response_queue):
+def relay_incoming_messages(conn, request_queue, response_queue):
     while (True):
         if (request_queue.qsize() > 0):
             request_q_mutex.acquire()
@@ -167,15 +195,15 @@ if __name__ == "__main__":
         main_socket.bind((load_balancer_host, load_balancer_port))
         main_socket.listen(10)
         print(f"load balancer service running on {load_balancer_host}:{load_balancer_port}...")
-        conn, addr = main_socket.accept()
+        workload_sckt, addr = main_socket.accept()
 
         print(f"connection established with {addr}")
-        response_queue_poller = ResponsePoller(response_queue, conn)
+        response_queue_poller = ResponsePoller(response_queue, workload_sckt)
         response_queue_poller.start()
         # invokes infinite synchronous loop:
-        request_queue_poller = RequestPoller(conn, request_queue)
+        request_queue_poller = RequestPoller(workload_sckt, request_queue)
         request_queue_poller.start()
-        listen(conn, request_queue, response_queue)
+        relay_incoming_messages(workload_sckt, request_queue, response_queue)
     except Exception as e:
         print("Exception in load balancer:")
         print(e)
@@ -183,7 +211,7 @@ if __name__ == "__main__":
         print("\n" +"distribution report:")
         print(users_distribution_report())
         terminate_sockets()
-        if (conn):
+        if (workload_sckt):
             main_socket.shutdown(socket.SHUT_RDWR)
             main_socket.close()
         response_queue_poller.join()
