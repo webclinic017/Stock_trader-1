@@ -53,7 +53,6 @@ class ResponsePoller(threading.Thread):
         self.conn = conn
     def run(self):
         response_queue = self.response_queue
-        conn = self.conn
         while (True):
             try:
                 if (response_queue.qsize() > 0):
@@ -65,34 +64,39 @@ class ResponsePoller(threading.Thread):
                             response = response_queue.get() # will block if the queue is empty
                             print("response:")
                             print(response)
-                            conn.sendall(str.encode(response))
+                            self.conn.sendall(str.encode(response))
                     finally:
                         response_q_mutex.release()
                         print("ResponsePoller: response queue mutex released")
             except Exception as e:
                 print("Exception raised in ResponsePoller")
+                print(type(e))
                 print(e)
                 break
 
 class RequestPoller(threading.Thread):
-    def __init__(self, conn, request_queue):
+    def __init__(self, conn, request_queue, workload_socket):
         super().__init__()
         self.conn = conn
+        self.workload_socket = workload_socket
         self.request_queue = request_queue
     def run(self):
-        conn = self.conn
         request_queue = self.request_queue
         while (True):
             try:
-                incoming_request = conn.recv(BUFFER_SIZE).decode()
+                print("request poller waiting for incoming request to push to request queue")
+                incoming_request = self.conn.recv(BUFFER_SIZE).decode()
                 if (len(incoming_request) > 0):
-                    print("load balancer has received an incoming request:")
+                    print("received an incoming request:")
                     print(incoming_request)
                     request_q_mutex.acquire()
                     try:
                         request_queue.put(incoming_request)
                     finally:
                         request_q_mutex.release()
+                else:
+                    self.conn, addr = self.workload_socket.accept()
+                    print(f"connecting to {addr}")
             except Exception as e:
                 print("Exception raised in RequestPoller")
                 print(e)
@@ -121,16 +125,18 @@ def next_available_server():
 def send(data, username, response_queue):
     server = users[username]
     print(f"send data to {str(server)}")
+    server.close_socket()
+    server.connect_socket()
     server.send(data)
     print("...sent")
-    response = ""
-    while (response == ""):
-        response = server.recv()
-    print(f"received response from {str(server)}: {response}")
-    print("send(): waiting to acquire response queue mutex")
     response_q_mutex.acquire()
-    print("send(): response queue mutex aquired")
     try:
+        print("wait on receive")
+        response = server.recv()
+        print("received: " + str(response))
+        print(f"received response from {str(server)}: {response}")
+        print("send(): waiting to acquire response queue mutex")
+        print("send(): response queue mutex aquired")
         response_queue.put(response)
     finally:
         response_q_mutex.release()
@@ -178,32 +184,36 @@ def relay(message, response_queue):
 def relay_incoming_messages(conn, request_queue, response_queue):
     while (True):
         if (request_queue.qsize() > 0):
+            print("waiting to acquire request queue mutex")
             request_q_mutex.acquire()
+            print("request queue mutex acquired")
             try:
                 if (request_queue.qsize() > 0): # check again if the queue is nonempty, otherwise there's a chance for get() to block and cause a deadlock if receive_requests() needs the mutex
+                    print("blocking on new message in empty request queue")
                     message = request_queue.get() # will block if the queue is empty
+                    print("got message from request queue")
                     relay(message, response_queue)
             finally:
                 request_q_mutex.release()
+                print("request queue mutex released")
 
 if __name__ == "__main__":
     try:
         initialize()
         request_queue = queue.Queue()
         response_queue = queue.Queue()
-        main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        main_socket.bind((load_balancer_host, load_balancer_port))
-        main_socket.listen(10)
+        workload_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        workload_socket.bind((load_balancer_host, load_balancer_port))
+        workload_socket.listen(10)
         print(f"load balancer service running on {load_balancer_host}:{load_balancer_port}...")
-        workload_sckt, addr = main_socket.accept()
+        conn, addr = workload_socket.accept()
 
-        print(f"connection established with {addr}")
-        response_queue_poller = ResponsePoller(response_queue, workload_sckt)
+        response_queue_poller = ResponsePoller(response_queue, conn)
         response_queue_poller.start()
         # invokes infinite synchronous loop:
-        request_queue_poller = RequestPoller(workload_sckt, request_queue)
+        request_queue_poller = RequestPoller(conn, request_queue, workload_socket)
         request_queue_poller.start()
-        relay_incoming_messages(workload_sckt, request_queue, response_queue)
+        relay_incoming_messages(conn, request_queue, response_queue)
     except Exception as e:
         print("Exception in load balancer:")
         print(e)
@@ -211,8 +221,8 @@ if __name__ == "__main__":
         print("\n" +"distribution report:")
         print(users_distribution_report())
         terminate_sockets()
-        if (workload_sckt):
-            main_socket.shutdown(socket.SHUT_RDWR)
-            main_socket.close()
+        if (conn):
+            workload_socket.shutdown(socket.SHUT_RDWR)
+            workload_socket.close()
         response_queue_poller.join()
         request_queue_poller.join()

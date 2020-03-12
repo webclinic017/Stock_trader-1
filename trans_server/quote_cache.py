@@ -72,6 +72,5 @@ class QuoteCache:
                 cryptokey = data["cryptokey"]
                 val = [quote_amount, symbol, user, quote_time, cryptokey]
         except KeyError as e:
-            raise e
             val = self.new_quote(symbol, user)
         return val

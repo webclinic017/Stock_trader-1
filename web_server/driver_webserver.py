@@ -44,11 +44,12 @@ def listen():
     web_socket.bind((web_server_host, web_server_port))
     print("listening on " + str(web_server_host) + ":" + str(web_server_port))
     web_socket.listen(10)
-    conn, addr = web_socket.accept()
-    incoming_request = ""
     while (True):
         try:
+            conn, addr = web_socket.accept()
+            print("awaiting incoming request...")
             incoming_request = conn.recv(BUFFER_SIZE).decode()
+            print(incoming_request)
             if (len(incoming_request) > 0):
                 print("incoming request:")
                 print(incoming_request)
@@ -57,12 +58,14 @@ def listen():
                     response = send_to_trans_server(transaction_payload)
                 else:
                     response = render_template("day_trader.html")
-                conn.sendall(response)
-                conn.shutdown(socket.SHUT_RDWR)
-                conn.close()
-                conn, addr = web_socket.accept()
+                conn.sendto(response, addr)
+                web_socket.shutdown(socket.SHUT_RDWR)
+                web_socket.close()
+        except OSError as e:
+            print("OSError raised in web server")
         except Exception as e:
             print("Exception in web server")
+            print(type(e))
             print(e)
 
 def main_page():

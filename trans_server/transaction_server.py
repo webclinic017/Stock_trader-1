@@ -33,8 +33,7 @@ class TransactionServer:
         data["Quote"] = quote_data[0]
         data["quoteServerTime"] = quote_data[3]
         data["cryptokey"] = quote_data[4]
-        data["Succeeded"] = True
-        return quote_data
+        return True
 
     ###### Buy Commands #####
     def buy(self, data):
