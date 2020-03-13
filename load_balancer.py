@@ -69,58 +69,6 @@ class ConnectionThread(threading.Thread):
         self.workload_conn.send(str.encode(response))
         print("sent response")
 
-# asynchronous thread that sends responses in the response queue to the write socket (to workload source)
-class ResponsePoller(threading.Thread):
-    def __init__(self, response_queue, write_socket):
-        super().__init__()
-        self.response_queue = response_queue
-        self.write_socket = write_socket
-    def run(self):
-        response_queue = self.response_queue
-        try:
-            if (response_queue.qsize() > 0):
-                response_q_mutex.acquire()
-                try:
-                    if (response_queue.qsize() > 0): # check again if the queue is nonempty, otherwise there's a chance for get() to block and cause a deadlock if send() needs the mutex
-                        print(response_queue)
-                        response = response_queue.get() # will block if the queue is empty
-                        print(response)
-                        self.write_socket.sendall(str.encode(response))
-                finally:
-                    response_q_mutex.release()
-        except Exception as e:
-            print("Exception raised in ResponsePoller")
-            print(type(e))
-            print(e)
-
-# asynchronous thread that reads from a connected socket for incoming requests (from workload) and pushes new request to the request queue
-class RequestPoller(threading.Thread):
-    def __init__(self, request_queue, read_socket):
-        super().__init__()
-        self.read_socket = read_socket
-        self.request_queue = request_queue
-    def run(self):
-        request_queue = self.request_queue
-        read_socket = self.read_socket
-        try:
-            incoming_request = read_socket.recv(BUFFER_SIZE).decode()
-            if (len(incoming_request) > 0):
-                print(incoming_request)
-                request_q_mutex.acquire()
-                try:
-                    request_queue.put(incoming_request)
-                finally:
-                    request_q_mutex.release()
-            else:
-                try:
-                    read_socket.shutdown(socket.SHUT_RDWR)
-                    read_socket.close()
-                except OSError:
-                    pass
-        except Exception as e:
-            print("Exception raised in RequestPoller")
-            print(e)
-
 def terminate_sockets():
     [server.close_socket() for server in servers]
 
@@ -132,26 +80,19 @@ def users_distribution_report():
         distribution[user_id] = str(server)
     return json.dumps(distribution)
 
-def next_available_server():
+def assign_next_available_server():
     # round robin
     next_server_index[0] = (next_server_index[0] + 1) % len(servers)
     return servers[next_server_index[0]]
 
-# returns a Future that holds the response data, when it is fulfilled
-def send(data, username, response_queue):
-    server = users[username]
-    server.connect_socket()
-    server.send(data)
-    response_q_mutex.acquire()
-    try:
-        response = server.recv()
-        response_queue.put(response)
-    finally:
-        response_q_mutex.release()
-        server.close_socket()
+def assign_random_server():
+    return servers[random.randint(0, len(servers))]
 
 def set_user_relay(username):
-    server = next_available_server()
+    if (username != None):
+        server = assign_next_available_server()
+    else:
+        server = assign_random_server()
     users[username] = server
     print(f"{username} assigned to server: {str(server)}")
     return server
@@ -177,27 +118,6 @@ def get_username(message):
     username = get_username_from_json(query)
     return username
 
-def relay(message, response_queue):
-    try:
-        username = get_username(message)
-        if (username == None):
-            raise Exception(f"no userid field in request payload: {message}")
-        set_user_relay(username)
-        send(message, username, response_queue)
-    except Exception as e:
-        print("EXCEPTION OCCURRED:")
-        print(e)
-
-def relay_incoming_messages(request_queue, response_queue):
-    if (request_queue.qsize() > 0):
-        request_q_mutex.acquire()
-        try:
-            if (request_queue.qsize() > 0): # check again if the queue is nonempty, otherwise there's a chance for get() to block and cause a deadlock if receive_requests() needs the mutex
-                message = request_queue.get() # will block if the queue is empty
-                relay(message, response_queue)
-        finally:
-            request_q_mutex.release()
-
 if __name__ == "__main__":
     try:
         request_queue = queue.Queue()
@@ -214,13 +134,6 @@ if __name__ == "__main__":
                 server = set_user_relay(username)
                 connection_thread = ConnectionThread(server, workload_conn, incoming_message)
                 connection_thread.start()
-            #response_queue_poller = ResponsePoller(response_queue, workload_conn)
-            #response_queue_poller.start()
-            #request_queue_poller = RequestPoller(request_queue, workload_conn)
-            #request_queue_poller.start()
-            #relay_incoming_messages(request_queue, response_queue)
-            #response_queue_poller.join()
-            #request_queue_poller.join()
             else:
                 try:
                     workload_conn.shutdown(socket.SHUT_RDWR)
