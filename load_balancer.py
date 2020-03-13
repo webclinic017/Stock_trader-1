@@ -89,12 +89,15 @@ def assign_random_server():
     return servers[random.randint(0, len(servers))]
 
 def set_user_relay(username):
-    if (username != None):
-        server = assign_next_available_server()
-    else:
+    if (username == None):
         server = assign_random_server()
-    users[username] = server
-    print(f"{username} assigned to server: {str(server)}")
+    else:
+        try:
+            server = users[username]
+        except KeyError:
+            server = assign_next_available_server()
+            users[username] = server
+            print(f"{username} assigned to server: {str(server)}")
     return server
 
 def get_username_from_query_string(self, query_str):
@@ -104,6 +107,7 @@ def get_username_from_query_string(self, query_str):
         username = None
     else:
         username = username_arg[0].split("=")[-1]
+    return username
 
 def get_username_from_json(json_str):
     try:
