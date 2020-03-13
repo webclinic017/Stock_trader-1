@@ -35,11 +35,11 @@ load_balancer_url = f"http://{load_balancer_ip}:{load_balancer_port}"
 
 def process_dumplog(output_filename, dumplog_response):
     try:
-        xml_string = dumplog_response.json()["data"]
+        xml_string = json.loads(dumplog_response)["data"]
         with open(output_filename, 'w+') as f:
             f.write(xml_string)
     except KeyError:
-        print(f"Error: no data attribute found in response. Response status {dumplog_response.json()['status']}")
+        print(f"Error: no data attribute found in response. Response status {json.loads(dumplog_response)['status']}")
 
 # Read work load file, process into dict commands
 def run_commands(file_obj):
@@ -113,7 +113,7 @@ def run_commands(file_obj):
         sckt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sckt.connect((load_balancer_ip, load_balancer_port))
         data = json.dumps(next_command)
-        http_request = f"POST /addFunds HTTP/1.1\nHOST: {load_balancer_ip}:{load_balancer_port}\nContent-Type: application/json\nAccept: application/json\n{data}"
+        http_request = f"POST {CommandURLs[command].value} HTTP/1.1\nHOST: {load_balancer_ip}:{load_balancer_port}\nContent-Type: application/json\nAccept: application/json\n{data}"
         print(http_request)
         sckt.sendall(str.encode(http_request))
         server_response = sckt.recv(BUFFER_SIZE).decode()
