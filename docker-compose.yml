@@ -29,8 +29,6 @@ services:
       - redis
     ports:
       - "44418:44418"
-    links:
-      - redis
     networks:
       backend:
         ipv4_address: 172.20.0.6
@@ -99,6 +97,7 @@ services:
       - redis
       - audit_log
       - user_db
+      - quote_cache
     ports:
       - "44415:44415"
     networks:

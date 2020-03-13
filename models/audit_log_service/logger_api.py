@@ -12,7 +12,6 @@ redis_port = os.environ["REDIS_PORT"]
 print(audit_log_server_ip)
 print(audit_log_server_port)
 
-# TODO redis==3.4.1
 
 logger_instance = None
 
