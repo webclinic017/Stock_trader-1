@@ -5,17 +5,18 @@ from transaction_server import TransactionServer
 from quote_cache import QuoteCache
 from event_server import EventServer
 import argparse, sys
+import os
 
 print("starting trans server")
 
 protocol = "http"
 server_name = "transaction server"
-transaction_server_ip = "172.18.0.4"
-transaction_server_port = 44415
-user_db_host = "172.18.0.4"
-user_db_port = 44416
-quote_cache_host = "172.18.0.4"
-quote_cache_port = 44417
+transaction_server_ip = os.environ['MY_HOST']
+transaction_server_port = os.environ['MY_PORT']
+user_db_host = os.environ['USER_DB_HOST']
+user_db_port = os.environ['USER_DB_PORT']
+quote_cache_host = os.environ['CACHE_HOST']
+quote_cache_port = os.environ['CACHE_PORT']
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument("--QuoteServer", "-qs", type=int, default=0,
                         help="set to 0 to indicate if quote server connection is not available (should be stubbed out), default value is 1 (expects real quote server to connect to)")

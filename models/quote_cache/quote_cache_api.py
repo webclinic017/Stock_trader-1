@@ -1,12 +1,13 @@
 from flask import Flask, app, request
 from quote_cache import quote_cache
 import json.tool
+import os
 app = Flask(__name__)
 
-redis_host = "127.0.0.1"
-redis_port = 6379
-quote_cache_ip = "localhost"
-quote_cache_port = 44418
+redis_host = os.environ["REDIS_HOST"]
+redis_port = os.environ["REDIS_PORT"]
+quote_cache_ip = os.environ["MY_HOST"]
+quote_cache_port = os.environ["MY_PORT"]
 
 quote_cache_instance = None
 

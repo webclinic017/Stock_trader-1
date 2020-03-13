@@ -1,42 +1,125 @@
 version: '3'
 services:
+  audit_log:
+    container_name: audit_log
+    restart: always
+    image: jkelly45/seng_468_project:audit_log
+    environment:
+      MY_HOST: "${audit_log}"
+      MY_PORT:  44416
+      REDIS_HOST: "${redis}"
+      REDIS_PORT: 44417
+    depends_on:
+      - redis
+    ports:
+      - "44416:44416"
+    networks:
+      backend:
+        ipv4_address: 172.20.0.3
+  user_db:
+    container_name: user_db
+    restart: always
+    image: jkelly45/seng_468_project:user_db
+    environment:
+      MY_HOST: "${user_db}"
+      MY_PORT:  44418
+      REDIS_HOST: "${redis}"
+      REDIS_PORT: 44417
+    depends_on:
+      - redis
+    ports:
+      - "44418:44418"
+    links:
+      - redis
+    networks:
+      backend:
+        ipv4_address: 172.20.0.6
+  quote_cache:
+    container_name: quote_cache
+    restart: always
+    image: jkelly45/seng_468_project:quote_cache
+    environment:
+      MY_HOST: "${quote_cache}"
+      MY_PORT: 44419
+      REDIS_HOST: "${redis}"
+      REDIS_PORT: 44417
+    ports:
+      - "44419:44419"
+    depends_on:
+      - redis
+    networks:
+      backend:
+        ipv4_address: 172.20.0.4
+  event_messenger:
+    container_name: event_messenger
+    restart: always
+    image: jkelly45/seng_468_project:event_messenger
+    environment:
+      MY_EVENT_HOST: "${event_messenger}"
+      MY_EVENT_PORT: 44420
+      REDIS_HOST: "${redis}"
+      REDIS_PORT: 44417
+    ports:
+    - "44420:44420"
+    depends_on:
+      - redis
+    networks:
+      backend:
+        ipv4_address: 172.20.0.5
   redis:
     container_name: redis
+    restart: always
     image: 'bitnami/redis:5.0'
     environment:
       # ALLOW_EMPTY_PASSWORD is recommended only for development.
       - ALLOW_EMPTY_PASSWORD=yes
       - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
+      - protected-mode=no
     command: /run.sh --maxmemory 200mb
-    # file for data
-    #volumes:
-    #-
+    # file for data defined in the dockerfile
     ports:
-        - '6379:6379'
+        - "44417:6379"
     networks:
-      - backend
+      backend:
+          ipv4_address: 172.20.0.2
   trans_server:
     container_name: trans
+    restart: always
     image: jkelly45/seng_468_project:trans_server2
+    environment:
+      MY_HOST: "${trans_server}"
+      MY_PORT: 44415
+      LOG_HOST: "${audit_log}"
+      LOG_PORT: 44416
+      USER_DB_HOST: "${user_db}"
+      USER_DB_PORT: 44418
+      CACHE_HOST: "${quote_cache}"
+      CACHE_PORT: 44419
     depends_on:
       - redis
+      - audit_log
+      - user_db
     ports:
       - "44415:44415"
-      - "44416:44416"
-      - "44417:44417"
     networks:
-      - backend
+      backend:
+        ipv4_address: 172.20.0.7
   web_server:
     container_name: web
+    restart: always
     image: jkelly45/seng_468_project:web
+    environment:
+      TRANS_HOST: "${trans_server}"
+      TRANS_PORT: 44415
+      LOG_HOST: "${audit_log}"
+      LOG_PORT: 44416
     ports:
       - "8000:5000"
     depends_on:
       - trans_server
-    links:
-      - trans_server
     networks:
-      - "backend"
+      backend:
+        ipv4_address: 172.20.0.8
 networks:
   backend:
     driver: "bridge"

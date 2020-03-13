@@ -1,12 +1,13 @@
 from flask import Flask, app, request
 from user import user
 import json.tool
+import os
 app = Flask(__name__)
 
-redis_host = "127.0.0.1"
-redis_port = 6379
-user_db_host = "localhost"
-user_db_port = 44417
+redis_host = os.environ["REDIS_HOST"]
+redis_port = os.environ["REDIS_PORT"]
+user_db_host = os.environ["MY_HOST"]
+user_db_port = os.environ["MY_PORT"]
 
 user_instance = None
 

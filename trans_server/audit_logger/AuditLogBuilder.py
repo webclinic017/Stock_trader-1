@@ -2,14 +2,15 @@ import uuid
 import time
 import requests
 import json
+import os
 from audit_logger.AuditCommandType import AuditCommandType
 
 
 class AuditLogBuilder:
     def __init__(self, command, server, commandType):
         self._protocol = "http"
-        self._audit_log_server_ip = "172.18.0.4"
-        self._audit_log_server_port = 44416
+        self._audit_log_server_ip = os.environ['LOG_HOST']
+        self._audit_log_server_port = os.environ['LOG_PORT']
         self._audit_log = {}
         self._server = server
         self._commandType = commandType
@@ -23,12 +24,13 @@ class AuditLogBuilder:
 
     def _accountUpdate(self, data):
         log = {}
+        print("adding to the account")
         log["commandType"] = self._commandType
         log["data_fields"] = {
             "username": data["userid"],
             "funds": str(data["amount"])
         }
-        if (self._commandType == AuditCommandType.userCommand):
+        if self._commandType == AuditCommandType.userCommand:
             log["data_fields"]["command"] = data["Command"]
         else:
             log["data_fields"]["action"] = data["action"]
@@ -226,7 +228,7 @@ class AuditLogBuilder:
             transactionId = str(uuid.uuid4())
             audit_log = self._audit_log
             transaction_num_response = self._get_appropriate_transaction_num().json()
-            if (transaction_num_response["status"] == "SUCCESS"):
+            if transaction_num_response["status"] == "SUCCESS":
                 transaction_num = transaction_num_response["data"]
                 audit_log[transactionId] = build_func(self, data)
                 audit_log[transactionId]["data_fields"]["transactionNum"] = transaction_num
