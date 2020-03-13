@@ -1,8 +1,7 @@
-from flask import render_template
 import socket
 import json
+import multiprocessing
 BUFFER_SIZE = 4096
-
 protocol = "http"
 server_name = "web server"
 
@@ -10,7 +9,8 @@ server_name = "web server"
 transaction_server_ip = audit_log_server_ip = "localhost"  # IP on home comp
 transaction_server_port = 44415
 audit_log_server_port = 44416
-
+static_server_host = "localhost"
+static_server_port = 44420
 web_server_host = "localhost"
 web_server_port = 44419
 base_url = f"{web_server_host}:{web_server_port}"
@@ -57,10 +57,10 @@ def listen():
                     transaction_payload = get_transaction_payload(incoming_request)
                     response = send_to_trans_server(transaction_payload)
                 else:
-                    response = render_template("day_trader.html")
+                    response = main_page()
                 conn.sendto(response, addr)
-                web_socket.shutdown(socket.SHUT_RDWR)
-                web_socket.close()
+                conn.shutdown(socket.SHUT_RDWR)
+                conn.close()
         except OSError as e:
             print("OSError raised in web server")
         except Exception as e:
@@ -69,7 +69,9 @@ def listen():
             print(e)
 
 def main_page():
-    return render_template("day_trader.html")
+    print("index route invoked")
+    return str.encode("landing page stub")
+    #return render_template("day_trader.html")
 
 if __name__ == "__main__":
     listen()
