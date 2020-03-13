@@ -21,6 +21,7 @@ class ClientData:
 
 	# Could be extended to load users on init
 	def __init__(self, server_name, protocol, user_db_host, user_db_port):
+		print("client data started")
 		self._server_name = server_name
 		self.lock = threading.Lock()
 		self.user_server_url = f"{protocol}://{user_db_host}:{user_db_port}"

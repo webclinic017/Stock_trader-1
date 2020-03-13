@@ -2,8 +2,10 @@ import threading
 from audit_logger.AuditLogBuilder import AuditLogBuilder
 from audit_logger.AuditCommandType import AuditCommandType
 from currency import Currency
+
 class QuoteThread(threading.Thread):
 	def __init__(self, cli_data, cache, ver, user, symbol, amount, price):
+		print("event server started")
 		super().__init__()
 		self.ver = ver
 		self.cli_data = cli_data

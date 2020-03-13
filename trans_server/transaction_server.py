@@ -17,14 +17,21 @@ class TransactionServer:
         self.cache = cache
         self.events = events
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server.bind((addr, port))
+        self.server.bind((addr, int(port)))
         self.server.listen(10)
+        print("server listening")
 
     ##### Base Commands #####
     def add(self, data):
+        # print("adding")
         user = data["userid"]
+        print("self._server_name = " + str(self._server_name))
+        print("Audit command type = " + str(AuditCommandType.userCommand))
+
         AuditLogBuilder("ADD", self._server_name, AuditCommandType.userCommand).build(data).send()
+
         amount = data["amount"]
+        print("after audit logger returning next")
         return self.cli_data.add_money(user, amount)
 
     def quote(self, data):
