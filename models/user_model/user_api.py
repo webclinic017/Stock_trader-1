@@ -29,8 +29,6 @@ def get_stocks_held(username, stock_symbol):
 @app.route("/commit_buy", methods=["POST"])
 def commit_buy():
     data = request.json
-    print("commit buy incoming payload:")
-    print(data)
     username = data["username"]
     stock_symbol = data["stock_symbol"]
     stock_price_dollars = data["stock_price_dollars"]

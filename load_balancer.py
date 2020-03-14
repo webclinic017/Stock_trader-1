@@ -54,18 +54,10 @@ class ConnectionThread(threading.Thread):
         self.workload_conn = workload_conn
         self.message = message
     def run(self):
-        print("sending...")
         self.server.connect_socket()
         self.server.send(self.message)
-        print("sent")
-        print("waiting for response...")
         response = self.server.recv()
-        print("received response")
-        print("----")
-        print(response)
-        print("----")
         self.workload_conn.send(str.encode(response))
-        print("sent response")
 
 def terminate_sockets():
     [server.close_socket() for server in servers]

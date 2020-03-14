@@ -24,7 +24,6 @@ class AuditLogBuilder:
 
     def _accountUpdate(self, data):
         log = {}
-        print("adding to the account")
         log["commandType"] = self._commandType
         log["data_fields"] = {
             "username": data["userid"],
