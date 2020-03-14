@@ -132,7 +132,7 @@ if __name__ == "__main__":
     try:
         workload_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         workload_socket.bind((load_balancer_host, load_balancer_port))
-        workload_socket.listen(10)
+        workload_socket.listen(1500)
         print(f"load balancer service running on {load_balancer_host}:{load_balancer_port}...")
         while (True):
             workload_conn, addr = workload_socket.accept()
