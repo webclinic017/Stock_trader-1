@@ -1,12 +1,13 @@
 from flask import Flask, app, request
 from logger import logger
 import json.tool
+import os
 app = Flask(__name__)
 
-audit_log_server_ip = "localhost"
-audit_log_server_port = 44416
-redis_host = "127.0.0.1"
-redis_port = 6379
+audit_log_server_ip = os.environ.get('MY_HOST', default="localhost")
+audit_log_server_port = os.environ.get('MY_PORT', default=44416)
+redis_host = os.environ.get("REDIS_HOST", default="localhost")
+redis_port = os.environ.get("REDIS_PORT", default=6379)
 
 logger_instance = None
 

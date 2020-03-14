@@ -29,7 +29,7 @@ workload_paths = {
     "--2019": "./workload_files/final_workload_2019.txt",
 }
 
-load_balancer_ip = "127.0.0.1"
+load_balancer_ip = "localhost"
 load_balancer_port = 44421
 load_balancer_url = f"http://{load_balancer_ip}:{load_balancer_port}"
 

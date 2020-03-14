@@ -1,14 +1,18 @@
-#FROM python:3
+#FROM ubuntu:16.04
 
-#ADD requirements.txt /
-#RUN pip install -r requirements.txt
+#RUN apt-get update && apt-get install -y software-properties-common && add-apt-repository ppa:deadsnakes/ppa && \
+#    apt-get update && apt-get install -y python3.6 python3.6-dev python3-pip
 
-#ADD driver_webserver.py /
+#RUN ln -sfn /usr/bin/python3.6 /usr/bin/python3 && ln -sfn /usr/bin/python3 /usr/bin/python && ln -sfn /usr/bin/pip3 /usr/bin/pip
+FROM python:alpine3.7
 
-#CMD ["python", "./driver_webserver.py"]
-FROM tiangolo/uwsgi-nginx-flask:python3.6-alpine3.7
-RUN apk --update add bash nano
-ENV STATIC_URL /static
-ENV STATIC_PATH /var/www/app/static
-COPY ./requirements.txt /var/www/requirements.txt
-RUN pip install -r /var/www/requirements.txt
+RUN pip install --upgrade pip
+
+ADD ./ web_server/
+WORKDIR web_server
+ADD requirements.txt /
+RUN pip install -r requirements.txt
+ADD driver_webserver.py /
+ADD app /
+
+CMD python ./driver_webserver.py

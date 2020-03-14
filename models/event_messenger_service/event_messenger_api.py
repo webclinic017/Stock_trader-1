@@ -1,14 +1,20 @@
 from flask import Flask, app, request
 from event_messenger import event_messenger
 import json.tool
+import os
+
 app = Flask(__name__)
 
-redis_host = "127.0.0.1"
-redis_port = 6379
-event_messenger_ip = "localhost"
-event_messenger_port = 44417
+redis_host = os.environ['REDIS_HOST']
+redis_port = os.environ['REDIS_PORT']
+event_messenger_ip = os.environ['MY_EVENT_HOST']
+event_messenger_port = os.environ['MY_EVENT_PORT']
 
 event_messenger_instance = None
+
+print("redis host = " + str(redis_host))
+
+
 
 @app.route("/set_event", methods=["POST"])
 def set_event():
@@ -21,6 +27,7 @@ def set_event():
     response = event_messenger.set_event(event_type, username, stock_symbol, target_dollars, target_cents)
     return json.dumps(response)
 
+
 @app.route("/set_event_status")
 def set_event_status():
     data = request.json
@@ -29,11 +36,13 @@ def set_event_status():
     response = event_messenger.set_event_status(event_id, new_status)
     return json.dumps(response)
 
+
 @app.route("/delete_event")
 def delete_event():
     data = request.json
     response = event_messenger.delete_event(data["event_id"])
     return json.dumps(response)
+
 
 if __name__ == "__main__":
     event_messenger_instance = event_messenger(redis_host=redis_host, redis_port=redis_port)

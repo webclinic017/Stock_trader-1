@@ -1,18 +1,19 @@
 import socket
 import json
 import multiprocessing
+import requests
+import os
 BUFFER_SIZE = 4096
 protocol = "http"
 server_name = "web server"
 
 # transaction_server_ip = "192.168.1.229"  # IP on comp 17
-transaction_server_ip = audit_log_server_ip = "localhost"  # IP on home comp
-transaction_server_port = 44415
-audit_log_server_port = 44416
-static_server_host = "localhost"
-static_server_port = 44420
-web_server_host = "localhost"
-web_server_port = 44419
+transaction_server_ip = os.environ.get('TRANS_HOST', default="localhost")
+transaction_server_port = os.environ.get('TRANS_PORT', default=44415)
+audit_log_server_ip = os.environ.get("LOG_HOST", default="localhost")
+audit_log_server_port = os.environ.get("LOG_PORT", default=44416)
+web_server_host = os.environ.get("WEB_HOST", default="localhost")
+web_server_port = os.environ.get("WEB_PORT", default=44419)
 base_url = f"{web_server_host}:{web_server_port}"
 
 def send_to_trans_server(transaction_payload):
@@ -30,13 +31,16 @@ def send_to_trans_server(transaction_payload):
 
     return str.encode(trans_response)
 
-def is_index_route(http_request):
+def get_route(http_request):
     first_line = http_request.split("\n")[0]
-    endpoint = first_line.split(" ")[1]
-    result = endpoint == "/"
-    return result
+    route = first_line.split(" ")[1]
+    return route
 
-def get_transaction_payload(http_request):
+def dumpLog(data):
+    response = requests.post(f"{protocol}://{audit_log_server_ip}:{audit_log_server_port}/dumpLog", json=data).json()
+    return json.dumps(response)
+
+def get_data(http_request):
     return http_request.split("\n")[-1]
 
 def listen():
@@ -53,11 +57,14 @@ def listen():
             if (len(incoming_request) > 0):
                 print("incoming request:")
                 print(incoming_request)
-                if (not is_index_route(incoming_request)):
-                    transaction_payload = get_transaction_payload(incoming_request)
-                    response = send_to_trans_server(transaction_payload)
-                else:
+                route = get_route(incoming_request)
+                if (route == "/dumpLog"):
+                    response = dumpLog(get_data(incoming_request))
+                elif (route == "/"):
                     response = main_page()
+                else:
+                    transaction_payload = get_data(incoming_request)
+                    response = send_to_trans_server(transaction_payload)
                 conn.sendto(response, addr)
                 conn.shutdown(socket.SHUT_RDWR)
                 conn.close()
