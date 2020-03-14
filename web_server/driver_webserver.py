@@ -16,10 +16,12 @@ web_server_host = os.environ.get("WEB_HOST", default="localhost")
 web_server_port = os.environ.get("WEB_PORT", default=44419)
 base_url = f"{web_server_host}:{web_server_port}"
 
+print(base_url)
+
 def send_to_trans_server(transaction_payload):
 
     sckt_trans = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sckt_trans.connect((transaction_server_ip, transaction_server_port))
+    sckt_trans.connect((transaction_server_ip, int(transaction_server_port)))
 
     # Forward request
     sckt_trans.sendall(str.encode(json.dumps(transaction_payload)))
@@ -68,7 +70,7 @@ class ConnectionThread(threading.Thread):
 
 def listen():
     web_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    web_socket.bind((web_server_host, web_server_port))
+    web_socket.bind((web_server_host, int(web_server_port)))
     web_socket.listen(1500)
     while (True):
         try:

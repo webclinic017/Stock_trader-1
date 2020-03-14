@@ -115,10 +115,6 @@ services:
       TRANS_PORT: 44415
       LOG_HOST: "${audit_log}"
       LOG_PORT: 44416
-      MY_HOST: "${web_sever}"
-      MY_PORT: 44421
-    ports:
-      - "8000:5000"
     depends_on:
       - trans_server
     networks:
