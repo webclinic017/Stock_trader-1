@@ -1,6 +1,6 @@
 import socket
 import json
-import multiprocessing
+import threading
 import requests
 import os
 BUFFER_SIZE = 4096
@@ -42,28 +42,39 @@ def dumpLog(data):
 def get_data(http_request):
     return http_request.split("\n")[-1]
 
+class ConnectionThread(threading.Thread):
+    def __init__(self, workload_conn, addr):
+        super().__init__()
+        self.workload_conn = workload_conn
+        self.addr = addr
+    def run(self):
+        conn = self.workload_conn
+        incoming_request = conn.recv(BUFFER_SIZE).decode()
+        if (len(incoming_request) > 0):
+            route = get_route(incoming_request)
+            if (route == "/dumpLog"):
+                response = dumpLog(get_data(incoming_request))
+            elif (route == "/"):
+                response = main_page()
+            else:
+                transaction_payload = get_data(incoming_request)
+                response = send_to_trans_server(transaction_payload)
+            conn.sendto(str.encode(response), self.addr)
+        try:
+            conn.shutdown(socket.SHUT_RDWR)
+            conn.close()
+        except OSError as e:
+            print(e)
+
 def listen():
     web_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     web_socket.bind((web_server_host, web_server_port))
     web_socket.listen(10)
     while (True):
         try:
-            conn, addr = web_socket.accept()
-            incoming_request = conn.recv(BUFFER_SIZE).decode()
-            if (len(incoming_request) > 0):
-                route = get_route(incoming_request)
-                if (route == "/dumpLog"):
-                    response = dumpLog(get_data(incoming_request))
-                elif (route == "/"):
-                    response = main_page()
-                else:
-                    transaction_payload = get_data(incoming_request)
-                    response = send_to_trans_server(transaction_payload)
-                conn.sendto(str.encode(response), addr)
-                conn.shutdown(socket.SHUT_RDWR)
-                conn.close()
-        except OSError as e:
-            print("OSError raised in web server")
+            workload_conn, addr = web_socket.accept()
+            connection_thread = ConnectionThread(workload_conn=workload_conn, addr=addr)
+            connection_thread.start()
         except Exception as e:
             print("Exception in web server")
             print(type(e))
