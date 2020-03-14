@@ -69,7 +69,7 @@ class ConnectionThread(threading.Thread):
 def listen():
     web_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     web_socket.bind((web_server_host, web_server_port))
-    web_socket.listen(10)
+    web_socket.listen(1500)
     while (True):
         try:
             workload_conn, addr = web_socket.accept()

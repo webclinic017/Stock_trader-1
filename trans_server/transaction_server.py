@@ -18,7 +18,7 @@ class TransactionServer:
         self.events = events
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((addr, int(port)))
-        self.server.listen(10)
+        self.server.listen(1500)
 
     ##### Base Commands #####
     def add(self, data):
