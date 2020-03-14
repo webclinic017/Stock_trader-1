@@ -13,6 +13,9 @@ BUFFER_SIZE = 4096
 LOG_ENABLED = False
 PRINT_ENABLED = False
 
+class InvalidCommand(Exception):
+    """invalid command given"""
+    pass
 
 class TransactionServer:
     # Create a server socket then bind and listen the socket
@@ -250,6 +253,65 @@ class TransactionServer:
 
         return {"Account": acc, "Triggers": tri_copy}
 
+    def validate_command(self, command):
+        valid = False
+        try:
+            if isinstance(dict, command):
+                cmd = command["Command"]
+                usr = command["userid"]
+                if usr.strip() in ("", None):
+                    return False
+                elif cmd == "ADD":
+                    valid = len(command) == 3 \
+                            and float(command["amount"]) >= 0
+                elif cmd == "QUOTE":
+                    valid = len(command) == 3 \
+                            and command["StockSymbol"].strip() not in ("", None)
+                elif cmd == "BUY":
+                    valid = len(command) == 4 \
+                            and command["StockSymbol"].strip() not in ("", None) \
+                            and float(command["amount"]) >= 0
+                elif cmd == "SELL":
+                    valid = len(command) == 4 \
+                            and command["StockSymbol"].strip() not in ("", None) \
+                            and float(command["amount"]) >= 0
+                elif cmd == "COMMIT_BUY":
+                    valid = len(command) == 2
+                elif cmd == "CANCEL_BUY":
+                    valid = len(command) == 2
+                elif cmd == "COMMIT_SELL":
+                    valid = len(command) == 2
+                elif cmd == "CANCEL_SELL":
+                    valid = len(command) == 2
+                elif cmd == "SET_BUY_AMOUNT":
+                    valid = len(command) == 4 \
+                            and command["StockSymbol"].strip() not in ("", None) \
+                            and float(command["amount"]) >= 0
+                elif cmd == "SET_BUY_TRIGGER":
+                    valid = len(command) == 4 \
+                            and command["StockSymbol"].strip() not in ("", None) \
+                            and float(command["amount"]) >= 0
+                elif cmd == "CANCEL_SET_BUY":
+                    valid = len(command) == 3 \
+                            and command["StockSymbol"].strip() not in ("", None)
+                elif cmd == "SET_SELL_AMOUNT":
+                    valid = len(command) == 4 \
+                            and command["StockSymbol"].strip() not in ("", None) \
+                            and float(command["amount"]) >= 0
+                elif cmd == "SET_SELL_TRIGGER":
+                    valid = len(command) == 4 \
+                            and command["StockSymbol"].strip() not in ("", None) \
+                            and float(command["amount"]) >= 0
+                elif cmd == "CANCEL_SET_SELL":
+                    valid = len(command) == 3 \
+                            and command["StockSymbol"].strip() not in ("", None)
+                elif cmd == "DISPLAY_SUMMARY":
+                    valid = len(command) == 2
+        except Exception as e:
+            print(f"-----------------------------------------------------------Bad Command:{e}")
+            return False
+        return valid
+
     # Command entry point
     def transaction(self, conn):
         # TODO: We should consider creating a queue for the incoming commands.
@@ -261,19 +323,31 @@ class TransactionServer:
         if PRINT_ENABLED: print(f"TS-Incoming request:{incoming_data}")
 
         try:
-            try:
-                data_payload_list = [json.loads(incoming_data)]
-            except ValueError as v:
-                data_payload_list = []
-                split_data = incoming_data.split("}{")
-                for partial_json_str in split_data:
-                    json_str = partial_json_str
-                    if (partial_json_str[0] != "{"):
-                        json_str = "{" + json_str
-                    if (partial_json_str[len(partial_json_str) - 1] != "}"):
-                        json_str = json_str + "}"
-                    json_data = json.loads(json_str)
-                    data_payload_list.append(json_data)
+            # try:
+            data_payload_list = [json.loads(incoming_data)]
+            # try:
+            # Validate the incoming command
+            if not self.validate_command(data_payload_list[0]):
+                conn.send(str.encode("{\"FAILED\"}"))
+                # TODO: 3 statements below are temporary as webserver doesn't hold each user connection open
+                conn.shutdown(socket.SHUT_RDWR)
+                conn.close()
+                self.open_sockets.remove(conn)
+                return False
+            # except Exception as e:
+            #     print(e)
+            #     exit()#Just for debug purposes
+            # except ValueError as v:
+            #     data_payload_list = []
+            #     split_data = incoming_data.split("}{")
+            #     for partial_json_str in split_data:
+            #         json_str = partial_json_str
+            #         if (partial_json_str[0] != "{"):
+            #             json_str = "{" + json_str
+            #         if (partial_json_str[len(partial_json_str) - 1] != "}"):
+            #             json_str = json_str + "}"
+            #         json_data = json.loads(json_str)
+            #         data_payload_list.append(json_data)
 
             for data in data_payload_list:
                 command = data["Command"]
