@@ -8,8 +8,6 @@ BUFFER_SIZE = 4096
 load_balancer_host = "localhost"
 load_balancer_port = 44421
 next_server_index = [0]
-request_q_mutex = threading.Lock()
-response_q_mutex = threading.Lock()
 
 class Server:
     def __init__(self, ip_addr, port):
@@ -124,8 +122,6 @@ def get_username(message):
 
 if __name__ == "__main__":
     try:
-        request_queue = queue.Queue()
-        response_queue = queue.Queue()
         workload_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         workload_socket.bind((load_balancer_host, load_balancer_port))
         workload_socket.listen(10)
