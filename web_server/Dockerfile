@@ -15,4 +15,4 @@ RUN pip install -r requirements.txt
 ADD driver_webserver.py /
 ADD app /
 
-CMD python ./driver_webserver.py
+CMD ["python3", "-u", "driver_webserver.py"]
