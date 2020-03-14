@@ -7,7 +7,7 @@ services:
     environment:
       MY_HOST: "${audit_log}"
       MY_PORT:  44416
-      REDIS_HOST: "${redis}"
+      REDIS_HOST: "${audit_log}"
       REDIS_PORT: 44417
     depends_on:
       - redis
