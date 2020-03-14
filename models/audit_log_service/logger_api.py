@@ -4,14 +4,10 @@ import json.tool
 import os
 app = Flask(__name__)
 
-audit_log_server_ip = os.environ['MY_HOST']
-audit_log_server_port = os.environ['MY_PORT']
-redis_host = os.environ['REDIS_HOST']
-redis_port = os.environ["REDIS_PORT"]
-
-print(audit_log_server_ip)
-print(audit_log_server_port)
-
+audit_log_server_ip = os.environ.get('MY_HOST', default="localhost")
+audit_log_server_port = os.environ.get('MY_PORT', default=44416)
+redis_host = os.environ.get("REDIS_HOST", default="localhost")
+redis_port = os.environ.get("REDIS_PORT", default=6379)
 
 logger_instance = None
 

@@ -29,8 +29,8 @@ workload_paths = {
     "--2019": "./workload_files/final_workload_2019.txt",
 }
 
-load_balancer_ip = "127.0.0.1"
-load_balancer_port = 44421
+load_balancer_ip = "localhost"
+load_balancer_port = 44420
 load_balancer_url = f"http://{load_balancer_ip}:{load_balancer_port}"
 
 def process_dumplog(output_filename, dumplog_response):
@@ -114,7 +114,6 @@ def run_commands(file_obj):
         sckt.connect((load_balancer_ip, load_balancer_port))
         data = json.dumps(next_command)
         http_request = f"POST {CommandURLs[command].value} HTTP/1.1\nHOST: {load_balancer_ip}:{load_balancer_port}\nContent-Type: application/json\nAccept: application/json\n{data}"
-        print(http_request)
         sckt.sendall(str.encode(http_request))
         server_response = sckt.recv(BUFFER_SIZE).decode()
         #server_response = requests.post((load_balancer_url + CommandURLs[command].value), data=next_command)

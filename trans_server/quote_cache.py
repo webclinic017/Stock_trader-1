@@ -12,7 +12,6 @@ class QuoteCacheUrls:
 
 class QuoteCache:
     def __init__(self, addr, port, should_stub, server_name, protocol, quote_cache_host, quote_cache_port):
-        print("quote cash started")
         self._server_name = server_name
         self._addr = addr
         self._port = port
@@ -38,6 +37,7 @@ class QuoteCache:
 
         qtm = time.time()
         amount = Currency(data[0])
+        data[0] = amount
         cryptokey = data[4]
         requests.post(
             f"{self.quote_cache_server_url}/{QuoteCacheUrls.CACHE_QUOTE}",

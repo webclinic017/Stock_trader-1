@@ -2,14 +2,11 @@ import socket
 import json
 import threading
 import queue
-import threading
-
+import random
 BUFFER_SIZE = 4096
 load_balancer_host = "localhost"
-load_balancer_port = 44421
+load_balancer_port = 44420
 next_server_index = [0]
-request_q_mutex = threading.Lock()
-response_q_mutex = threading.Lock()
 
 class Server:
     def __init__(self, ip_addr, port):
@@ -31,11 +28,13 @@ class Server:
         else:
             return response
     def close_socket(self):
-        if (self.socket):
-            _socket = self.socket
-            _socket.shutdown(socket.SHUT_RDWR)
-            _socket.close()
-            del self.socket
+        try:
+            if (self.socket):
+                _socket = self.socket
+                _socket.shutdown(socket.SHUT_RDWR)
+                _socket.close()
+        except OSError:
+            pass
     def __str__(self):
         return f"{self.ip_addr}:{self.port}"
     def __repr__(self):
@@ -56,18 +55,25 @@ class ConnectionThread(threading.Thread):
         self.workload_conn = workload_conn
         self.message = message
     def run(self):
-        print("sending...")
+        print("----")
+        print(f"connecting to {server}")
         self.server.connect_socket()
+        print(f"sending:")
+        print(self.message)
         self.server.send(self.message)
-        print("sent")
-        print("waiting for response...")
+        print("sent! waiting on response...")
         response = self.server.recv()
-        print("received response")
+        if (response != None and len(response) > 0):
+            print(f"received response")
+            print(response)
+            print("sending back to client...")
+            self.workload_conn.send(str.encode(response))
+            print("sent!")
+        else:
+            print("no response, closing socket....")
+            self.server.close_socket()
+            print("socket closed")
         print("----")
-        print(response)
-        print("----")
-        self.workload_conn.send(str.encode(response))
-        print("sent response")
 
 def terminate_sockets():
     [server.close_socket() for server in servers]
@@ -86,15 +92,18 @@ def assign_next_available_server():
     return servers[next_server_index[0]]
 
 def assign_random_server():
-    return servers[random.randint(0, len(servers))]
+    return servers[random.randint(0, len(servers) - 1)]
 
 def set_user_relay(username):
-    if (username != None):
-        server = assign_next_available_server()
-    else:
+    if (username == None):
         server = assign_random_server()
-    users[username] = server
-    print(f"{username} assigned to server: {str(server)}")
+    else:
+        try:
+            server = users[username]
+        except KeyError:
+            server = assign_next_available_server()
+            users[username] = server
+            print(f"{username} assigned to server: {str(server)}")
     return server
 
 def get_username_from_query_string(self, query_str):
@@ -104,6 +113,7 @@ def get_username_from_query_string(self, query_str):
         username = None
     else:
         username = username_arg[0].split("=")[-1]
+    return username
 
 def get_username_from_json(json_str):
     try:
@@ -120,11 +130,9 @@ def get_username(message):
 
 if __name__ == "__main__":
     try:
-        request_queue = queue.Queue()
-        response_queue = queue.Queue()
         workload_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         workload_socket.bind((load_balancer_host, load_balancer_port))
-        workload_socket.listen(10)
+        workload_socket.listen(1500)
         print(f"load balancer service running on {load_balancer_host}:{load_balancer_port}...")
         while (True):
             workload_conn, addr = workload_socket.accept()
@@ -134,13 +142,9 @@ if __name__ == "__main__":
                 server = set_user_relay(username)
                 connection_thread = ConnectionThread(server, workload_conn, incoming_message)
                 connection_thread.start()
-            else:
-                try:
-                    workload_conn.shutdown(socket.SHUT_RDWR)
-                    workload_conn.close()
-                except OSError as e:
-                    print("OSError raised in load balancer")
-                    print(e)
+    except Exception as e:
+        print(type(e))
+        print(e)
     finally:
         print("\n" +"distribution report:")
         print(users_distribution_report())

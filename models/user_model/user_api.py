@@ -4,10 +4,10 @@ import json.tool
 import os
 app = Flask(__name__)
 
-redis_host = os.environ["REDIS_HOST"]
-redis_port = os.environ["REDIS_PORT"]
-user_db_host = os.environ["MY_HOST"]
-user_db_port = os.environ["MY_PORT"]
+redis_host = os.environ.get("REDIS_HOST", default="localhost")
+redis_port = os.environ.get("REDIS_PORT", default=6379)
+user_db_host = os.environ.get("MY_HOST", default="localhost")
+user_db_port = os.environ.get("MY_PORT", default=44417)
 
 user_instance = None
 
@@ -29,8 +29,6 @@ def get_stocks_held(username, stock_symbol):
 @app.route("/commit_buy", methods=["POST"])
 def commit_buy():
     data = request.json
-    print("commit buy incoming payload:")
-    print(data)
     username = data["username"]
     stock_symbol = data["stock_symbol"]
     stock_price_dollars = data["stock_price_dollars"]
