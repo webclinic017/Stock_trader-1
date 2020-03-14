@@ -6,7 +6,7 @@ import threading
 
 BUFFER_SIZE = 4096
 load_balancer_host = "localhost"
-load_balancer_port = 44421
+load_balancer_port = 44420
 next_server_index = [0]
 
 class Server:
