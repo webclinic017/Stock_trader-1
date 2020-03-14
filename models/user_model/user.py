@@ -94,10 +94,6 @@ class user:
             stocks = self.r.hget(username, "stocks")
             all_stocks = self._sanitize(stocks)
             num_stocks_for_symbol = all_stocks[stock_symbol]
-            print("all stocks")
-            print(all_stocks)
-            print(f"number of {stock_symbol} stocks:")
-            print(num_stocks_for_symbol)
         except KeyError:
             num_stocks_for_symbol = 0
         return num_stocks_for_symbol
@@ -199,11 +195,7 @@ class user:
             item = {"stock_symbol": stock_symbol, "dollars": dollars, "cents": cents, "timestamp": timestamp}
             command_stack.append(item)
             command_stack_str = json.dumps(command_stack)
-            print("push:")
-            print(item)
             self.r.hset(username, key, command_stack_str)
-            print("command stack result:")
-            print(command_stack_str)
             user[key] = command_stack_str
         finally:
             mutex.release()
@@ -215,8 +207,6 @@ class user:
         try:
             user = self.get_user(username)
             command_stack = json.loads(user[key])
-            print("command stack: ")
-            print(command_stack)
             #command_stack = self._order_by_timestamp(json.loads(user[key]))
 
             try:
@@ -230,7 +220,6 @@ class user:
         return popped_item
 
     def clear_old_commands(self, username, command, current_time):
-        print("clear old commands")
         response = {"status": "Success"}
         key = f"{command}_stack"
         mutex = self._lock(Resource.COMMAND_STACK, username)

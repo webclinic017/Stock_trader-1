@@ -4,10 +4,10 @@ import json.tool
 import os
 app = Flask(__name__)
 
-redis_host = os.environ["REDIS_HOST"]
-redis_port = os.environ["REDIS_PORT"]
-quote_cache_ip = os.environ["MY_HOST"]
-quote_cache_port = os.environ["MY_PORT"]
+redis_host = os.environ.get("REDIS_HOST", default="localhost")
+redis_port = os.environ.get("REDIS_PORT", default=6379)
+quote_cache_ip = os.environ.get('MY_HOST', default="localhost")
+quote_cache_port = os.environ.get('MY_PORT', default=44418)
 
 quote_cache_instance = None
 

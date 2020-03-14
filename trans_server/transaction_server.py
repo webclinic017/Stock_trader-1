@@ -19,19 +19,12 @@ class TransactionServer:
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((addr, int(port)))
         self.server.listen(10)
-        print("server listening")
 
     ##### Base Commands #####
     def add(self, data):
-        # print("adding")
         user = data["userid"]
-        print("self._server_name = " + str(self._server_name))
-        print("Audit command type = " + str(AuditCommandType.userCommand))
-
         AuditLogBuilder("ADD", self._server_name, AuditCommandType.userCommand).build(data).send()
-
         amount = data["amount"]
-        print("after audit logger returning next")
         return self.cli_data.add_money(user, amount)
 
     def quote(self, data):
@@ -40,8 +33,7 @@ class TransactionServer:
         data["Quote"] = quote_data[0]
         data["quoteServerTime"] = quote_data[3]
         data["cryptokey"] = quote_data[4]
-        data["Succeeded"] = True
-        return quote_data
+        return True
 
     ###### Buy Commands #####
     def buy(self, data):
@@ -246,6 +238,9 @@ class TransactionServer:
                     data_payload_list.append(json_data)
 
             for data in data_payload_list:
+                print(data)
+                if (type(data) == str):
+                    data = json.loads(data)
                 command = data["Command"]
 
                 if command == "ADD":

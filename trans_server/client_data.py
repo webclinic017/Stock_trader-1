@@ -21,7 +21,6 @@ class ClientData:
 
 	# Could be extended to load users on init
 	def __init__(self, server_name, protocol, user_db_host, user_db_port):
-		print("client data started")
 		self._server_name = server_name
 		self.lock = threading.Lock()
 		self.user_server_url = f"{protocol}://{user_db_host}:{user_db_port}"
@@ -101,7 +100,6 @@ class ClientData:
 
 	##### Buy and Sell Commands #####
 	def clear_old(self, user, command, current_time):
-		print("clear old commands")
 		requests.post(f"{self.user_server_url}/{UserUrls.CLEAR_OLD_COMMANDS}", json={"username": user, "command": command, "current_time": current_time})
 
 	def push(self, user, symbol, amount, command):
@@ -116,8 +114,6 @@ class ClientData:
 				"command": command, 
 				"timestamp": time.time()
 			}
-			print(f"push {command} payload:")
-			print(data)
 			requests.post(f"{self.user_server_url}/{UserUrls.PUSH_COMMAND}", json=data)
 		finally:
 			self.lock.release()
@@ -128,8 +124,6 @@ class ClientData:
 		data = {}
 		try:
 			data = requests.get(f"{self.user_server_url}/{UserUrls.POP_COMMAND}/{user}/{key}").json()
-			print(f"popped {key} response:")
-			print(data)
 		finally:
 			self.lock.release()
 		return data

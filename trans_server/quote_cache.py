@@ -12,7 +12,6 @@ class QuoteCacheUrls:
 
 class QuoteCache:
     def __init__(self, addr, port, should_stub, server_name, protocol, quote_cache_host, quote_cache_port):
-        print("quote cash started")
         self._server_name = server_name
         self._addr = addr
         self._port = port
@@ -73,6 +72,5 @@ class QuoteCache:
                 cryptokey = data["cryptokey"]
                 val = [quote_amount, symbol, user, quote_time, cryptokey]
         except KeyError as e:
-            raise e
             val = self.new_quote(symbol, user)
         return val

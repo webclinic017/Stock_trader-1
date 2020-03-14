@@ -9,8 +9,8 @@ from audit_logger.AuditCommandType import AuditCommandType
 class AuditLogBuilder:
     def __init__(self, command, server, commandType):
         self._protocol = "http"
-        self._audit_log_server_ip = os.environ['LOG_HOST']
-        self._audit_log_server_port = os.environ['LOG_PORT']
+        self._audit_log_server_ip = os.environ.get('LOG_HOST', default="localhost")
+        self._audit_log_server_port = os.environ.get('LOG_PORT', default=44416)
         self._audit_log = {}
         self._server = server
         self._commandType = commandType
@@ -24,7 +24,6 @@ class AuditLogBuilder:
 
     def _accountUpdate(self, data):
         log = {}
-        print("adding to the account")
         log["commandType"] = self._commandType
         log["data_fields"] = {
             "username": data["userid"],

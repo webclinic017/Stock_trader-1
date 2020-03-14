@@ -48,22 +48,22 @@ services:
     networks:
       backend:
         ipv4_address: 172.20.0.4
-  event_messenger:
-    container_name: event_messenger
-    restart: always
-    image: jkelly45/seng_468_project:event_messenger
-    environment:
-      MY_EVENT_HOST: "${event_messenger}"
-      MY_EVENT_PORT: 44420
-      REDIS_HOST: "${redis}"
-      REDIS_PORT: 44417
-    ports:
-    - "44420:44420"
-    depends_on:
-      - redis
-    networks:
-      backend:
-        ipv4_address: 172.20.0.5
+  #event_messenger:
+  #  container_name: event_messenger
+  #  restart: always
+  #  image: jkelly45/seng_468_project:event_messenger
+  #  environment:
+  #    MY_EVENT_HOST: "${event_messenger}"
+  #    MY_EVENT_PORT: 44420
+  #    REDIS_HOST: "${redis}"
+  #    REDIS_PORT: 44417
+  #  ports:
+  #  - "44420:44420"
+  #  depends_on:
+  #    - redis
+  #  networks:
+  #    backend:
+  #      ipv4_address: 172.20.0.5
   redis:
     container_name: redis
     restart: always
@@ -108,6 +108,8 @@ services:
     restart: always
     image: jkelly45/seng_468_project:web
     environment:
+      WEB_HOST: "${web_server}"
+      WEB_PORT: 44420
       TRANS_HOST: "${trans_server}"
       TRANS_PORT: 44415
       LOG_HOST: "${audit_log}"
