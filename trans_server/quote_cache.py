@@ -37,6 +37,7 @@ class QuoteCache:
 
         qtm = time.time()
         amount = Currency(data[0])
+        data[0] = amount
         cryptokey = data[4]
         requests.post(
             f"{self.quote_cache_server_url}/{QuoteCacheUrls.CACHE_QUOTE}",

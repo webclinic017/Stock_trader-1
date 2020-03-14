@@ -28,7 +28,7 @@ def send_to_trans_server(transaction_payload):
     trans_response = sckt_trans.recv(BUFFER_SIZE).decode()
     sckt_trans.close()
 
-    return str.encode(trans_response)
+    return trans_response
 
 def get_route(http_request):
     first_line = http_request.split("\n")[0]
@@ -59,7 +59,7 @@ def listen():
                 else:
                     transaction_payload = get_data(incoming_request)
                     response = send_to_trans_server(transaction_payload)
-                conn.sendto(response, addr)
+                conn.sendto(str.encode(response), addr)
                 conn.shutdown(socket.SHUT_RDWR)
                 conn.close()
         except OSError as e:
@@ -70,7 +70,7 @@ def listen():
             print(e)
 
 def main_page():
-    return str.encode("landing page stub")
+    return "landing page stub"
     #return render_template("day_trader.html")
 
 if __name__ == "__main__":

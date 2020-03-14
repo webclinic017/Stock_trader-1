@@ -204,17 +204,16 @@ class user:
     def pop_command(self, username, command):
         key = f"{command}_stack"
         mutex = self._lock(Resource.COMMAND_STACK, username)
+        popped_item = {}
         try:
             user = self.get_user(username)
             command_stack = json.loads(user[key])
-            #command_stack = self._order_by_timestamp(json.loads(user[key]))
-
-            try:
-                popped_item = command_stack.pop()
-                self.r.hset(username, key, json.dumps(command_stack))
-            except IndexError:
-                popped_item = {}
-                pass
+            popped_item = command_stack.pop()
+            self.r.hset(username, key, json.dumps(command_stack))
+        except KeyError:
+            pass
+        except IndexError:
+            pass
         finally:
             mutex.release()
         return popped_item

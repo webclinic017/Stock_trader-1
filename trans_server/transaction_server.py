@@ -62,7 +62,7 @@ class TransactionServer:
         else:
             print("popped from NONEMPTY buy stack")
         stock_symbol = buy_data["stock_symbol"]
-        price = Currency(self.cache.quote(stock_symbol, user)[0])
+        price = self.cache.quote(stock_symbol, user)[0]
         buy_amount = Currency(buy_data["dollars"]) + Currency(buy_data["cents"])
 
         # Return the delta of the transaction to user's account
@@ -88,7 +88,6 @@ class TransactionServer:
         user = data["userid"]
         dollar_amt_to_sell = float(data["amount"])
         symbol = data["StockSymbol"]
-        price = self.cache.quote(symbol, user)[0]
         stocks_on_hand = int(self.cli_data.get_stock_held(user, symbol))
         if stocks_on_hand > 0:
             self.cli_data.push(user, data["StockSymbol"], dollar_amt_to_sell, "sell")
@@ -109,7 +108,7 @@ class TransactionServer:
         shares_on_hand = cli_data.get_stock_held(user, symbol)
 
         price = self.cache.quote(symbol, user)[0]
-        shares_to_sell = int(int(sell_data["dollars"]) / price)
+        shares_to_sell = int(int(sell_data["dollars"]) / price.dollars)
         if shares_to_sell <= shares_on_hand:
             cli_data.commit_sell(user, symbol, price, shares_to_sell)
         succeeded = True
