@@ -213,7 +213,7 @@ class TransactionServer:
         for stock_sym in sell_triggers_keys:
             tri_copy["sel"][stock_sym] = str(tri["sel"][stock_sym])
 
-        log_data = acc.deepcopy()
+        log_data = acc.copy()
         log_data["userid"] = data["userid"]
         log_data["Command"] = "DISPLAY_SUMMARY"
         AuditLogBuilder("DISPLAY_SUMMARY", self._server_name, AuditCommandType.userCommand).build(log_data).send()
