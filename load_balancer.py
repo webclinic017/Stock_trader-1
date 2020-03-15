@@ -21,12 +21,12 @@ class Server:
         if (self.socket):
             self.socket.sendall(str.encode(data))
     def recv(self):
-        response = self.socket.recv(BUFFER_SIZE).decode()
-        if (response == ""):
-            self.close_socket()
-            return None
-        else:
-            return response
+        response = self.recvall().decode()
+        # if (response == ""):
+        #     self.close_socket()
+        #     return None
+        # else:
+        return response
     def close_socket(self):
         try:
             if (self.socket):
@@ -35,6 +35,19 @@ class Server:
                 _socket.close()
         except OSError:
             pass
+
+    def recvall(self):
+        # Helper function to recv all bytes from response
+        # Must have server side close connection when finished to ensure EOF is caught on this end.
+        data = bytearray()
+        while True:
+            packet = self.socket.recv(BUFFER_SIZE)
+            if not packet:
+                self.close_socket()
+                break
+            data.extend(packet)
+        return data
+
     def __str__(self):
         return f"{self.ip_addr}:{self.port}"
     def __repr__(self):
@@ -54,6 +67,7 @@ class ConnectionThread(threading.Thread):
         self.server = server
         self.workload_conn = workload_conn
         self.message = message
+
     def run(self):
         print("----")
         print(f"connecting to {server}")
@@ -65,7 +79,7 @@ class ConnectionThread(threading.Thread):
         response = self.server.recv()
         if (response != None and len(response) > 0):
             print(f"received response")
-            print(response)
+            # print(response)
             print("sending back to client...")
             self.workload_conn.send(str.encode(response))
             print("sent!")
@@ -132,7 +146,7 @@ if __name__ == "__main__":
     try:
         workload_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         workload_socket.bind((load_balancer_host, load_balancer_port))
-        workload_socket.listen(10)
+        workload_socket.listen(1500)
         print(f"load balancer service running on {load_balancer_host}:{load_balancer_port}...")
         while (True):
             workload_conn, addr = workload_socket.accept()

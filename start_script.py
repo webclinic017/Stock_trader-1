@@ -29,8 +29,11 @@ if __name__ == "__main__":
         #start_service("models/events_service/events_api.py")
         start_service("trans_server/driver_transserver.py", ["--QuoteServer", str(parsed_args.QuoteServer)])
         start_service("web_server/driver_webserver.py")
+
+        #TODO: Use something other than an endless loop to keep subprocesses alive
         while (True):
             try:
+                time.sleep(5)
                 pass
             except KeyboardInterrupt:
                 cleanup()

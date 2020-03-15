@@ -1,6 +1,9 @@
 import select
 import socket
 import json
+import threading
+from threading import Thread
+
 from event_server import QuoteThread
 from audit_logger.AuditLogBuilder import AuditLogBuilder
 from audit_logger.AuditCommandType import AuditCommandType
@@ -56,18 +59,23 @@ class TransactionServer:
         AuditLogBuilder("COMMIT_BUY", self._server_name, AuditCommandType.userCommand).build(data).send()
         succeeded = False
         user = data["userid"]
-        buy_data = self.cli_data.pop(user, "buy")
-        if (len(buy_data) == 0):
-            raise Exception("pop() performed on empty buy stack")
-        else:
-            print("popped from NONEMPTY buy stack")
-        stock_symbol = buy_data["stock_symbol"]
-        price = self.cache.quote(stock_symbol, user)[0]
-        buy_amount = Currency(buy_data["dollars"]) + Currency(buy_data["cents"])
+        cli_data = self.cli_data
 
-        # Return the delta of the transaction to user's account
-        self.cli_data.commit_buy(user, stock_symbol, price, buy_amount)
-        succeeded = True
+        try:
+            buy_data = cli_data.pop(user, "buy")
+            if (len(buy_data) == 0):
+                raise Exception("pop() performed on empty buy stack")
+            stock_symbol = buy_data["stock_symbol"]
+            price = self.cache.quote(stock_symbol, user)[0]
+            buy_amount = Currency(buy_data["dollars"]) + Currency(buy_data["cents"])
+
+            status = cli_data.commit_buy(user, stock_symbol, price, buy_amount)["status"]
+            succeeded = status == "SUCCESS"
+
+        except Exception as e:
+            print(e)
+            pass
+        self.cli_data = cli_data
         return succeeded
 
     def cancel_buy(self, data):
@@ -99,20 +107,20 @@ class TransactionServer:
         succeeded = False
         user = data["userid"]
         cli_data = self.cli_data
-
-        sell_data = cli_data.pop(user, "sell")
-        if (len(sell_data) == 0):
-            raise Exception("pop() performed on empty sell stack")
-        symbol = sell_data["stock_symbol"]
-
-        shares_on_hand = cli_data.get_stock_held(user, symbol)
-
-        price = self.cache.quote(symbol, user)[0]
-        shares_to_sell = int(int(sell_data["dollars"]) / price.dollars)
-        if shares_to_sell <= shares_on_hand:
-            cli_data.commit_sell(user, symbol, price, shares_to_sell)
-        succeeded = True
-
+        try:
+            sell_data = cli_data.pop(user, "sell")
+            if (len(sell_data) == 0):
+                raise Exception("pop() performed on empty sell stack")
+            symbol = sell_data["stock_symbol"]
+            shares_on_hand = cli_data.get_stock_held(user, symbol)
+            price = self.cache.quote(symbol, user)[0]
+            shares_to_sell = int(int(sell_data["dollars"]) / price.dollars)
+            if shares_to_sell <= shares_on_hand:
+                status = cli_data.commit_sell(user, symbol, price, shares_to_sell)["status"]
+                succeeded = status == "SUCCESS"
+        except Exception as e:
+            print(e)
+            pass
         self.cli_data = cli_data
         return succeeded
 
@@ -205,12 +213,71 @@ class TransactionServer:
         for stock_sym in sell_triggers_keys:
             tri_copy["sel"][stock_sym] = str(tri["sel"][stock_sym])
 
-        log_data = acc.copy()
+        log_data = acc.deepcopy()
         log_data["userid"] = data["userid"]
         log_data["Command"] = "DISPLAY_SUMMARY"
         AuditLogBuilder("DISPLAY_SUMMARY", self._server_name, AuditCommandType.userCommand).build(log_data).send()
 
         return {"Account": acc, "Triggers": tri_copy}
+
+    def validate_command(self, command):
+        valid = False
+        try:
+            if isinstance(dict, command):
+                cmd = command["Command"]
+                usr = command["userid"]
+                if usr.strip() in ("", None):
+                    return False
+                elif cmd == "ADD":
+                    valid = len(command) == 3 \
+                            and float(command["amount"]) >= 0
+                elif cmd == "QUOTE":
+                    valid = len(command) == 3 \
+                            and command["StockSymbol"].strip() not in ("", None)
+                elif cmd == "BUY":
+                    valid = len(command) == 4 \
+                            and command["StockSymbol"].strip() not in ("", None) \
+                            and float(command["amount"]) >= 0
+                elif cmd == "SELL":
+                    valid = len(command) == 4 \
+                            and command["StockSymbol"].strip() not in ("", None) \
+                            and float(command["amount"]) >= 0
+                elif cmd == "COMMIT_BUY":
+                    valid = len(command) == 2
+                elif cmd == "CANCEL_BUY":
+                    valid = len(command) == 2
+                elif cmd == "COMMIT_SELL":
+                    valid = len(command) == 2
+                elif cmd == "CANCEL_SELL":
+                    valid = len(command) == 2
+                elif cmd == "SET_BUY_AMOUNT":
+                    valid = len(command) == 4 \
+                            and command["StockSymbol"].strip() not in ("", None) \
+                            and float(command["amount"]) >= 0
+                elif cmd == "SET_BUY_TRIGGER":
+                    valid = len(command) == 4 \
+                            and command["StockSymbol"].strip() not in ("", None) \
+                            and float(command["amount"]) >= 0
+                elif cmd == "CANCEL_SET_BUY":
+                    valid = len(command) == 3 \
+                            and command["StockSymbol"].strip() not in ("", None)
+                elif cmd == "SET_SELL_AMOUNT":
+                    valid = len(command) == 4 \
+                            and command["StockSymbol"].strip() not in ("", None) \
+                            and float(command["amount"]) >= 0
+                elif cmd == "SET_SELL_TRIGGER":
+                    valid = len(command) == 4 \
+                            and command["StockSymbol"].strip() not in ("", None) \
+                            and float(command["amount"]) >= 0
+                elif cmd == "CANCEL_SET_SELL":
+                    valid = len(command) == 3 \
+                            and command["StockSymbol"].strip() not in ("", None)
+                elif cmd == "DISPLAY_SUMMARY":
+                    valid = len(command) == 2
+        except Exception as e:
+            print(f"-----------------------------------------------------------Bad Command:{e}")
+            return False
+        return valid
 
     # Command entry point
     def transaction(self, conn):
@@ -220,6 +287,7 @@ class TransactionServer:
             return False
 
         # DEBUG
+        print(f"{incoming_data}")
 
         try:
             try:
@@ -272,46 +340,60 @@ class TransactionServer:
                     data["Succeeded"] = self.set_sell_trigger(data)
                 elif command == "DISPLAY_SUMMARY":
                     data["Data"] = self.display_summary(data)
-                    # TR-The lower section was overwriting the actual triggers
-                    # buy_triggers_keys = data["Data"]["Triggers"]["buy"].keys()
-                    # sell_triggers_keys = data["Data"]["Triggers"]["sel"].keys()
-                    # for stock_sym in buy_triggers_keys:
-                    #     data["Data"]["Triggers"]["buy"][stock_sym][0] = str(data["Data"]["Triggers"]["buy"][stock_sym][0])
-                    # for stock_sym in sell_triggers_keys:
-                    #     data["Data"]["Triggers"]["sel"][stock_sym][0] = str(data["Data"]["Triggers"]["sel"][stock_sym][0])
                 # Echo back JSON with new attributes
                 conn.send(str.encode(json.dumps(data, cls=Currency)))
 
         except Exception as e:
             print(e)
             AuditLogBuilder("ERROR", self._server_name, AuditCommandType.errorEvent).build({"errorMessage": str(e)}).send()
-            conn.send(str.encode("{\"FAILED\"}"))
+            conn.send(str.encode(f"FAILED! | {data}"))
             return False
         return True
 
-    # Non-return function launches the server loop
     def launch(self):
+        threads = []
         open_sockets = []
         try:
             while True:
-                rlist, wlist, xlisst = select.select([self.server] + open_sockets, [], [])
-                for s in rlist:
-                    if s is self.server:
-                        conn, addr = self.server.accept()
-                        open_sockets.append(conn)
-                    else:
-                        try:
-                            if not self.transaction(s):
-                                try:
-                                    s.shutdown(socket.SHUT_RDWR)
-                                    s.close()
-                                except OSError:
-                                    pass
-                                open_sockets.remove(s)
-                        except ConnectionResetError:
-                            print("connection reset by peer")
-                            pass
+                # establish connection with client
+                print("waiting for w-server connection...")
+                s, addr = self.server.accept()
+                print("connection accepted!")
+                open_sockets.append(s)
+                # Start a new thread and return its identifier
+                # print("Thread processing cmd")
+                t = Thread(target=self.transaction, args=(s,))
+                t.start()
+                threads.append(t)
+                # print(threading.active_count())
         except KeyboardInterrupt:
             for s in open_sockets:
                 s.shutdown(socket.SHUT_RDWR)
                 s.close()
+
+    # # Non-return function launches the server loop
+    # def launch(self):
+    #     open_sockets = []
+    #     try:
+    #         while True:
+    #             rlist, wlist, xlisst = select.select([self.server] + open_sockets, [], [])
+    #             for s in rlist:
+    #                 if s is self.server:
+    #                     conn, addr = self.server.accept()
+    #                     open_sockets.append(conn)
+    #                 else:
+    #                     try:
+    #                         if not self.transaction(s):
+    #                             try:
+    #                                 s.shutdown(socket.SHUT_RDWR)
+    #                                 s.close()
+    #                             except OSError:
+    #                                 pass
+    #                             open_sockets.remove(s)
+    #                     except ConnectionResetError:
+    #                         print("connection reset by peer")
+    #                         pass
+    #     except KeyboardInterrupt:
+    #         for s in open_sockets:
+    #             s.shutdown(socket.SHUT_RDWR)
+    #             s.close()

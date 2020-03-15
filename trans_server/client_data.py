@@ -70,7 +70,7 @@ class ClientData:
 		return True
 
 	def commit_buy(self, username, stock_symbol, price, buy_amount):
-		self.persist(
+		return self.persist(
 			UserUrls.COMMIT_BUY, 
 			{
 				"username": username,
@@ -86,7 +86,7 @@ class ClientData:
 		total = price * count
 		stock_price = Currency(price)
 		cost = stock_price * count
-		self.persist(
+		return self.persist(
 			UserUrls.COMMIT_SELL, 
 			{
 				"username": username,
