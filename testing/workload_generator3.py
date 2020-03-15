@@ -181,6 +181,7 @@ def forward_requests(thread_name, user_requests, user_pipe):
         try:
             print(f"-->In:{idx + 1} | pid|thr:{thread_name}")
             sckt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sckt.settimeout(5)
             sckt.connect((load_balancer_ip, load_balancer_port))
             data = json.dumps(user_request)
             http_request = f"POST {CommandURLs[user_request['Command']].value} HTTP/1.1\nHOST: {load_balancer_ip}:{load_balancer_port}\nContent-Type: application/json\nAccept: application/json\n{data}"
@@ -193,9 +194,23 @@ def forward_requests(thread_name, user_requests, user_pipe):
             print(f"<--Out:{idx + 1} | pid|thr:{thread_name} | {response}")
         except Exception as e:
             print(f"{e} | {user_request}")
-    print(f"finished:{thread_name}")
+    print(f"finished:{thread_name} | active:{threading.active_count()}")
     # user_pipe.send(responses)
     # user_pipe.close()
+
+def recvall(sock):
+    # Helper function to recv all bytes from response
+    # Must have server side close connection when finished to ensure EOF is caught on this end.
+    data = bytearray()
+    while True:
+        packet = sock.recv(BUFFER_SIZE)
+        # print(f"pktlen:{len(packet)}")
+        if len(packet) < BUFFER_SIZE:
+            data.extend(packet)
+            sock.close()
+            break
+        data.extend(packet)
+    return data
 
 
 if __name__ == "__main__":
@@ -213,19 +228,25 @@ if __name__ == "__main__":
     users_on_second_process = num_users - users_on_first_process
     print(f"num_users:{num_users}")
 
-    a1, b1 = Pipe()
-    a2, b2 = Pipe()
-    l1 = user_cmd_dict_list[:users_on_first_process]
-    l2 = user_cmd_dict_list[users_on_first_process:]
-    p1 = Process(target=process_user_requests, args=(l1, b1))
-    p2 = Process(target=process_user_requests, args=(l2, b2))
+    try:
+        a1, b1 = Pipe()
+        a2, b2 = Pipe()
+        l1 = user_cmd_dict_list[:users_on_first_process]
+        l2 = user_cmd_dict_list[users_on_first_process:]
+        p1 = Process(target=process_user_requests, args=(l1, b1))
+        p2 = Process(target=process_user_requests, args=(l2, b2))
 
-    # Start the processes
-    p1.start()
-    p2.start()
-    # Halt main process until both sub-processes finish
-    p1.join()
-    p2.join()
+        # Start the processes
+        p1.start()
+        p2.start()
+        # Halt main process until both sub-processes finish
+        p1.join()
+        p2.join()
+
+    except KeyboardInterrupt:
+        p1.kill()
+        p2.kill()
+        exit()
 
     # TODO: Need to fix the pipe so we can analyze returned data
     # b1.close()
@@ -246,12 +267,15 @@ if __name__ == "__main__":
         try:
             print(f"Printing dumplog!")
             sckt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # sckt.settimeout(2)
             sckt.connect((load_balancer_ip, load_balancer_port))
             data = json.dumps(admin_dumplog)
             http_request = f"POST {CommandURLs[admin_dumplog['Command']].value} HTTP/1.1\nHOST: {load_balancer_ip}:{load_balancer_port}\nContent-Type: application/json\nAccept: application/json\n{data}"
             print(http_request)
             sckt.sendall(str.encode(http_request))
-            response = sckt.recv(BUFFER_SIZE).decode()
+            print("Receiving dumplog...")
+            response = recvall(sckt).decode()
+            print("Dumplog received!")
             process_dumplog(admin_dumplog["filename"], response)
         except KeyError:
             pass
