@@ -33,6 +33,7 @@ class QuoteCache:
             except Exception as e:
                 print(e)
         else:
+            time.sleep(2)
             data = ["20.87", symbol, user, time.time(), "QWERTYUIOP"]
 
         qtm = time.time()
