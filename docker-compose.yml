@@ -65,6 +65,7 @@ services:
   #    backend:
   #      ipv4_address: 172.20.0.5
   redis:
+    #TODO do we want a backup for the redis
     container_name: redis
     restart: always
     image: 'bitnami/redis:5.0'
@@ -114,8 +115,6 @@ services:
       TRANS_PORT: 44415
       LOG_HOST: "${audit_log}"
       LOG_PORT: 44416
-    ports:
-      - "8000:5000"
     depends_on:
       - trans_server
     networks:
