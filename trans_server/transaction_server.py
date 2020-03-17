@@ -3,7 +3,6 @@ import socket
 import json
 import threading
 from threading import Thread
-
 from event_server import QuoteThread
 from audit_logger.AuditLogBuilder import AuditLogBuilder
 from audit_logger.AuditCommandType import AuditCommandType
@@ -12,16 +11,24 @@ from currency import Currency
 BUFFER_SIZE = 4096
 
 # noinspection PyRedundantParentheses
-class TransactionServer:
+class TransactionServer():
     # Create a server socket then bind and listen the socket
-    def __init__(self, cli_data, cache, events, addr, port, server_name):
+    def __init__(self, cli_data, cache, events, server_name):
+        self.load_env()
         self._server_name = server_name
         self.cli_data = cli_data
         self.cache = cache
         self.events = events
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server.bind((addr, int(port)))
+        self.server.bind((self.addr, int(self.port)))
         self.server.listen(1500)
+
+    def load_env(self):
+        import os
+        from dotenv import load_dotenv
+        load_dotenv()
+        self.addr = os.environ.get("trans_host")
+        self.port = os.environ.get("trans_port")
 
     ##### Base Commands #####
     def add(self, data):
@@ -213,10 +220,7 @@ class TransactionServer:
         for stock_sym in sell_triggers_keys:
             tri_copy["sel"][stock_sym] = str(tri["sel"][stock_sym])
 
-        log_data = acc.deepcopy()
-        log_data["userid"] = data["userid"]
-        log_data["Command"] = "DISPLAY_SUMMARY"
-        AuditLogBuilder("DISPLAY_SUMMARY", self._server_name, AuditCommandType.userCommand).build(log_data).send()
+        AuditLogBuilder("DISPLAY_SUMMARY", self._server_name, AuditCommandType.userCommand).build(data).send()
 
         return {"Account": acc, "Triggers": tri_copy}
 
@@ -344,6 +348,7 @@ class TransactionServer:
                 conn.send(str.encode(json.dumps(data, cls=Currency)))
 
         except Exception as e:
+            raise e
             print(e)
             AuditLogBuilder("ERROR", self._server_name, AuditCommandType.errorEvent).build({"errorMessage": str(e)}).send()
             conn.send(str.encode(f"FAILED! | {data}"))
@@ -356,9 +361,7 @@ class TransactionServer:
         try:
             while True:
                 # establish connection with client
-                print("waiting for w-server connection...")
                 s, addr = self.server.accept()
-                print("connection accepted!")
                 open_sockets.append(s)
                 # Start a new thread and return its identifier
                 # print("Thread processing cmd")

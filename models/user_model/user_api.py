@@ -4,12 +4,7 @@ import json.tool
 import os
 app = Flask(__name__)
 
-redis_host = os.environ.get("REDIS_HOST", default="localhost")
-redis_port = os.environ.get("REDIS_PORT", default=6379)
-user_db_host = os.environ.get("MY_HOST", default="localhost")
-user_db_port = os.environ.get("MY_PORT", default=44417)
-
-user_instance = None
+user_instance = user()
 
 @app.route("/current_funds/<string:username>", methods=["GET"])
 def current_funds(username):
@@ -118,7 +113,3 @@ def set_sell_trigger():
     cents = data["cents"]
     response = user.set_buy_trigger(user.TriggerTypes.SELL, username, stock_symbol, dollars, cents)
     return json.dumps(response)
-
-if __name__ == "__main__":
-    user_instance = user(redis_host=redis_host, redis_port=redis_port)
-    app.run(host=user_db_host, port=user_db_port)

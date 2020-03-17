@@ -20,10 +20,18 @@ class UserUrls:
 class ClientData:
 
 	# Could be extended to load users on init
-	def __init__(self, server_name, protocol, user_db_host, user_db_port):
+	def __init__(self, server_name, protocol):
+		self.load_env()
 		self._server_name = server_name
 		self.lock = threading.Lock()
-		self.user_server_url = f"{protocol}://{user_db_host}:{user_db_port}"
+		self.user_server_url = f"{protocol}://{self.user_db_host}:{self.user_db_port}"
+
+	def load_env(self):
+		import os
+		from dotenv import load_dotenv
+		load_dotenv()
+		self.user_db_host = os.environ.get("user_db_host")
+		self.user_db_port = os.environ.get("user_db_port")
 
 	def get_current_funds(self, username):
 		data = requests.get(f"{self.user_server_url}/{UserUrls.CURRENT_FUNDS}/{username}").json()

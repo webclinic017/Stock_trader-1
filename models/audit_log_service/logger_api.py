@@ -2,14 +2,10 @@ from flask import Flask, app, request
 from logger import logger
 import json.tool
 import os
+
 app = Flask(__name__)
 
-audit_log_server_ip = os.environ.get('MY_HOST', default="localhost")
-audit_log_server_port = os.environ.get('MY_PORT', default=44416)
-redis_host = os.environ.get("REDIS_HOST", default="localhost")
-redis_port = os.environ.get("REDIS_PORT", default=6379)
-
-logger_instance = None
+logger_instance = logger()
 
 @app.route("/getCurrentTransactionNum", methods=["POST"])
 def get_current_transaction_num():
@@ -39,6 +35,5 @@ def debug():
     audit_log = logger_instance.debug()
     return json.dumps({"status": "SUCCESS", "data": audit_log})
 
-if __name__ == "__main__":
-    logger_instance = logger(redis_host=redis_host, redis_port=redis_port)
-    app.run(host=audit_log_server_ip, port=audit_log_server_port)
+#if __name__ == "__main__":
+#    app.run(host=audit_log_server_ip, port=audit_log_server_port)
