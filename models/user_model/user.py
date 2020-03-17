@@ -13,14 +13,22 @@ class user:
         BUY = "buy_triggers"
         SELL = "sell_triggers"
         
-    def __init__(self, redis_host, redis_port):
-        self.r = redis.Redis(host=redis_host, port=redis_port)
+    def __init__(self):
+        self.load_env()
+        self.r = redis.Redis(host=self.redis_host, port=self.redis_port)
         self.resources = {
             Resource.STOCK_DELTA: {},
             Resource.ADD_FUNDS_DELTA: {},
             Resource.SET_TRIGGER: {},
             Resource.COMMAND_STACK: {}
         }
+
+    def load_env(self):
+        import os
+        from dotenv import load_dotenv
+        load_dotenv()
+        self.redis_host = os.environ.get("redis_host")
+        self.redis_port = os.environ.get("redis_port")
 
     def _lock(self, resource, username):
         mutex = self._get_mutex(resource, username)
@@ -94,7 +102,8 @@ class user:
             stocks = self.r.hget(username, "stocks")
             all_stocks = self._sanitize(stocks)
             num_stocks_for_symbol = all_stocks[stock_symbol]
-        except KeyError:
+        except Exception as e:
+            print(e)
             num_stocks_for_symbol = 0
         return num_stocks_for_symbol
 

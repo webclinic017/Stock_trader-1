@@ -11,21 +11,26 @@ class QuoteCacheUrls:
     GET_QUOTE = "get_quote"
 
 class QuoteCache:
-    def __init__(self, addr, port, should_stub, server_name, protocol, quote_cache_host, quote_cache_port):
+    def __init__(self, server_name, protocol):
+        self.load_env()
         self._server_name = server_name
-        self._addr = addr
-        self._port = port
-        self._should_stub = should_stub
-        self.quote_cache_server_url = f"{protocol}://{quote_cache_host}:{quote_cache_port}"
+        self.quote_cache_server_url = f"{protocol}://{self.quote_cache_host}:{self.quote_cache_port}"
 
+    def load_env(self):
+        import os
+        from dotenv import load_dotenv
+        load_dotenv()
+        self.quote_cache_host = os.environ.get("quote_cache_host")
+        self.quote_cache_port = os.environ.get("quote_cache_port")
+        self.quote_server_host = os.environ.get("quote_server_host")
+        self.quote_server_port = os.environ.get("quote_server_port")
+        self.quote_server = os.environ.get("quote_server")
 
     def new_quote(self, symbol, user):
-        addr = self._addr
-        port = self._port
-        if (not self._should_stub):
+        if (self.quote_server):
             self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             try:
-                self.conn.connect((addr, port))
+                self.conn.connect((self.quote_server_host, self.quote_server_port))
                 self.conn.sendall(str.encode(symbol + ", " + user + "\n"))
                 print("->quote_server 'quote request' sent\n->waiting for response...")
                 data = self.conn.recv(BUFFER_SIZE).decode().split(",")

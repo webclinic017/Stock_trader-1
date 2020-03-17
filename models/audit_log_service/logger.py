@@ -9,8 +9,16 @@ from heapq import heappush, heappop
 server_name = "audit_log_server"
 
 class logger:
-    def __init__(self, redis_host, redis_port):
-        self.r = redis.Redis(host=redis_host, port=redis_port, db=0)
+    def __init__(self):
+        self.load_env()
+        self.r = redis.Redis(host=self.redis_host, port=self.redis_port, db=0)
+
+    def load_env(self):
+        import os
+        from dotenv import load_dotenv
+        load_dotenv()
+        self.redis_host = os.environ.get("redis_host")
+        self.redis_port = os.environ.get("redis_port")
 
     def increment_transaction_num(self):
         transaction_num = self.get_next_transaction_num()

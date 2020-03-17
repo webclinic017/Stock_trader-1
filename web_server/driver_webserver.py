@@ -3,20 +3,20 @@ import json
 import threading
 import requests
 import os
+from dotenv import load_dotenv
+load_dotenv()
 BUFFER_SIZE = 4096
 protocol = "http"
 server_name = "web server"
 
 # transaction_server_ip = "192.168.1.229"  # IP on comp 17
-transaction_server_ip = os.environ.get('TRANS_HOST', default="localhost")
-transaction_server_port = os.environ.get('TRANS_PORT', default=44415)
-audit_log_server_ip = os.environ.get("LOG_HOST", default="localhost")
-audit_log_server_port = os.environ.get("LOG_PORT", default=44416)
-web_server_host = os.environ.get("WEB_HOST", default="localhost")
-web_server_port = os.environ.get("WEB_PORT", default=44419)
+transaction_server_ip = os.environ.get("trans_host")
+transaction_server_port = os.environ.get("trans_port")
+audit_log_server_ip = os.environ.get("audit_log_host")
+audit_log_server_port = os.environ.get("audit_log_port")
+web_server_host = os.environ.get("web_host")
+web_server_port = os.environ.get("web_port")
 base_url = f"{web_server_host}:{web_server_port}"
-
-print(base_url)
 
 def send_to_trans_server(transaction_payload):
 

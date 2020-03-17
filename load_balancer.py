@@ -3,9 +3,10 @@ import json
 import threading
 import queue
 import random
+import os
+from dotenv import load_dotenv
+load_dotenv()
 BUFFER_SIZE = 4096
-load_balancer_host = "localhost"
-load_balancer_port = 44420
 next_server_index = [0]
 
 class Server:
@@ -143,6 +144,8 @@ def get_username(message):
     return username
 
 if __name__ == "__main__":
+    load_balancer_host = os.environ.get("load_balancer_host")
+    load_balancer_port = os.environ.get("load_balancer_port")
     try:
         workload_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         workload_socket.bind((load_balancer_host, load_balancer_port))

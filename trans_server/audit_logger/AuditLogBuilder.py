@@ -182,17 +182,13 @@ class AuditLogBuilder:
         return log
 
     def _display_summary(self, data):
+        print("DISPLAY_SUMMARY DATA:")
+        print(data)
         log = {}
         log["commandType"] = self._commandType
         log["data_fields"] = {
             "command": data["Command"],
-            "username": data["userid"],
-            "dollars": data["dollars"],
-            "cents": data["cents"],
-            "buy_triggers": data["buy_triggers"],
-            "sell_triggers": data["sell_triggers"],
-            "buy_stack": data["buy_stack"],
-            "sell_stack": data["sell_stack"]
+            "username": data["userid"]
         }
         return log
 

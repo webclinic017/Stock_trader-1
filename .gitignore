@@ -5,6 +5,7 @@ redis_services/hiredis
 **.o
 **.vscode
 **redis-stable
+redis-5.0.8
 
 /.idea
 __pycache__
