@@ -145,7 +145,7 @@ def get_username(message):
 
 if __name__ == "__main__":
     load_balancer_host = os.environ.get("load_balancer_host")
-    load_balancer_port = os.environ.get("load_balancer_port")
+    load_balancer_port = int(os.environ.get("load_balancer_port"))
     try:
         workload_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         workload_socket.bind((load_balancer_host, load_balancer_port))

@@ -3,7 +3,7 @@ export $(egrep -v '^#' .env | xargs)
 
 if [ $1 == "master" ]
 then
-    (python3 load_balancer)& echo "load balancer server running on ${load_balancer_host}:${load_balancer_port}, with pid ${!}"
+    (python3 load_balancer.py)& echo "load balancer server running on ${load_balancer_host}:${load_balancer_port}, with pid ${!}"
 else
     if [ $1 == "worker" ]
     then
