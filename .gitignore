@@ -6,7 +6,7 @@ redis_services/hiredis
 **.vscode
 **redis-stable
 redis-5.0.8
-
+kill_script.sh
 /.idea
 __pycache__
 /testing/workload_files/100User_testWorkLoad.txt
