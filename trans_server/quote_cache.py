@@ -24,7 +24,7 @@ class QuoteCache:
         self.quote_cache_port = os.environ.get("quote_cache_port")
         self.quote_server_host = os.environ.get("quote_server_host")
         self.quote_server_port = os.environ.get("quote_server_port")
-        self.quote_server = os.environ.get("quote_server")
+        self.quote_server = int(os.environ.get("quote_server"))
 
     def new_quote(self, symbol, user):
         if (self.quote_server):
