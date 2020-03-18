@@ -2,10 +2,7 @@ import uuid
 import time
 import requests
 import json
-import os
 from audit_logger.AuditCommandType import AuditCommandType
-from dotenv import load_dotenv
-load_dotenv()
 
 class AuditLogBuilder:
     def __init__(self, command, server, commandType):
@@ -20,6 +17,9 @@ class AuditLogBuilder:
             pass
 
     def load_env(self):
+        import os
+        from dotenv import load_dotenv
+        load_dotenv()
         self._audit_log_server_ip = os.environ.get('audit_log_host')
         self._audit_log_server_port = os.environ.get('audit_log_port')
 
