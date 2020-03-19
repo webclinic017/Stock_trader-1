@@ -186,8 +186,8 @@ class AuditLogBuilder:
         return log
 
     def _display_summary(self, data):
-        print("DISPLAY_SUMMARY DATA:")
-        print(data)
+        # print("DISPLAY_SUMMARY DATA:")
+        # print(data)
         log = {}
         log["commandType"] = self._commandType
         log["data_fields"] = {
@@ -235,7 +235,7 @@ class AuditLogBuilder:
                 audit_log[transactionId]["data_fields"]["server"] = self._server
             else:
                 raise Exception(
-                    f"Error: could not communicate with the audit log server to obtain the transaction number of the current {self._commandType}")
+                    f"\033[1;31mError: could not communicate with the audit log server to obtain the transaction number of the current {self._commandType}\033[0;0m")
             self._audit_log = audit_log
             return self
 

@@ -14,13 +14,16 @@ class Server:
         self.ip_addr = ip_addr
         self.port = port
         self.socket = None
+
     def connect_socket(self):
         _socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         _socket.connect((self.ip_addr, self.port))
         self.socket = _socket
+
     def send(self, data):
         if (self.socket):
             self.socket.sendall(str.encode(data))
+
     def recv(self):
         response = self.recvall().decode()
         # if (response == ""):
@@ -28,6 +31,7 @@ class Server:
         #     return None
         # else:
         return response
+
     def close_socket(self):
         try:
             if (self.socket):
@@ -42,15 +46,19 @@ class Server:
         # Must have server side close connection when finished to ensure EOF is caught on this end.
         data = bytearray()
         while True:
-            packet = self.socket.recv(BUFFER_SIZE)
-            if not packet:
-                self.close_socket()
-                break
-            data.extend(packet)
+            try:
+                packet = self.socket.recv(BUFFER_SIZE)
+                if not packet:
+                    self.close_socket()
+                    break
+                data.extend(packet)
+            except Exception as e:
+                print(f"\033[1;31mLoad_Bal:{e}\033[0;0m")
         return data
 
     def __str__(self):
         return f"{self.ip_addr}:{self.port}"
+
     def __repr__(self):
         return self.__str__()
 
@@ -70,25 +78,25 @@ class ConnectionThread(threading.Thread):
         self.message = message
 
     def run(self):
-        print("----")
-        print(f"connecting to {server}")
+        print("\033[1;34m----\033[0;0m")
+        print(f"\033[1;34mconnecting to {server}\033[0;0m")
         self.server.connect_socket()
-        print(f"sending:")
-        print(self.message)
+        print("\033[1;34msending:\033[0;0m")
+        print(f"\033[1;34m{self.message}\033[0;0m")
         self.server.send(self.message)
-        print("sent! waiting on response...")
+        print("\033[1;34msent! waiting on response...\033[0;0m")
         response = self.server.recv()
         if (response != None and len(response) > 0):
-            print(f"received response")
+            print(f"\033[1;34mreceived response\033[0;0m")
             # print(response)
-            print("sending back to client...")
+            print("\033[1;34msending back to client...\033[0;0m")
             self.workload_conn.send(str.encode(response))
-            print("sent!")
+            print("\033[1;34msent!\033[0;0m")
         else:
-            print("no response, closing socket....")
+            print("\033[1;2;33mno response, closing socket....\033[0;0m")
             self.server.close_socket()
-            print("socket closed")
-        print("----")
+            print("\033[1;2;33msocket closed\033[0;0m")
+        print("\033[1;34m----\033[0;0m")
 
 def terminate_sockets():
     [server.close_socket() for server in servers]
@@ -118,7 +126,7 @@ def set_user_relay(username):
         except KeyError:
             server = get_next_available_server()
             users[username] = server
-            print(f"{username} assigned to server: {str(server)}")
+            print(f"\033[1;34mLoad_Bal:{username} assigned to server: {str(server)}\033[0;0m")
     return server
 
 def get_username_from_query_string(self, query_str):
@@ -150,7 +158,7 @@ if __name__ == "__main__":
         workload_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         workload_socket.bind((load_balancer_host, load_balancer_port))
         workload_socket.listen(1500)
-        print(f"load balancer service running on {load_balancer_host}:{load_balancer_port}...")
+        print(f"\033[1;34mload balancer service running on {load_balancer_host}:{load_balancer_port}...\033[0;0m")
         while (True):
             workload_conn, addr = workload_socket.accept()
             incoming_message = workload_conn.recv(BUFFER_SIZE).decode()
@@ -160,9 +168,9 @@ if __name__ == "__main__":
                 connection_thread = ConnectionThread(server, workload_conn, incoming_message)
                 connection_thread.start()
     except Exception as e:
-        print(type(e))
-        print(e)
+        print(f"\033[1;31mLoad_Bal:{type(e)}\033[0;0m")
+        print(f"\033[1;31m{e}\033[0;0m")
     finally:
-        print("\n" +"distribution report:")
+        print("\n\033[1;34m" + "distribution report:\033[0;0m")
         print(users_distribution_report())
         terminate_sockets()
