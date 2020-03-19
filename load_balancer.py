@@ -93,9 +93,9 @@ class ConnectionThread(threading.Thread):
             self.workload_conn.send(str.encode(response))
             print("\033[1;34msent!\033[0;0m")
         else:
-            print("\033[1;2;34mno response, closing socket....\033[0;0m")
+            print("\033[1;2;33mno response, closing socket....\033[0;0m")
             self.server.close_socket()
-            print("\033[1;2;34msocket closed\033[0;0m")
+            print("\033[1;2;33msocket closed\033[0;0m")
         print("\033[1;34m----\033[0;0m")
 
 def terminate_sockets():

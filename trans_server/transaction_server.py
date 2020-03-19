@@ -71,16 +71,16 @@ class TransactionServer():
         try:
             buy_data = cli_data.pop(user, "buy")
             if (len(buy_data) != 0):
-                # raise Exception("pop() performed on empty buy stack")
-                stock_symbol = buy_data["stock_symbol"]
-                price = self.cache.quote(stock_symbol, user)[0]
-                buy_amount = Currency(buy_data["dollars"]) + Currency(buy_data["cents"])
+                raise Exception("pop() performed on empty buy stack")
+            stock_symbol = buy_data["stock_symbol"]
+            price = self.cache.quote(stock_symbol, user)[0]
+            buy_amount = Currency(buy_data["dollars"]) + Currency(buy_data["cents"])
 
-                status = cli_data.commit_buy(user, stock_symbol, price, buy_amount)["status"]
-                succeeded = status == "SUCCESS"
+            status = cli_data.commit_buy(user, stock_symbol, price, buy_amount)["status"]
+            succeeded = status == "SUCCESS"
 
         except Exception as e:
-            print(f"\033[1;31mTrans-Server:{e}\033[0;0m")
+            print(f"\033[1;33mTrans-Server:{e}\033[0;0m")
             pass
         self.cli_data = cli_data
         return succeeded
@@ -92,7 +92,8 @@ class TransactionServer():
         try:
             self.cli_data.pop(user, "buy")
             succeeded = True
-        except Exception:
+        except Exception as e:
+            print(f"\033[1;33mTrans-Server:{e}\033[0;0m")
             pass
         return succeeded
 
@@ -117,16 +118,16 @@ class TransactionServer():
         try:
             sell_data = cli_data.pop(user, "sell")
             if (len(sell_data) != 0):
-                # raise Exception("pop() performed on empty sell stack")
-                symbol = sell_data["stock_symbol"]
-                shares_on_hand = cli_data.get_stock_held(user, symbol)
-                price = self.cache.quote(symbol, user)[0]
-                shares_to_sell = int(int(sell_data["dollars"]) / price.dollars)
-                if shares_to_sell <= shares_on_hand:
-                    status = cli_data.commit_sell(user, symbol, price, shares_to_sell)["status"]
-                    succeeded = status == "SUCCESS"
+                raise Exception("pop() performed on empty sell stack")
+            symbol = sell_data["stock_symbol"]
+            shares_on_hand = cli_data.get_stock_held(user, symbol)
+            price = self.cache.quote(symbol, user)[0]
+            shares_to_sell = int(int(sell_data["dollars"]) / price.dollars)
+            if shares_to_sell <= shares_on_hand:
+                status = cli_data.commit_sell(user, symbol, price, shares_to_sell)["status"]
+                succeeded = status == "SUCCESS"
         except Exception as e:
-            print(f"\033[1;31mTrans-Server:{e}\033[0;0m")
+            print(f"\033[1;33mTrans-Server:{e}\033[0;0m")
             pass
         self.cli_data = cli_data
         return succeeded
@@ -138,7 +139,8 @@ class TransactionServer():
         try:
             self.cli_data.pop(user, "sell")
             succeeded = True
-        except Exception:
+        except Exception as e:
+            print(f"\033[1;33mTrans-Server:{e}\033[0;0m")
             pass
         return succeeded
 
@@ -279,7 +281,7 @@ class TransactionServer():
                 elif cmd == "DISPLAY_SUMMARY":
                     valid = len(command) == 2
         except Exception as e:
-            print(f"\033[1;31mTrans-Server---------------------------------------------------Bad Command:{e}\033[0;0m")
+            print(f"\033[1;33mTrans-Server---------------------------------------------------Bad Command:{e}\033[0;0m")
             return False
         return valid
 
@@ -349,7 +351,7 @@ class TransactionServer():
 
         except Exception as e:
             print(f"\033[1;31mTrans-Server:{e}\033[0;0m")
-            raise e # TODO: this raise function means no other below it is accessible, needs reworking
+            raise e # TODO: this raise function means nothing below it is accessible, needs reworking
             print(f"\033[1;31mTrans-Server:{e}\033[0;0m")
             AuditLogBuilder("ERROR", self._server_name, AuditCommandType.errorEvent).build({"errorMessage": str(e)}).send()
             conn.send(str.encode(f"FAILED! | {data}"))
