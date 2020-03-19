@@ -38,7 +38,7 @@ workload_paths = {
 BUFFER_SIZE = 4096
 # base_url = "http://192.168.1.223:44419"
 load_balancer_ip = "localhost"
-load_balancer_port = 44420
+load_balancer_port = 44421
 load_balancer_url = f"http://{load_balancer_ip}:{load_balancer_port}"
 
 
@@ -53,12 +53,14 @@ class UserThread(threading.Thread):
 
 
 def process_dumplog(output_filename, dumplog_response):
+    if not dumplog_response:
+        print("\033[1;31mDumplog empty!!!\033[0;0m")
     try:
         xml_string = json.loads(dumplog_response)["data"]
         with open(output_filename, 'w+') as f:
             f.write(xml_string)
     except KeyError:
-        print(f"Error: no data attribute found in response. Response status {json.loads(dumplog_response)['status']}")
+        print(f"\033[1;31mWork_Gen:Error: no data attribute found in response. Response status {json.loads(dumplog_response)['status']}\033[0;0m")
 
 
 # Read work load file, process into a dictionary of user command lists that can be run in parallel:
@@ -136,10 +138,10 @@ def workload_to_user_command_dicts(file_obj):
                 else:
                     user_divided_commands["admin"] = [next_command]
             else:
-                print(f"Invalid command: #{i + 1} -> {action}")
+                print(f"\033[1;31mInvalid command: #{i + 1} -> {action}\033[0;0m")
                 continue
         except Exception as e:
-            print(f"{e} | {action}")
+            print(f"\033[1;31mWork_Gen:{e} | {action}\033[0;0m")
             continue
 
         if command == "DUMPLOG":
@@ -179,13 +181,13 @@ def forward_requests(thread_name, user_requests, user_pipe):
     responses = []
     for idx, user_request in enumerate(user_requests):
         try:
-            print(f"-->In:{idx + 1} | pid|thr:{thread_name}")
+            print(f"-->In:{idx + 1} | pid|thr:{thread_name} | rqst:{user_request}")
             sckt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sckt.settimeout(5)
             sckt.connect((load_balancer_ip, load_balancer_port))
             data = json.dumps(user_request)
             http_request = f"POST {CommandURLs[user_request['Command']].value} HTTP/1.1\nHOST: {load_balancer_ip}:{load_balancer_port}\nContent-Type: application/json\nAccept: application/json\n{data}"
-            print(http_request)
+            # print(http_request)
             sckt.sendall(str.encode(http_request))
             response = sckt.recv(BUFFER_SIZE).decode()
             # responses.append(response)
@@ -193,7 +195,7 @@ def forward_requests(thread_name, user_requests, user_pipe):
             sckt.close()
             print(f"<--Out:{idx + 1} | pid|thr:{thread_name} | {response}")
         except Exception as e:
-            print(f"{e} | {user_request}")
+            print(f"\033[1;31mWork_Gen:{e} | {user_request}\033[0;0m")
     print(f"finished:{thread_name} | active:{threading.active_count()}")
     # user_pipe.send(responses)
     # user_pipe.close()
@@ -203,13 +205,16 @@ def recvall(sock):
     # Must have server side close connection when finished to ensure EOF is caught on this end.
     data = bytearray()
     while True:
-        packet = sock.recv(BUFFER_SIZE)
-        # print(f"pktlen:{len(packet)}")
-        if len(packet) < BUFFER_SIZE:
+        try:
+            packet = sock.recv(BUFFER_SIZE)
+            # print(f"pktlen:{len(packet)}")
+            if len(packet) < BUFFER_SIZE:
+                data.extend(packet)
+                sock.close()
+                break
             data.extend(packet)
-            sock.close()
-            break
-        data.extend(packet)
+        except Exception as e:
+            print(f"\033[1;31mWork_Gen:{e}\033[0;0m")
     return data
 
 
@@ -271,7 +276,7 @@ if __name__ == "__main__":
             sckt.connect((load_balancer_ip, load_balancer_port))
             data = json.dumps(admin_dumplog)
             http_request = f"POST {CommandURLs[admin_dumplog['Command']].value} HTTP/1.1\nHOST: {load_balancer_ip}:{load_balancer_port}\nContent-Type: application/json\nAccept: application/json\n{data}"
-            print(http_request)
+            # print(http_request)
             sckt.sendall(str.encode(http_request))
             print("Receiving dumplog...")
             response = recvall(sckt).decode()
