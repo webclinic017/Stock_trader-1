@@ -4,6 +4,7 @@ import socket
 import sys
 import time
 import os
+from dotenv import load_dotenv
 import requests
 from multiprocessing import Process, Pool, Queue, Pipe
 import threading
@@ -36,11 +37,6 @@ workload_paths = {
 }
 
 BUFFER_SIZE = 4096
-# base_url = "http://192.168.1.223:44419"
-load_balancer_ip = "localhost"
-load_balancer_port = 44420
-load_balancer_url = f"http://{load_balancer_ip}:{load_balancer_port}"
-
 
 class UserThread(threading.Thread):
     def __init__(self, name, args: tuple):
@@ -214,6 +210,11 @@ def recvall(sock):
 
 
 if __name__ == "__main__":
+    load_dotenv()
+    load_balancer_ip = os.environ.get("load_balancer_host")
+    load_balancer_port = int(os.environ.get("load_balancer_port"))
+    protocol = "http"
+    load_balancer_url = f"{protocol}://{load_balancer_ip}:{load_balancer_port}"
     startT = time.time()
     file_index = sys.argv[1]
     file_object = open(workload_paths[file_index])
