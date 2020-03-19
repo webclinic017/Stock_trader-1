@@ -66,7 +66,7 @@ class ConnectionThread(threading.Thread):
             conn.shutdown(socket.SHUT_RDWR)
             conn.close()
         except OSError as e:
-            print(e)
+            print(f"\033[1;31mWeb_Srv:{e}\033[0;0m")
 
 def listen():
     web_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -78,9 +78,8 @@ def listen():
             connection_thread = ConnectionThread(workload_conn=workload_conn, addr=addr)
             connection_thread.start()
         except Exception as e:
-            print("Exception in web server")
-            print(type(e))
-            print(e)
+            print(f"\033[1;31mWeb_Srv:{type(e)}\033[0;0m")
+            print(f"\033[1;31m{e}\033[0;0m")
 
 def main_page():
     return "landing page stub"

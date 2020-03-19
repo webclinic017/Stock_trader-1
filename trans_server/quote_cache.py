@@ -32,11 +32,11 @@ class QuoteCache:
             try:
                 self.conn.connect((self.quote_server_host, self.quote_server_port))
                 self.conn.sendall(str.encode(symbol + ", " + user + "\n"))
-                print("->quote_server 'quote request' sent\n->waiting for response...")
+                print("\033[1;33m->quote_server 'quote request' sent\n->waiting for response...\033[0;0m")
                 data = self.conn.recv(BUFFER_SIZE).decode().split(",")
                 self.conn.close()
             except Exception as e:
-                print(e)
+                print(f"\033[1;31m{e}\033[0;0m")
         else:
             time.sleep(2)
             data = ["20.87", symbol, user, time.time(), "QWERTYUIOP"]

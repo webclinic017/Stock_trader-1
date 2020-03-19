@@ -103,7 +103,7 @@ class user:
             all_stocks = self._sanitize(stocks)
             num_stocks_for_symbol = all_stocks[stock_symbol]
         except Exception as e:
-            print(e)
+            print(f"\033[1;33mUser.py:{e}\033[0;0m")
             num_stocks_for_symbol = 0
         return num_stocks_for_symbol
 
@@ -139,7 +139,7 @@ class user:
             response = updated_funds
             response["stocks"] = stocks_str
         except Exception as e:
-            print(e)
+            print(f"\033[1;33mUser.py:{e}\033[0;0m")
             response = {}
             response["stocks"] = "{}"
             response["status"] = "ERROR"
@@ -182,9 +182,9 @@ class user:
         assert type(trigger_type) == str
         mutex = self._lock(Resource.SET_TRIGGER, username)
         try:
-            if (trigger_type == TriggerTypes.BUY):
+            if (trigger_type == self.TriggerTypes.BUY):
                 triggers = json.loads(self.r.hget(username, "buy_triggers"))
-            elif (trigger_type == TriggerTypes.SELL):
+            elif (trigger_type == self.TriggerTypes.SELL):
                 triggers = json.loads(self._sanitize(self.r.hget(username, "sell_triggers")))
             else:
                 return {"status": f"ERROR: invalid trigger type, {trigger_type}"}
@@ -247,7 +247,7 @@ class user:
                         pass
                 self.r.hset(username, key, json.dumps(cleared_stack))
             except Exception as e:
-                print(e)
+                print(f"\033[1;31mUser.py:{e}\033[0;0m")
                 response["status"] = "ERROR"
                 response["message"] = str(e)
         finally:

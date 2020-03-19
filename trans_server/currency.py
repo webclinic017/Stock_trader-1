@@ -31,8 +31,8 @@ class Currency(JSONEncoder):
             self.dollars = 0
             self.cents = 0
         else:
-            raise ValueError(f"Valid 'Currency' initializer argument types are: "
-                             f"<Currency>,<float>,<int>,<str representation of float/int>")
+            raise ValueError(f"\033[1;31Valid 'Currency' initializer argument types are: "
+                             f"<Currency>,<float>,<int>,<str representation of float/int>\033[0;0m")
 
     def __add__(self, other):
         if isinstance(other, Currency):
@@ -52,7 +52,7 @@ class Currency(JSONEncoder):
         elif isinstance(other, float) or isinstance(other, int):
             return Currency(self.__float__() + other)
         else:
-            raise TypeError(f"unsupported operand type(s) for +: 'Currency' and '{type(other)}'")
+            raise TypeError(f"\033[1;31munsupported operand type(s) for +: 'Currency' and '{type(other)}'\033[0;01m")
 
     def __radd__(self, other):
         return self.__add__(other)
@@ -79,7 +79,7 @@ class Currency(JSONEncoder):
         elif isinstance(other, int):
             return self.dollars < other
         else:
-            raise TypeError(f"unsupported operand type(s) for <: 'Currency' and '{type(other)}'")
+            raise TypeError(f"\033[1;31munsupported operand type(s) for <: 'Currency' and '{type(other)}'\033[0;01m")
 
     def __gt__(self, other):
         return not self.__lt__(other) and not self.__eq__(other)
@@ -98,7 +98,7 @@ class Currency(JSONEncoder):
         elif isinstance(other, int):
             return self.dollars == other and self.cents == 0
         else:
-            raise TypeError(f"unsupported operand type(s) for ==: 'Currency' and '{type(other)}'")
+            raise TypeError(f"\033[1;31munsupported operand type(s) for ==: 'Currency' and '{type(other)}'\033[0;0m")
 
     def __ne__(self, other):
         return not self.__eq__(other)
