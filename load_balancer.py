@@ -109,7 +109,7 @@ def users_distribution_report():
         distribution[user_id] = str(server)
     return json.dumps(distribution)
 
-def assign_next_available_server():
+def get_next_available_server():
     # round robin
     next_server_index[0] = (next_server_index[0] + 1) % len(servers)
     return servers[next_server_index[0]]
@@ -124,7 +124,7 @@ def set_user_relay(username):
         try:
             server = users[username]
         except KeyError:
-            server = assign_next_available_server()
+            server = get_next_available_server()
             users[username] = server
             print(f"\033[1;34mLoad_Bal:{username} assigned to server: {str(server)}\033[0;0m")
     return server

@@ -2,11 +2,11 @@
 export $(egrep -v '^#' .env | xargs)
 
 echo "#!/bin/bash" > kill_script.sh
-if [ $1 == "master" ]
+if [[ $1 == "master" ]]
 then
     (python3 load_balancer.py)& echo "load balancer server running on ${load_balancer_host}:${load_balancer_port}, with pid ${!}"
     echo "kill -9 ${!}" >> kill_script.sh
-elif [ $1 == "worker" ]
+elif [[ $1 == "worker" ]]
 then
     (./redis-5.0.8/src/redis-server --port $redis_port)& echo "redis server running on ${redis_host}:${redis_port}, with pid ${!}"
     echo "kill -9 ${!}" >> kill_script.sh
@@ -18,7 +18,7 @@ then
     echo "kill -9 ${!}" >> kill_script.sh
     (gunicorn --workers=2 --bind="${quote_cache_host}:${quote_cache_port}" --chdir=models/quote_cache quote_cache_api:app)& echo "quote cache server running on ${quote_cache_host}:${quote_cache_port}, with pid ${!}"
     echo "kill -9 ${!}" >> kill_script.sh
-elif [ $1 == "audit_logger" ]
+elif [[ $1 == "audit_logger" ]]
 then
     (./redis-5.0.8/src/redis-server --port $redis_port)& echo "redis server running on ${redis_host}:${redis_port}, with pid ${!}"
     echo "kill -9 ${!}" >> kill_script.sh
