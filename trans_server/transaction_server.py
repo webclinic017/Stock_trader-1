@@ -14,7 +14,7 @@ BUFFER_SIZE = 4096
 
 load_dotenv()
 addr = os.environ.get("trans_host")
-port = os.environ.get("trans_port")
+port = int(os.environ.get("trans_port"))
 
 # noinspection PyRedundantParentheses
 class TransactionServer():
@@ -27,7 +27,7 @@ class TransactionServer():
         self.cache = cache
         self.events = events
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server.bind((self.addr, int(self.port)))
+        self.server.bind((self.addr, self.port))
         self.server.listen(1500)
 
     ##### Base Commands #####
@@ -78,11 +78,8 @@ class TransactionServer():
 
             status = cli_data.commit_buy(user, stock_symbol, price, buy_amount)["status"]
             succeeded = status == "SUCCESS"
-
         except Exception as e:
-            print("EXCEPTION RAISED")
-            print(type(e))
-            print(f"\033[1;33mTrans-Server:{e}\033[0;0m")
+            print(f"\033[1;33mTrans-Server.commit_buy:{e}\033[0;0m")
             pass
         self.cli_data = cli_data
         return succeeded
@@ -95,7 +92,7 @@ class TransactionServer():
             self.cli_data.pop(user, "buy")
             succeeded = True
         except Exception as e:
-            print(f"\033[1;33mTrans-Server:{e}\033[0;0m")
+            print(f"\033[1;33mTrans-Server.cancel_buy:{e}\033[0;0m")
             pass
         return succeeded
 
@@ -129,7 +126,7 @@ class TransactionServer():
                 status = cli_data.commit_sell(user, symbol, price, shares_to_sell)["status"]
                 succeeded = status == "SUCCESS"
         except Exception as e:
-            print(f"\033[1;33mTrans-Server:{e}\033[0;0m")
+            print(f"\033[1;33mTrans-Server.commit_sell:{e}\033[0;0m")
             pass
         self.cli_data = cli_data
         return succeeded
@@ -142,7 +139,7 @@ class TransactionServer():
             self.cli_data.pop(user, "sell")
             succeeded = True
         except Exception as e:
-            print(f"\033[1;33mTrans-Server:{e}\033[0;0m")
+            print(f"\033[1;33mTrans-Server.cancel_sell:{e}\033[0;0m")
             pass
         return succeeded
 
@@ -283,7 +280,7 @@ class TransactionServer():
                 elif cmd == "DISPLAY_SUMMARY":
                     valid = len(command) == 2
         except Exception as e:
-            print(f"\033[1;33mTrans-Server---------------------------------------------------Bad Command:{e}\033[0;0m")
+            print(f"\033[1;33mTrans-Server.validate_cmd---------------------------------------Bad Command:{e}\033[0;0m")
             return False
         return valid
 
@@ -352,9 +349,9 @@ class TransactionServer():
                 conn.send(str.encode(json.dumps(data, cls=Currency)))
 
         except Exception as e:
-            print(f"\033[1;31mTrans-Server:{e}\033[0;0m")
+            print(f"\033[1;31mTrans-Server.transaction:{e}\033[0;0m")
             raise e # TODO: this raise function means nothing below it is accessible, needs reworking
-            print(f"\033[1;31mTrans-Server:{e}\033[0;0m")
+            print(f"\033[1;31mTrans-Server.transaction:{e}\033[0;0m")
             AuditLogBuilder("ERROR", self._server_name, AuditCommandType.errorEvent).build({"errorMessage": str(e)}).send()
             conn.send(str.encode(f"FAILED! | {data}"))
             return False
@@ -373,9 +370,9 @@ class TransactionServer():
                 t = Thread(target=self.transaction, args=(s,))
                 t.start()
                 threads.append(t)
-                # print(threading.active_count())
+                # print(f"\033[1;31mTran_srv-threads:{threading.active_count()}\033[0;0m")
         except Exception as e:
-            print(f"\033[1;31mTrans-Server:{e}\033[0;0m")
+            print(f"\033[1;31mTrans-Server.launch:{e}\033[0;0m")
             for s in open_sockets:
                 s.shutdown(socket.SHUT_RDWR)
                 s.close()

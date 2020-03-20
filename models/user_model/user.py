@@ -28,7 +28,7 @@ class user:
         from dotenv import load_dotenv
         load_dotenv()
         self.redis_host = os.environ.get("redis_host")
-        self.redis_port = os.environ.get("redis_port")
+        self.redis_port = int(os.environ.get("redis_port"))
 
     def _lock(self, resource, username):
         mutex = self._get_mutex(resource, username)

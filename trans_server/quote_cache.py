@@ -11,7 +11,7 @@ load_dotenv()
 quote_cache_host = os.environ.get("quote_cache_host")
 quote_cache_port = os.environ.get("quote_cache_port")
 quote_server_host = os.environ.get("quote_server_host")
-quote_server_port = os.environ.get("quote_server_port")
+quote_server_port = int(os.environ.get("quote_server_port"))
 quote_server = int(os.environ.get("quote_server"))
 
 class QuoteCacheUrls:
@@ -40,7 +40,7 @@ class QuoteCache:
             except Exception as e:
                 print(f"\033[1;31m{e}\033[0;0m")
         else:
-            time.sleep(2)
+            # time.sleep(2)
             data = ["20.87", symbol, user, time.time(), "QWERTYUIOP"]
 
         qtm = time.time()

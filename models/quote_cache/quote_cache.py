@@ -11,7 +11,7 @@ class quote_cache:
         from dotenv import load_dotenv
         load_dotenv()
         self.redis_host = os.environ.get("redis_host")
-        self.redis_port = os.environ.get("redis_port")
+        self.redis_port = int(os.environ.get("redis_port"))
 
     def sanitize_byte_keys_and_vals(self, response):
         sanitized_dict = {}

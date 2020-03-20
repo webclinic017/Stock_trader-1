@@ -7,7 +7,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 audit_log_server_ip = os.environ.get('audit_log_host')
-audit_log_server_port = os.environ.get('audit_log_port')
+audit_log_server_port = int(os.environ.get('audit_log_port'))
 class AuditLogBuilder:
     def __init__(self, command, server, commandType):
         self._audit_log_server_ip = audit_log_server_ip

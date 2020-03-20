@@ -4,7 +4,7 @@ import operator
 import json
 import time
 redis_host = "127.0.0.1"
-redis_port = "6379"
+redis_port = 6379
 
 def clear_db(r):
     r.execute_command("flushdb")
