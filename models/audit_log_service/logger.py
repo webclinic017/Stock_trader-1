@@ -18,7 +18,7 @@ class logger:
         from dotenv import load_dotenv
         load_dotenv()
         self.redis_host = os.environ.get("redis_host")
-        self.redis_port = os.environ.get("redis_port")
+        self.redis_port = int(os.environ.get("redis_port"))
 
     def increment_transaction_num(self):
         transaction_num = self.get_next_transaction_num()

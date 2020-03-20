@@ -25,7 +25,8 @@ class Server:
             self.socket.sendall(str.encode(data))
 
     def recv(self):
-        response = self.recvall().decode()
+        response = self.socket.recv(BUFFER_SIZE).decode()
+        # response = self.recvall().decode()
         # if (response == ""):
         #     self.close_socket()
         #     return None
@@ -48,12 +49,13 @@ class Server:
         while True:
             try:
                 packet = self.socket.recv(BUFFER_SIZE)
-                if not packet:
+                if len(packet) < BUFFER_SIZE:
+                    data.extend(packet)
                     self.close_socket()
                     break
                 data.extend(packet)
-            except Exception as e:
-                print(f"\033[1;31mLoad_Bal:{e}\033[0;0m")
+            except Exception as e2:
+                print(f"\033[1;31mLoad_Bal.recvall:{e2}\033[0;0m")
         return data
 
     def __str__(self):
@@ -78,25 +80,28 @@ class ConnectionThread(threading.Thread):
         self.message = message
 
     def run(self):
-        print("\033[1;34m----\033[0;0m")
-        print(f"\033[1;34mconnecting to {server}\033[0;0m")
-        self.server.connect_socket()
-        print("\033[1;34msending:\033[0;0m")
-        print(f"\033[1;34m{self.message}\033[0;0m")
-        self.server.send(self.message)
-        print("\033[1;34msent! waiting on response...\033[0;0m")
-        response = self.server.recv()
-        if (response != None and len(response) > 0):
-            print(f"\033[1;34mreceived response\033[0;0m")
-            # print(response)
-            print("\033[1;34msending back to client...\033[0;0m")
-            self.workload_conn.send(str.encode(response))
-            print("\033[1;34msent!\033[0;0m")
-        else:
-            print("\033[1;2;33mno response, closing socket....\033[0;0m")
-            self.server.close_socket()
-            print("\033[1;2;33msocket closed\033[0;0m")
-        print("\033[1;34m----\033[0;0m")
+        try:
+            print("\033[1;34m----\033[0;0m")
+            print(f"\033[1;34mconnecting to {server}\033[0;0m")
+            self.server.connect_socket()
+            print("\033[1;34msending:\033[0;0m")
+            print(f"\033[1;34m{self.message}\033[0;0m")
+            self.server.send(self.message)
+            print("\033[1;34msent! waiting on response...\033[0;0m")
+            response = self.server.recv()
+            if (response != None and len(response) > 0):
+                print(f"\033[1;34mreceived response\033[0;0m")
+                # print(response)
+                print("\033[1;34msending back to client...\033[0;0m")
+                self.workload_conn.send(str.encode(response))
+                print("\033[1;34msent!\033[0;0m")
+            else:
+                print("\033[1;2;33mno response, closing socket....\033[0;0m")
+                self.server.close_socket()
+                print("\033[1;2;33msocket closed\033[0;0m")
+            print("\033[1;34m----\033[0;0m")
+        except Exception as e1:
+            print(f"\033[1;31mLD_BAL.run:{e1}\033[0;0m")
 
 def terminate_sockets():
     [server.close_socket() for server in servers]
@@ -126,7 +131,7 @@ def set_user_relay(username):
         except KeyError:
             server = get_next_available_server()
             users[username] = server
-            print(f"\033[1;34mLoad_Bal:{username} assigned to server: {str(server)}\033[0;0m")
+            print(f"\033[1;34mLoad_Bal.set_user_relay:{username} assigned to server: {str(server)}\033[0;0m")
     return server
 
 def get_username_from_query_string(self, query_str):
@@ -157,7 +162,7 @@ if __name__ == "__main__":
     try:
         workload_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         workload_socket.bind((load_balancer_host, load_balancer_port))
-        workload_socket.listen(1500)
+        workload_socket.listen(1010)
         print(f"\033[1;34mload balancer service running on {load_balancer_host}:{load_balancer_port}...\033[0;0m")
         while (True):
             workload_conn, addr = workload_socket.accept()
@@ -167,9 +172,10 @@ if __name__ == "__main__":
                 server = set_user_relay(username)
                 connection_thread = ConnectionThread(server, workload_conn, incoming_message)
                 connection_thread.start()
+            print(f"\033[1;35mLD_BLR-wrk_gen_socks:{len(users)} | wb_srv_socks:{len(servers)} | threads:{threading.active_count()}\033[0;0m")
     except Exception as e:
-        print(f"\033[1;31mLoad_Bal:{type(e)}\033[0;0m")
-        print(f"\033[1;31m{e}\033[0;0m")
+        print(f"\033[1;31mLoad_Bal.main:{type(e)} | \033[0;0m", end="")
+        print(f"\033[1;31m{e.with_traceback()}\033[0;0m")
     finally:
         print("\n\033[1;34m" + "distribution report:\033[0;0m")
         print(users_distribution_report())

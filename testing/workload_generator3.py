@@ -188,7 +188,7 @@ def forward_requests(thread_name, user_requests, user_pipe):
             http_request = f"POST {CommandURLs[user_request['Command']].value} HTTP/1.1\nHOST: {load_balancer_ip}:{load_balancer_port}\nContent-Type: application/json\nAccept: application/json\n{data}"
             # print(http_request)
             sckt.sendall(str.encode(http_request))
-            #TODO: We are possibly receiving 2 responses at the same time, or the threads are printing at the same time, unlikely though.
+            #TODO: We are possibly receiving 2 responses at the same time, or the threads are printing at the same time, latter is unlikely though.
             response = sckt.recv(BUFFER_SIZE).decode()
             # responses.append(response)
             sckt.shutdown(socket.SHUT_RDWR)
@@ -214,7 +214,7 @@ def recvall(sock):
                 break
             data.extend(packet)
         except Exception as e:
-            print(f"\033[1;31mWork_Gen:{e}\033[0;0m")
+            print(f"\033[1;31mWork_Gen.recvall:{e}\033[0;0m")
     return data
 
 
@@ -272,22 +272,23 @@ if __name__ == "__main__":
 
     endT = time.time()
     print(f"runtime: {endT - startT}")
+    print("dumplog stubbed!")
 
-    if admin_dumplog is not None:
-        try:
-            print(f"Printing dumplog!")
-            sckt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            # sckt.settimeout(2)
-            sckt.connect((load_balancer_ip, load_balancer_port))
-            data = json.dumps(admin_dumplog)
-            http_request = f"POST {CommandURLs[admin_dumplog['Command']].value} HTTP/1.1\nHOST: {load_balancer_ip}:{load_balancer_port}\nContent-Type: application/json\nAccept: application/json\n{data}"
-            # print(http_request)
-            sckt.sendall(str.encode(http_request))
-            print("Receiving dumplog...")
-            response = recvall(sckt).decode()
-            print("Dumplog received!")
-            process_dumplog(admin_dumplog["filename"], response)
-        except KeyError:
-            pass
-        except Exception as e:
-            print(f"\033[1;31mWork_Gen-Error: {e}\033[0;0m")
+    # if admin_dumplog is not None:
+    #     try:
+    #         print(f"Printing dumplog!")
+    #         sckt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #         # sckt.settimeout(2)
+    #         sckt.connect((load_balancer_ip, load_balancer_port))
+    #         data = json.dumps(admin_dumplog)
+    #         http_request = f"POST {CommandURLs[admin_dumplog['Command']].value} HTTP/1.1\nHOST: {load_balancer_ip}:{load_balancer_port}\nContent-Type: application/json\nAccept: application/json\n{data}"
+    #         # print(http_request)
+    #         sckt.sendall(str.encode(http_request))
+    #         print("Receiving dumplog...")
+    #         response = recvall(sckt).decode()
+    #         print("Dumplog received!")
+    #         process_dumplog(admin_dumplog["filename"], response)
+    #     except KeyError:
+    #         pass
+    #     except Exception as e:
+    #         print(f"\033[1;31mWork_Gen-Error: {e}\033[0;0m")

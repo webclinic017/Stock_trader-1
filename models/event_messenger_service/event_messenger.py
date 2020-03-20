@@ -23,14 +23,14 @@ class event_messenger:
         self.event_status_mutex = threading.Lock()
 
     def set_event(self, event_id, event_type, status, username, stock_symbol, target_dollars, target_cents):
-        assert (event_type == EventTypes.BUY or event_type == EventTypes.SELL)
+        assert (event_type == self.EventTypes.BUY or event_type == self.EventTypes.SELL)
         key = f"{event_type}_{event_id}_{status}"
 
         self.r.hmset(key, {"event_id": event_id, "event_type": event_type, "status": status, "username": username, "stock_symbol": stock_symbol, "target_dollars": target_dollars, "target_cents": target_cents})
         return {"status": "SUCCESS", "event_id": event_id}
 
     def get_all_pending_events(self):
-        match_str = f"**_**_{PENDING}"
+        match_str = f"**_**_{self.PENDING}"
         return self.get_all_matching_events(match_str)
     
     def get_all_matching_events(self, match_str, first_result=False):

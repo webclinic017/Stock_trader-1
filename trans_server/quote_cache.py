@@ -23,7 +23,7 @@ class QuoteCache:
         self.quote_cache_host = os.environ.get("quote_cache_host")
         self.quote_cache_port = os.environ.get("quote_cache_port")
         self.quote_server_host = os.environ.get("quote_server_host")
-        self.quote_server_port = os.environ.get("quote_server_port")
+        self.quote_server_port = int(os.environ.get("quote_server_port"))
         self.quote_server = int(os.environ.get("quote_server"))
 
     def new_quote(self, symbol, user):
@@ -38,7 +38,7 @@ class QuoteCache:
             except Exception as e:
                 print(f"\033[1;31m{e}\033[0;0m")
         else:
-            time.sleep(2)
+            # time.sleep(2)
             data = ["20.87", symbol, user, time.time(), "QWERTYUIOP"]
 
         qtm = time.time()
