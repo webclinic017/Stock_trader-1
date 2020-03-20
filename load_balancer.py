@@ -38,8 +38,8 @@ class Server:
                 _socket = self.socket
                 _socket.shutdown(socket.SHUT_RDWR)
                 _socket.close()
-        except OSError:
-            pass
+        except OSError as e:
+            print(e)
 
     def recvall(self):
         # Helper function to recv all bytes from response
@@ -101,6 +101,19 @@ class ConnectionThread(threading.Thread):
 def terminate_sockets():
     [server.close_socket() for server in servers]
 
+class ConnectionPool:
+    def __init__(self):
+        self.pool = []
+    def new_connection(self, server, workload_conn, incoming_message):
+        connection_thread = ConnectionThread(server, workload_conn, incoming_message)
+        connection_thread.start()
+        self.pool.append(connection_thread)
+    def __repr__(self):
+        string = "---------------\nconnection pool: \n"
+        for conn in self.pool:
+            string = string + "\n" + str(conn.is_alive())
+        return string + "\n---------------\n"
+        
 def users_distribution_report():
     user_ids = users.keys()
     distribution = {}
@@ -159,14 +172,15 @@ if __name__ == "__main__":
         workload_socket.bind((load_balancer_host, load_balancer_port))
         workload_socket.listen(1500)
         print(f"\033[1;34mload balancer service running on {load_balancer_host}:{load_balancer_port}...\033[0;0m")
+        connection_pool = ConnectionPool()
         while (True):
+            print(connection_pool)
             workload_conn, addr = workload_socket.accept()
             incoming_message = workload_conn.recv(BUFFER_SIZE).decode()
             if (len(incoming_message) > 0):
                 username = get_username(incoming_message)
                 server = set_user_relay(username)
-                connection_thread = ConnectionThread(server, workload_conn, incoming_message)
-                connection_thread.start()
+                connection_pool.new_connection(server=server, workload_conn=workload_conn, incoming_message=incoming_message)
     except Exception as e:
         print(f"\033[1;31mLoad_Bal:{type(e)}\033[0;0m")
         print(f"\033[1;31m{e}\033[0;0m")

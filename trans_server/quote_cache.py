@@ -5,6 +5,14 @@ from audit_logger.AuditCommandType import AuditCommandType
 BUFFER_SIZE = 4096
 import requests
 from currency import Currency
+import os
+from dotenv import load_dotenv
+load_dotenv()
+quote_cache_host = os.environ.get("quote_cache_host")
+quote_cache_port = os.environ.get("quote_cache_port")
+quote_server_host = os.environ.get("quote_server_host")
+quote_server_port = os.environ.get("quote_server_port")
+quote_server = int(os.environ.get("quote_server"))
 
 class QuoteCacheUrls:
     CACHE_QUOTE = "cache_quote"
@@ -12,19 +20,13 @@ class QuoteCacheUrls:
 
 class QuoteCache:
     def __init__(self, server_name, protocol):
-        self.load_env()
+        self.quote_cache_host = quote_cache_host
+        self.quote_cache_port = quote_cache_port
+        self.quote_server_host = quote_server_host
+        self.quote_server_port = quote_server_port
+        self.quote_server = quote_server
         self._server_name = server_name
         self.quote_cache_server_url = f"{protocol}://{self.quote_cache_host}:{self.quote_cache_port}"
-
-    def load_env(self):
-        import os
-        from dotenv import load_dotenv
-        load_dotenv()
-        self.quote_cache_host = os.environ.get("quote_cache_host")
-        self.quote_cache_port = os.environ.get("quote_cache_port")
-        self.quote_server_host = os.environ.get("quote_server_host")
-        self.quote_server_port = os.environ.get("quote_server_port")
-        self.quote_server = int(os.environ.get("quote_server"))
 
     def new_quote(self, symbol, user):
         if (self.quote_server):

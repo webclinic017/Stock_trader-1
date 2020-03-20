@@ -3,10 +3,18 @@ import socket
 import requests
 import json
 from enum_utils import CommandURLs
+import os
+from dotenv import load_dotenv
 BUFFER_SIZE = 4096
 
 # command line usage: "py workload_generator.py --1"
 # Where '--1' is the workload file to use as stated below
+
+load_dotenv()
+load_balancer_ip = os.environ.get("load_balancer_host")
+load_balancer_port = int(os.environ.get("load_balancer_port"))
+protocol = "http"
+load_balancer_url = f"{protocol}://{load_balancer_ip}:{load_balancer_port}"
 
 workload_paths = {
     "--1": "./workload_files/1userWorkLoad.txt",
@@ -28,10 +36,6 @@ workload_paths = {
     "--2018": "./workload_files/final_workload_2018.txt",
     "--2019": "./workload_files/final_workload_2019.txt",
 }
-
-load_balancer_ip = "localhost"
-load_balancer_port = 44420
-load_balancer_url = f"http://{load_balancer_ip}:{load_balancer_port}"
 
 def process_dumplog(output_filename, dumplog_response):
     try:

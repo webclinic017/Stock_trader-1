@@ -2,6 +2,8 @@ import select
 import socket
 import json
 import threading
+import os
+from dotenv import load_dotenv
 from threading import Thread
 from event_server import QuoteThread
 from audit_logger.AuditLogBuilder import AuditLogBuilder
@@ -10,11 +12,16 @@ from currency import Currency
 
 BUFFER_SIZE = 4096
 
+load_dotenv()
+addr = os.environ.get("trans_host")
+port = os.environ.get("trans_port")
+
 # noinspection PyRedundantParentheses
 class TransactionServer():
     # Create a server socket then bind and listen the socket
     def __init__(self, cli_data, cache, events, server_name):
-        self.load_env()
+        self.addr = addr
+        self.port = port
         self._server_name = server_name
         self.cli_data = cli_data
         self.cache = cache
@@ -22,13 +29,6 @@ class TransactionServer():
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind((self.addr, int(self.port)))
         self.server.listen(1500)
-
-    def load_env(self):
-        import os
-        from dotenv import load_dotenv
-        load_dotenv()
-        self.addr = os.environ.get("trans_host")
-        self.port = os.environ.get("trans_port")
 
     ##### Base Commands #####
     def add(self, data):
@@ -80,6 +80,8 @@ class TransactionServer():
             succeeded = status == "SUCCESS"
 
         except Exception as e:
+            print("EXCEPTION RAISED")
+            print(type(e))
             print(f"\033[1;33mTrans-Server:{e}\033[0;0m")
             pass
         self.cli_data = cli_data
