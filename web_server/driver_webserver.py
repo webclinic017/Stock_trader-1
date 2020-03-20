@@ -8,6 +8,8 @@ load_dotenv()
 BUFFER_SIZE = 4096
 protocol = "http"
 server_name = "web server"
+lb_socks = 0
+ts_socks = 0
 
 # transaction_server_ip = "192.168.1.229"  # IP on comp 17
 transaction_server_ip = os.environ.get("trans_host")
@@ -19,9 +21,10 @@ web_server_port = os.environ.get("web_port")
 base_url = f"{web_server_host}:{web_server_port}"
 
 def send_to_trans_server(transaction_payload):
-
+    global ts_socks
     sckt_trans = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sckt_trans.connect((transaction_server_ip, int(transaction_server_port)))
+    ts_socks += 1
 
     # Forward request
     sckt_trans.sendall(str.encode(json.dumps(transaction_payload)))
@@ -29,7 +32,7 @@ def send_to_trans_server(transaction_payload):
     # Receive response
     trans_response = sckt_trans.recv(BUFFER_SIZE).decode()
     sckt_trans.close()
-
+    ts_socks -= 1
     return trans_response
 
 def get_route(http_request):
@@ -49,7 +52,9 @@ class ConnectionThread(threading.Thread):
         super().__init__()
         self.workload_conn = workload_conn
         self.addr = addr
+
     def run(self):
+        global lb_socks
         conn = self.workload_conn
         incoming_request = conn.recv(BUFFER_SIZE).decode()
         if (len(incoming_request) > 0):
@@ -65,21 +70,26 @@ class ConnectionThread(threading.Thread):
         try:
             conn.shutdown(socket.SHUT_RDWR)
             conn.close()
+            lb_socks -= 1
         except OSError as e:
-            print(f"\033[1;31mWeb_Srv:{e}\033[0;0m")
+            print(f"\033[1;31mWeb_Srv.run:{e}\033[0;0m")
 
 def listen():
+    global lb_socks
+    global ts_socks
     web_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     web_socket.bind((web_server_host, int(web_server_port)))
     web_socket.listen(1500)
     while (True):
         try:
             workload_conn, addr = web_socket.accept()
+            lb_socks += 1
             connection_thread = ConnectionThread(workload_conn=workload_conn, addr=addr)
             connection_thread.start()
         except Exception as e:
-            print(f"\033[1;31mWeb_Srv:{type(e)}\033[0;0m")
-            print(f"\033[1;31m{e}\033[0;0m")
+            print(f"\033[1;31mWeb_Srv.listen:{type(e)}\033[0;0m")
+            print(f"\033[1;31mWeb_Srv.listen{e}\033[0;0m")
+        print(f"\033[1;31mWEB_SRV-ld_bln_socks:{lb_socks} | trans_socks:{ts_socks} | threads:{threading.active_count()}\033[0;0m")
 
 def main_page():
     return "landing page stub"

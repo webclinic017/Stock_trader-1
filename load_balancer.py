@@ -167,6 +167,7 @@ if __name__ == "__main__":
                 server = set_user_relay(username)
                 connection_thread = ConnectionThread(server, workload_conn, incoming_message)
                 connection_thread.start()
+            print(f"\033[1;31mLD_BLR-wrk_gen_socks:{len(users)} | wb_srv_socks:{len(servers)} | threads:{threading.active_count()}\033[0;0m")
     except Exception as e:
         print(f"\033[1;31mLoad_Bal:{type(e)}\033[0;0m")
         print(f"\033[1;31m{e}\033[0;0m")
