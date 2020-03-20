@@ -6,14 +6,13 @@ import os
 app = Flask(__name__)
 
 redis_host = os.environ['REDIS_HOST']
-redis_port = os.environ['REDIS_PORT']
+redis_port = int(os.environ['REDIS_PORT'])
 event_messenger_ip = os.environ['MY_EVENT_HOST']
-event_messenger_port = os.environ['MY_EVENT_PORT']
+event_messenger_port = int(os.environ['MY_EVENT_PORT'])
 
 event_messenger_instance = None
 
 print("redis host = " + str(redis_host))
-
 
 
 @app.route("/set_event", methods=["POST"])

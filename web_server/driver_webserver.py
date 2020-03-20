@@ -13,17 +13,17 @@ ts_socks = 0
 
 # transaction_server_ip = "192.168.1.229"  # IP on comp 17
 transaction_server_ip = os.environ.get("trans_host")
-transaction_server_port = os.environ.get("trans_port")
+transaction_server_port = int(os.environ.get("trans_port"))
 audit_log_server_ip = os.environ.get("audit_log_host")
-audit_log_server_port = os.environ.get("audit_log_port")
+audit_log_server_port = int(os.environ.get("audit_log_port"))
 web_server_host = os.environ.get("web_host")
-web_server_port = os.environ.get("web_port")
+web_server_port = int(os.environ.get("web_port"))
 base_url = f"{web_server_host}:{web_server_port}"
 
 def send_to_trans_server(transaction_payload):
     global ts_socks
     sckt_trans = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sckt_trans.connect((transaction_server_ip, int(transaction_server_port)))
+    sckt_trans.connect((transaction_server_ip, transaction_server_port))
     ts_socks += 1
 
     # Forward request
@@ -68,8 +68,9 @@ class ConnectionThread(threading.Thread):
                 response = send_to_trans_server(transaction_payload)
             conn.sendto(str.encode(response), self.addr)
         try:
-            conn.shutdown(socket.SHUT_RDWR)
+            # conn.shutdown(socket.SHUT_RDWR)
             conn.close()
+            print("WS->LB SCKT closed")
             lb_socks -= 1
         except OSError as e:
             print(f"\033[1;31mWeb_Srv.run:{e}\033[0;0m")
@@ -78,7 +79,7 @@ def listen():
     global lb_socks
     global ts_socks
     web_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    web_socket.bind((web_server_host, int(web_server_port)))
+    web_socket.bind((web_server_host, web_server_port))
     web_socket.listen(1500)
     while (True):
         try:
@@ -89,7 +90,7 @@ def listen():
         except Exception as e:
             print(f"\033[1;31mWeb_Srv.listen:{type(e)}\033[0;0m")
             print(f"\033[1;31mWeb_Srv.listen{e}\033[0;0m")
-        print(f"\033[1;31mWEB_SRV-ld_bln_socks:{lb_socks} | trans_socks:{ts_socks} | threads:{threading.active_count()}\033[0;0m")
+        print(f"\033[1;35mWEB_SRV-ld_bln_socks:{lb_socks} | trans_socks:{ts_socks} | threads:{threading.active_count()}\033[0;0m")
 
 def main_page():
     return "landing page stub"

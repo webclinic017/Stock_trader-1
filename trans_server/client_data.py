@@ -31,7 +31,7 @@ class ClientData:
 		from dotenv import load_dotenv
 		load_dotenv()
 		self.user_db_host = os.environ.get("user_db_host")
-		self.user_db_port = os.environ.get("user_db_port")
+		self.user_db_port = int(os.environ.get("user_db_port"))
 
 	def get_current_funds(self, username):
 		data = requests.get(f"{self.user_server_url}/{UserUrls.CURRENT_FUNDS}/{username}").json()

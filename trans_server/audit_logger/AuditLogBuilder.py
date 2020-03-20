@@ -21,7 +21,7 @@ class AuditLogBuilder:
         from dotenv import load_dotenv
         load_dotenv()
         self._audit_log_server_ip = os.environ.get('audit_log_host')
-        self._audit_log_server_port = os.environ.get('audit_log_port')
+        self._audit_log_server_port = int(os.environ.get('audit_log_port'))
 
     def build(self, data):
         return self
