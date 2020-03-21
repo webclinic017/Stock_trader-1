@@ -13,50 +13,29 @@ class Server:
     def __init__(self, ip_addr, port):
         self.ip_addr = ip_addr
         self.port = port
-        self.socket = None
+        self.socket_pool = []
 
     def connect_socket(self):
         _socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         _socket.connect((self.ip_addr, self.port))
-        self.socket = _socket
+        self.socket_pool.append(_socket)
+        return _socket
 
-    def send(self, data):
-        if (self.socket):
-            self.socket.sendall(str.encode(data))
+    def close_all_sockets(self):
+        sockets = self.socket_pool
+        for _socket in sockets:
+            _socket.close()
+            sockets.remove(_socket)
 
-    def recv(self):
-        response = self.socket.recv(BUFFER_SIZE).decode()
-        # response = self.recvall().decode()
-        # if (response == ""):
-        #     self.close_socket()
-        #     return None
-        # else:
-        return response
-
-    def close_socket(self):
+    def close_socket(self, _socket):
         try:
-            if (self.socket):
-                _socket = self.socket
+            if (_socket):
                 _socket.shutdown(socket.SHUT_RDWR)
                 _socket.close()
+                self.socket_pool.remove(_socket)
+                del _socket
         except OSError as e:
             print(e)
-
-    def recvall(self):
-        # Helper function to recv all bytes from response
-        # Must have server side close connection when finished to ensure EOF is caught on this end.
-        data = bytearray()
-        while True:
-            try:
-                packet = self.socket.recv(BUFFER_SIZE)
-                if len(packet) < BUFFER_SIZE:
-                    data.extend(packet)
-                    self.close_socket()
-                    break
-                data.extend(packet)
-            except Exception as e2:
-                print(f"\033[1;31mLoad_Bal.recvall:{e2}\033[0;0m")
-        return data
 
     def __str__(self):
         return f"{self.ip_addr}:{self.port}"
@@ -83,28 +62,49 @@ class ConnectionThread(threading.Thread):
         try:
             print("\033[1;34m----\033[0;0m")
             print(f"\033[1;34mconnecting to {server}\033[0;0m")
-            self.server.connect_socket()
+            self.server_socket = self.server.connect_socket()
             print("\033[1;34msending:\033[0;0m")
             print(f"\033[1;34m{self.message}\033[0;0m")
-            self.server.send(self.message)
+            self._send(self.message)
             print("\033[1;34msent! waiting on response...\033[0;0m")
-            response = self.server.recv()
-            if (response != None and len(response) > 0):
+            response_bytes = self._recvall()
+            if (response_bytes != None and len(response_bytes) > 0):
                 print(f"\033[1;34mreceived response\033[0;0m")
                 # print(response)
                 print("\033[1;34msending back to client...\033[0;0m")
-                self.workload_conn.send(str.encode(response))
+                self.workload_conn.sendall(response_bytes)
                 print("\033[1;34msent!\033[0;0m")
             else:
                 print("\033[1;2;33mno response, closing socket....\033[0;0m")
-                self.server.close_socket()
+                self.server.close_socket(self.server_socket)
                 print("\033[1;2;33msocket closed\033[0;0m")
             print("\033[1;34m----\033[0;0m")
         except Exception as e1:
             print(f"\033[1;31mLD_BAL.run:{e1}\033[0;0m")
 
-def terminate_sockets():
-    [server.close_socket() for server in servers]
+    def _send(self, data):
+        self.server_socket.sendall(str.encode(data))
+
+    def _recv(self):
+        return self.server_socket.recv(BUFFER_SIZE).decode()
+
+    def _recvall(self):
+        # Helper function to recv all bytes from response
+        # Must have server side close connection when finished to ensure EOF is caught on this end.
+        data = bytearray()
+        while True:
+            try:
+                packet = self.server_socket.recv(BUFFER_SIZE)
+                if len(packet) < BUFFER_SIZE:
+                    data.extend(packet)
+                    break
+                data.extend(packet)
+            except Exception as e2:
+                print(f"\033[1;31mLoad_Bal.recvall:{e2}\033[0;0m")
+        return data
+
+def terminate_servers_sockets():
+    [server.close_all_sockets() for server in servers]
 
 class ConnectionPool:
     def __init__(self):
@@ -179,7 +179,6 @@ if __name__ == "__main__":
         print(f"\033[1;34mload balancer service running on {load_balancer_host}:{load_balancer_port}...\033[0;0m")
         connection_pool = ConnectionPool()
         while (True):
-            print(connection_pool)
             workload_conn, addr = workload_socket.accept()
             incoming_message = workload_conn.recv(BUFFER_SIZE).decode()
             if (len(incoming_message) > 0):
@@ -192,4 +191,4 @@ if __name__ == "__main__":
     finally:
         print("\n\033[1;34m" + "distribution report:\033[0;0m")
         print(users_distribution_report())
-        terminate_sockets()
+        terminate_servers_sockets()

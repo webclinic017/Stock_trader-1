@@ -9,7 +9,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 quote_cache_host = os.environ.get("quote_cache_host")
-quote_cache_port = os.environ.get("quote_cache_port")
+quote_cache_port = int(os.environ.get("quote_cache_port"))
 quote_server_host = os.environ.get("quote_server_host")
 quote_server_port = int(os.environ.get("quote_server_port"))
 quote_server = int(os.environ.get("quote_server"))

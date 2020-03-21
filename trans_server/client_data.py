@@ -7,7 +7,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 user_db_host = os.environ.get("user_db_host")
-user_db_port = os.environ.get("user_db_port")
+user_db_port = int(os.environ.get("user_db_port"))
 
 class UserUrls:
 		CURRENT_FUNDS = "current_funds"
