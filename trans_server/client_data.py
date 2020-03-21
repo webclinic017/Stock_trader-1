@@ -3,6 +3,11 @@ import threading
 from currency import Currency
 import threading
 import requests
+import os
+from dotenv import load_dotenv
+load_dotenv()
+user_db_host = os.environ.get("user_db_host")
+user_db_port = int(os.environ.get("user_db_port"))
 
 class UserUrls:
 		CURRENT_FUNDS = "current_funds"
@@ -18,20 +23,13 @@ class UserUrls:
 		CLEAR_OLD_COMMANDS = "clear_old_commands"
 
 class ClientData:
-
 	# Could be extended to load users on init
 	def __init__(self, server_name, protocol):
-		self.load_env()
+		self.user_db_host = user_db_host
+		self.user_db_port = user_db_port
 		self._server_name = server_name
 		self.lock = threading.Lock()
 		self.user_server_url = f"{protocol}://{self.user_db_host}:{self.user_db_port}"
-
-	def load_env(self):
-		import os
-		from dotenv import load_dotenv
-		load_dotenv()
-		self.user_db_host = os.environ.get("user_db_host")
-		self.user_db_port = int(os.environ.get("user_db_port"))
 
 	def get_current_funds(self, username):
 		data = requests.get(f"{self.user_server_url}/{UserUrls.CURRENT_FUNDS}/{username}").json()

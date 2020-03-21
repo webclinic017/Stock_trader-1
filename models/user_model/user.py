@@ -247,7 +247,7 @@ class user:
                         pass
                 self.r.hset(username, key, json.dumps(cleared_stack))
             except Exception as e:
-                print(f"\033[1;31mUser.py:{e}\033[0;0m")
+                print(f"\033[1;31m {type(e)} User.py:{e}\033[0;0m")
                 response["status"] = "ERROR"
                 response["message"] = str(e)
         finally:

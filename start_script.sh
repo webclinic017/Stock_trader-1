@@ -33,6 +33,7 @@ else
     echo "kill -9 ${!}" >> kill_script.sh
     (python3 web_server/driver_webserver.py)& echo "web server running on ${web_host}:${web_port}, with pid ${!}"
     echo "kill -9 ${!}" >> kill_script.sh
+
     (gunicorn --workers=2 --threads=16 --bind="${user_db_host}:${user_db_port}" --chdir=models/user_model user_api:app)& echo "user db server running on ${user_db_host}:${user_db_port}, with pid ${!}"
     echo "kill -9 ${!}" >> kill_script.sh
     (gunicorn --workers=2 --threads=16 --bind="${quote_cache_host}:${quote_cache_port}" --chdir=models/quote_cache quote_cache_api:app)& echo "quote cache server running on ${quote_cache_host}:${quote_cache_port}, with pid ${!}"

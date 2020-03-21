@@ -3,10 +3,15 @@ import time
 import requests
 import json
 from audit_logger.AuditCommandType import AuditCommandType
-
+import os
+from dotenv import load_dotenv
+load_dotenv()
+audit_log_server_ip = os.environ.get('audit_log_host')
+audit_log_server_port = int(os.environ.get('audit_log_port'))
 class AuditLogBuilder:
     def __init__(self, command, server, commandType):
-        self.load_env()
+        self._audit_log_server_ip = audit_log_server_ip
+        self._audit_log_server_port = audit_log_server_port
         self._protocol = "http"
         self._audit_log = {}
         self._server = server
@@ -15,13 +20,6 @@ class AuditLogBuilder:
             self.build = self._func_wrapper(self._method[command])
         except KeyError:
             pass
-
-    def load_env(self):
-        import os
-        from dotenv import load_dotenv
-        load_dotenv()
-        self._audit_log_server_ip = os.environ.get('audit_log_host')
-        self._audit_log_server_port = int(os.environ.get('audit_log_port'))
 
     def build(self, data):
         return self
