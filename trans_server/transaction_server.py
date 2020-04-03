@@ -11,6 +11,7 @@ from audit_logger.AuditCommandType import AuditCommandType
 from currency import Currency
 
 BUFFER_SIZE = 4096
+STUBBED = False
 
 load_dotenv()
 addr = os.environ.get("trans_host")
@@ -285,12 +286,7 @@ class TransactionServer():
         return valid
 
     # Command entry point
-    def transaction(self, conn):
-        # TODO: We should consider creating a queue for the incoming commands.
-        incoming_data = conn.recv(BUFFER_SIZE).decode()
-        if incoming_data == "":
-            return False
-
+    def transaction(self, conn, incoming_data):
         # DEBUG
         # print(f"{incoming_data}")
 
@@ -314,6 +310,11 @@ class TransactionServer():
                 if (type(data) == str):
                     data = json.loads(data)
                 command = data["Command"]
+
+                if STUBBED:
+                    conn.send(str.encode(json.dumps(data)))
+                    conn.close()
+                    return True
 
                 if command == "ADD":
                     data["Succeeded"] = self.add(data)
@@ -347,6 +348,8 @@ class TransactionServer():
                     data["Data"] = self.display_summary(data)
                 # Echo back JSON with new attributes
                 conn.send(str.encode(json.dumps(data, cls=Currency)))
+                conn.shutdown(socket.SHUT_RDWR)
+                conn.close()
 
         except Exception as e:
             print(f"\033[1;31mTrans-Server.transaction:{e}\033[0;0m")
@@ -354,52 +357,71 @@ class TransactionServer():
             print(f"\033[1;31mTrans-Server.transaction:{e}\033[0;0m")
             AuditLogBuilder("ERROR", self._server_name, AuditCommandType.errorEvent).build({"errorMessage": str(e)}).send()
             conn.send(str.encode(f"FAILED! | {data}"))
+            conn.shutdown(socket.SHUT_RDWR)
+            conn.close()
             return False
         return True
 
     def launch(self):
         threads = []
-        open_sockets = []
+        # open_sockets = []
         try:
             while True:
                 # establish connection with client
                 s, addr = self.server.accept()
-                open_sockets.append(s)
+                # open_sockets.append(s)
                 # Start a new thread and return its identifier
                 # print("Thread processing cmd")
-                t = Thread(target=self.transaction, args=(s,))
-                t.start()
-                threads.append(t)
-                # print(f"\033[1;31mTran_srv-threads:{threading.active_count()}\033[0;0m")
+                try:
+                    incoming_data = s.recv(BUFFER_SIZE).decode()
+                    if len(incoming_data) > 0:
+                        t = Thread(target=self.transaction, args=(s, incoming_data))
+                        t.start()
+                    else:
+                        s.shutdown(socket.SHUT_RDWR)
+                        s.close()
+                        # open_sockets.remove(s)
+                except Exception as e1:
+                    print(f"error: {e1}")
+                    pass
+                # t = Thread(target=self.transaction, args=(s,))
+                # t.start()
+                # threads.append(t)
+                print(f"\033[1;35mTran_srv-threads:{threading.active_count()}\033[0;0m")
         except Exception as e:
             print(f"\033[1;31mTrans-Server.launch:{e}\033[0;0m")
-            for s in open_sockets:
-                s.shutdown(socket.SHUT_RDWR)
-                s.close()
+            # for s in open_sockets:
+            #     s.shutdown(socket.SHUT_RDWR)
+            #     s.close()
+            exit()
 
-    # # Non-return function launches the server loop
+    # Non-return function launches the server loop
     # def launch(self):
-    #     open_sockets = []
+    #     open_sockets = [self.server]
     #     try:
     #         while True:
-    #             rlist, wlist, xlisst = select.select([self.server] + open_sockets, [], [])
-    #             for s in rlist:
+    #             print(f"\033[1;31mnum_socks: {len(open_sockets)}\033[0;0m")
+    #             readable, writable, exceptional = select.select(open_sockets, [], [])
+    #             for s in readable:
     #                 if s is self.server:
-    #                     conn, addr = self.server.accept()
-    #                     open_sockets.append(conn)
+    #                     ws_conn, ws_addr = s.accept()
+    #                     open_sockets.append(ws_conn)
     #                 else:
     #                     try:
-    #                         if not self.transaction(s):
-    #                             try:
-    #                                 s.shutdown(socket.SHUT_RDWR)
-    #                                 s.close()
-    #                             except OSError:
-    #                                 pass
+    #                         incoming_data = s.recv(BUFFER_SIZE).decode()
+    #                         if len(incoming_data) > 0:
+    #                             t = Thread(target=self.transaction, args=(s, incoming_data))
+    #                             t.start()
+    #                         else:
+    #                             # s.shutdown(socket.SHUT_RDWR)
+    #                             s.close()
     #                             open_sockets.remove(s)
-    #                     except ConnectionResetError:
-    #                         print("connection reset by peer")
+    #                     except Exception as e1:
+    #                         print(f"error: {e1}")
     #                         pass
-    #     except KeyboardInterrupt:
+    #     except Exception as e2:
     #         for s in open_sockets:
     #             s.shutdown(socket.SHUT_RDWR)
     #             s.close()
+    #         print(f"\033[1;31mTS.launch, error: {e2}\033[0;0m")
+    #         exit()

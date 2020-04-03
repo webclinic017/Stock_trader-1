@@ -1,5 +1,6 @@
 import json
 import math
+import resource
 import socket
 import sys
 import time
@@ -45,7 +46,7 @@ class UserThread(threading.Thread):
         self.args = args
 
     def run(self):
-        forward_requests(self.name, self.args[0], self.args[1])
+        forward_requests(self.name, self.args[0])
 
 
 def process_dumplog(output_filename, dumplog_response):
@@ -152,53 +153,48 @@ def workload_to_user_command_dicts(file_obj):
 
     return user_divided_commands
 
-# Creates a thread for each set of user requests, runs all created threads, assembles and returns responses
-def process_user_requests(request_sets, main_pipe):
+# Creates a thread for each set of user requests, runs all created threads
+def process_user_requests(request_sets):
     # Create the user threads
     user_threads = []
     for usr_idx, user_requests in enumerate(request_sets):
-        a, b = Pipe()
-        thread = UserThread(name=f"{os.getpid()}|{usr_idx}", args=(user_requests, b))
-        user_threads.append((thread, (a, b)))
+        thread = UserThread(name=f"{os.getpid()}|{usr_idx}", args=(user_requests,))
+        user_threads.append(thread)
         thread.start()
 
     # Wait for all threads to finish
-    responses = []
     for t in user_threads:
-        t[0].join()             # Halt main thread until all threads are complete
-        t[1][1].close()         # Close pipe
-        # resp = t[1][0].recv()   # Receive responses from the closed pipe
-        # responses.append(resp)  # Append responses to the main response list
+        t.join()             # Halt main thread until all threads are complete
 
     # Send back list of lists of responses
-    main_pipe.send(responses)
-    print(f"num user response sets:{len(responses)}")
+    #print(f"num user response sets:{len(responses)}")
 
 # Forwards requests for a single user to the web servers(or load balancer), returns responses
-def forward_requests(thread_name, user_requests, user_pipe):
-    # session = requests.session()
-    responses = []
+def forward_requests(thread_name, user_requests):
     for idx, user_request in enumerate(user_requests):
         try:
             print(f"-->SENT:{idx + 1} | pid|thr:{thread_name} | rqst:{user_request}")
-            sckt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sckt.settimeout(5)
-            sckt.connect((load_balancer_ip, load_balancer_port))
+            thd_local = threading.local()
+            thd_local.sckt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            thd_local.sckt.settimeout(5)
+            thd_local.sckt.connect((load_balancer_ip, load_balancer_port))
             data = json.dumps(user_request)
             http_request = f"POST {CommandURLs[user_request['Command']].value} HTTP/1.1\nHOST: {load_balancer_ip}:{load_balancer_port}\nContent-Type: application/json\nAccept: application/json\n{data}"
             # print(http_request)
-            sckt.sendall(str.encode(http_request))
+            thd_local.sckt.sendall(str.encode(http_request))
             #TODO: We are possibly receiving 2 responses at the same time, or the threads are printing at the same time, latter is unlikely though.
-            response = sckt.recv(BUFFER_SIZE).decode()
+            response = thd_local.sckt.recv(BUFFER_SIZE).decode()
             # responses.append(response)
-            sckt.shutdown(socket.SHUT_RDWR)
-            sckt.close()
-            print(f"<--RCVD:{idx + 1} | pid|thr:{thread_name} | {response}")
+            thd_local.sckt.shutdown(socket.SHUT_RDWR)
+            thd_local.sckt.close()
+            # print(f"<--RCVD:{idx + 1} | pid|thr:{thread_name} | {response}")
+            print(f"<--RCVD:{idx + 1} | pid|thr:{thread_name}")
+            # print(f"Total Threads:{threading.active_count()}")
         except Exception as e:
-            print(f"\033[1;31mWork_Gen:{e} | {user_request}\033[0;0m")
+            print(f"\033[1;31mTotal Threads:{threading.active_count()} | error:{e.with_traceback()}\033[0;0m")
+            exit()
+            # print(f"\033[1;31mWork_Gen:{e} | {user_request}\033[0;0m")
     print(f"finished:{thread_name} | active:{threading.active_count()}")
-    # user_pipe.send(responses)
-    # user_pipe.close()
 
 def recvall(sock):
     # Helper function to recv all bytes from response
@@ -224,7 +220,6 @@ if __name__ == "__main__":
     load_balancer_port = int(os.environ.get("load_balancer_port"))
     protocol = "http"
     load_balancer_url = f"{protocol}://{load_balancer_ip}:{load_balancer_port}"
-    startT = time.time()
     file_index = sys.argv[1]
     file_object = open(workload_paths[file_index])
     user_cmd_dict = workload_to_user_command_dicts(file_object)
@@ -238,13 +233,13 @@ if __name__ == "__main__":
     users_on_second_process = num_users - users_on_first_process
     print(f"num_users:{num_users}")
 
+    startT = time.time()
+
     try:
-        a1, b1 = Pipe()
-        a2, b2 = Pipe()
         l1 = user_cmd_dict_list[:users_on_first_process]
         l2 = user_cmd_dict_list[users_on_first_process:]
-        p1 = Process(target=process_user_requests, args=(l1, b1))
-        p2 = Process(target=process_user_requests, args=(l2, b2))
+        p1 = Process(target=process_user_requests, args=(l1,))
+        p2 = Process(target=process_user_requests, args=(l2,))
 
         # Start the processes
         p1.start()
@@ -254,24 +249,18 @@ if __name__ == "__main__":
         p2.join()
 
     except KeyboardInterrupt:
-        p1.kill()
-        p2.kill()
+        endT = time.time()
+        total_time = endT - startT
+        print(f"runtime: {total_time}")
+        num_trans = 10000 if (100 > num_users > 1) else 100000
+        print(f"TPS:{num_trans / total_time}")
         exit()
 
-    # TODO: Need to fix the pipe so we can analyze returned data
-    # b1.close()
-    # b2.close()
-    # resps1 = a1.recv()
-    # resps2 = a2.recv()
-    # num_resps = 0
-    # for element in resps1:
-    #     num_resps += len(element)
-    # for element in resps2:
-    #     num_resps += len(element)
-    # print(f"Total number responses:{num_resps}")
-
     endT = time.time()
-    print(f"runtime: {endT - startT}")
+    total_time = endT - startT
+    print(f"runtime: {total_time}")
+    num_trans = 10000 if (100 > num_users > 1) else 100000
+    print(f"TPS:{num_trans / total_time}")
     print("dumplog stubbed!")
 
     # if admin_dumplog is not None:

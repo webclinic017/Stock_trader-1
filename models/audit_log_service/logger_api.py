@@ -35,5 +35,5 @@ def debug():
     audit_log = logger_instance.debug()
     return json.dumps({"status": "SUCCESS", "data": audit_log})
 
-#if __name__ == "__main__":
-#    app.run(host=audit_log_server_ip, port=audit_log_server_port)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=44415)

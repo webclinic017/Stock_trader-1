@@ -1,3 +1,5 @@
+import resource
+import select
 import socket
 import json
 import threading
@@ -8,6 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 BUFFER_SIZE = 4096
 next_server_index = [0]
+STUBBED = False
 
 class Server:
     def __init__(self, ip_addr, port):
@@ -60,8 +63,11 @@ class ConnectionThread(threading.Thread):
 
     def run(self):
         try:
+            if STUBBED:
+                self.workload_conn.sendall(str.encode(self.message))
+                return
             print("\033[1;34m----\033[0;0m")
-            print(f"\033[1;34mconnecting to {server}\033[0;0m")
+            print(f"\033[1;34mconnecting to {self.server}\033[0;0m")
             self.server_socket = self.server.connect_socket()
             print("\033[1;34msending:\033[0;0m")
             print(f"\033[1;34m{self.message}\033[0;0m")
@@ -74,10 +80,12 @@ class ConnectionThread(threading.Thread):
                 print("\033[1;34msending back to client...\033[0;0m")
                 self.workload_conn.sendall(response_bytes)
                 print("\033[1;34msent!\033[0;0m")
+
             else:
                 print("\033[1;2;33mno response, closing socket....\033[0;0m")
-                self.server.close_socket(self.server_socket)
+                # self.server.close_socket(self.server_socket)
                 print("\033[1;2;33msocket closed\033[0;0m")
+            self.server.close_socket(self.server_socket)
             print("\033[1;34m----\033[0;0m")
         except Exception as e1:
             print(f"\033[1;31mLD_BAL.run:{e1}\033[0;0m")
@@ -136,6 +144,7 @@ def assign_random_server():
     return servers[random.randint(0, len(servers) - 1)]
 
 def set_user_relay(username):
+    if STUBBED: return None
     if (username == None):
         server = assign_random_server()
     else:
@@ -144,7 +153,7 @@ def set_user_relay(username):
         except KeyError:
             server = get_next_available_server()
             users[username] = server
-            print(f"\033[1;34mLoad_Bal.set_user_relay:{username} assigned to server: {str(server)}\033[0;0m")
+            print(f"\033[1;34mLB.set_user_relay:{username} assigned to server: {str(server)}\033[0;0m")
     return server
 
 def get_username_from_query_string(self, query_str):
@@ -169,25 +178,58 @@ def get_username(message):
     username = get_username_from_json(query)
     return username
 
+def launch(work_gen_portal, conn_pool):
+    open_sockets = [work_gen_portal]
+    try:
+        while True:
+            print(f"\033[1;31mnum_socks: {len(open_sockets)}\033[0;0m")
+            readable, writable, exceptional = select.select(open_sockets, [], [])
+            for s in readable:
+                if s is work_gen_portal:
+                    wg_conn, wg_addr = work_gen_portal.accept()
+                    open_sockets.append(wg_conn)
+                else:
+                    try:
+                        incoming_message = s.recv(BUFFER_SIZE).decode()
+                        if len(incoming_message) > 0:
+                            username = get_username(incoming_message)
+                            server = set_user_relay(username)
+                            conn_pool.new_connection(server=server, workload_conn=s, incoming_message=incoming_message)
+                        else:
+                            s.shutdown(socket.SHUT_RDWR)
+                            s.close()
+                            open_sockets.remove(s)
+                    except Exception as e1:
+                        print(f"error: {e1}")
+                        pass
+    except Exception as e2:
+        for s in open_sockets:
+            s.shutdown(socket.SHUT_RDWR)
+            s.close()
+        print(f"\033[1;31mLB.launch, error: {e2}\033[0;0m")
+        exit()
+
 if __name__ == "__main__":
     load_balancer_host = os.environ.get("load_balancer_host")
     load_balancer_port = int(os.environ.get("load_balancer_port"))
     try:
         workload_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         workload_socket.bind((load_balancer_host, load_balancer_port))
-        workload_socket.listen(1010)
+        workload_socket.listen(1500)
         print(f"\033[1;34mload balancer service running on {load_balancer_host}:{load_balancer_port}...\033[0;0m")
         connection_pool = ConnectionPool()
-        while (True):
-            workload_conn, addr = workload_socket.accept()
-            incoming_message = workload_conn.recv(BUFFER_SIZE).decode()
-            if (len(incoming_message) > 0):
-                username = get_username(incoming_message)
-                server = set_user_relay(username)
-                connection_pool.new_connection(server=server, workload_conn=workload_conn, incoming_message=incoming_message)
+        launch(workload_socket, connection_pool)
+        # while True:
+        #     workload_conn, addr = workload_socket.accept()
+        #     incoming_message = workload_conn.recv(BUFFER_SIZE).decode()
+        #     if len(incoming_message) > 0:
+        #         username = get_username(incoming_message)
+        #         server = set_user_relay(username)
+        #         connection_pool.new_connection(server=server, workload_conn=workload_conn, incoming_message=incoming_message)
+        #     print(f"\033[1;35mLD_BAL-wrk_gen_socks:{len(users)} | web_srv_socks:{len(servers)} | threads:{threading.active_count()}\033[0;0m")
     except Exception as e:
-        print(f"\033[1;31mLoad_Bal.main:{type(e)} | \033[0;0m", end="")
-        print(f"\033[1;31m{e.with_traceback()}\033[0;0m")
+        print(f"\033[1;31mLB.main:{type(e)} | \033[0;0m", end="")
+        print(f"\033[1;31m{e}\033[0;0m")
     finally:
         print("\n\033[1;34m" + "distribution report:\033[0;0m")
         print(users_distribution_report())

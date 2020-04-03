@@ -6,6 +6,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 BUFFER_SIZE = 4096
+STUBBED = False
 protocol = "http"
 server_name = "web server"
 lb_socks = 0
@@ -48,20 +49,25 @@ def get_data(http_request):
     return http_request.split("\n")[-1]
 
 class ConnectionThread(threading.Thread):
-    def __init__(self, workload_conn, addr):
+    def __init__(self, loadbal_conn, addr):
         super().__init__()
-        self.workload_conn = workload_conn
+        self.loadbal_conn = loadbal_conn
         self.addr = addr
 
     def run(self):
         global lb_socks
-        conn = self.workload_conn
+        conn = self.loadbal_conn
         incoming_request = conn.recv(BUFFER_SIZE).decode()
-        if (len(incoming_request) > 0):
+        if len(incoming_request) > 0:
+            if STUBBED:
+                conn.sendto(str.encode(incoming_request), self.addr)
+                conn.close()
+                lb_socks -= 1
+                return
             route = get_route(incoming_request)
-            if (route == "/dumpLog"):
+            if route == "/dumpLog":
                 response = dumpLog(get_data(incoming_request))
-            elif (route == "/"):
+            elif route == "/":
                 response = main_page()
             else:
                 transaction_payload = get_data(incoming_request)
@@ -81,11 +87,11 @@ def listen():
     web_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     web_socket.bind((web_server_host, web_server_port))
     web_socket.listen(1500)
-    while (True):
+    while True:
         try:
-            workload_conn, addr = web_socket.accept()
+            loadbal_conn, addr = web_socket.accept()
             lb_socks += 1
-            connection_thread = ConnectionThread(workload_conn=workload_conn, addr=addr)
+            connection_thread = ConnectionThread(loadbal_conn=loadbal_conn, addr=addr)
             connection_thread.start()
         except Exception as e:
             print(f"\033[1;31mWeb_Srv.listen:{type(e)}\033[0;0m")
@@ -94,7 +100,7 @@ def listen():
 
 def main_page():
     return "landing page stub"
-    #return render_template("day_trader.html")
+    # return render_template("day_trader.html")
 
 if __name__ == "__main__":
     listen()
