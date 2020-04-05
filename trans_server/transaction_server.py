@@ -229,7 +229,7 @@ class TransactionServer():
     def validate_command(self, command):
         valid = False
         try:
-            if isinstance(dict, command):
+            if isinstance(command, dict):
                 cmd = command["Command"]
                 usr = command["userid"]
                 if usr.strip() in ("", None):
@@ -315,6 +315,9 @@ class TransactionServer():
                     conn.send(str.encode(json.dumps(data)))
                     conn.close()
                     return True
+
+                if not self.validate_command(data):
+                    continue
 
                 if command == "ADD":
                     data["Succeeded"] = self.add(data)

@@ -191,7 +191,7 @@ def forward_requests(thread_name, user_requests):
             print(f"<--RCVD:{idx + 1} | pid|thr:{thread_name}")
             # print(f"Total Threads:{threading.active_count()}")
         except Exception as e:
-            print(f"\033[1;31mTotal Threads:{threading.active_count()} | error:{e.with_traceback()}\033[0;0m")
+            print(f"\033[1;31mTotal Threads:{threading.active_count()} | error:{e}\033[0;0m")
             exit()
             # print(f"\033[1;31mWork_Gen:{e} | {user_request}\033[0;0m")
     print(f"finished:{thread_name} | active:{threading.active_count()}")
@@ -261,9 +261,10 @@ if __name__ == "__main__":
     print(f"runtime: {total_time}")
     num_trans = 10000 if (100 > num_users > 1) else 100000
     print(f"TPS:{num_trans / total_time}")
-    print("dumplog stubbed!")
 
-    # if admin_dumplog is not None:
+    # if admin_dumplog is None:
+    #     print("dumplog stubbed!")
+    # else:
     #     try:
     #         print(f"Printing dumplog!")
     #         sckt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
