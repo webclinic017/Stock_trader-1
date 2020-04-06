@@ -25,7 +25,9 @@ then
     (gunicorn --workers=2 --threads=16 --bind="${audit_log_host}:${audit_log_port}" --chdir=models/audit_log_service logger_api:app)& echo "audit log server running on ${audit_log_host}:${audit_log_port}, with pid ${!}"
     echo "kill -9 ${!}" >> kill_script.sh
 else
-    (python3 load_balancer.py)& echo "load balancer server running on ${load_balancer_host}:${load_balancer_port}, with pid ${!}"
+#    (python3 load_balancer.py)& echo "load balancer server running on ${load_balancer_host}:${load_balancer_port}, with pid ${!}"
+#    echo "kill -9 ${!}" >> kill_script.sh
+    (python3 LB_Test.py)& echo "LB_Test server running on ${load_balancer_host}:${load_balancer_port}, with pid ${!}"
     echo "kill -9 ${!}" >> kill_script.sh
     (./redis-5.0.8/src/redis-server --port $redis_port)& echo "redis server running on ${redis_host}:${redis_port}, with pid ${!}"
     echo "kill -9 ${!}" >> kill_script.sh
