@@ -4,6 +4,8 @@ import threading
 import queue
 import random
 import os
+from uuid import uuid4
+
 from dotenv import load_dotenv
 load_dotenv()
 BUFFER_SIZE = 4096
@@ -169,6 +171,24 @@ def get_username(message):
     username = get_username_from_json(query)
     return username
 
+def get_msg_dict(message):
+    message_lines = message.split("\n")
+    query = message_lines[-1]
+    return json.loads(query)
+
+def authenticate_user(username, password):
+    # Check username exists
+    if username in users:
+        # TODO: verify password with web server which returns uuid if verified
+        auth_token = uuid4()
+        return auth_token
+    else:
+        return None
+
+def isLogin(msg_dict):
+    return msg_dict["Command"] == "login"
+
+
 if __name__ == "__main__":
     load_balancer_host = os.environ.get("load_balancer_host")
     load_balancer_port = int(os.environ.get("load_balancer_port"))
@@ -182,9 +202,13 @@ if __name__ == "__main__":
             workload_conn, addr = workload_socket.accept()
             incoming_message = workload_conn.recv(BUFFER_SIZE).decode()
             if (len(incoming_message) > 0):
-                username = get_username(incoming_message)
-                server = set_user_relay(username)
-                connection_pool.new_connection(server=server, workload_conn=workload_conn, incoming_message=incoming_message)
+                msg_dict = get_msg_dict(incoming_message)
+                if isLogin(msg_dict):
+                    auth_token = authenticate_user(msg_dict["userid"], msg_dict["password"])
+                    workload_conn.sendall(str.encode(str(auth_token)))
+                else:
+                    server = set_user_relay(msg_dict["userid"])
+                    connection_pool.new_connection(server=server, workload_conn=workload_conn, incoming_message=incoming_message)
     except Exception as e:
         print(f"\033[1;31mLoad_Bal.main:{type(e)} | \033[0;0m", end="")
         print(f"\033[1;31m{e.with_traceback()}\033[0;0m")
