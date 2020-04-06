@@ -1,4 +1,30 @@
 
+
+// lb_socket.onopen = function(e) {
+//   alert("[open] Connection established");
+//   alert("Sending to server");
+// };
+
+// lb_socket.onmessage = function(event) {
+//   alert(`[message] Data received from server: ${event.data}`);
+// };
+
+// lb_socket.onclose = function(event) {
+//   if (event.wasClean) {
+//     alert(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+//   } else {
+//     // e.g. server process killed or network down
+//     // event.code is usually 1006 in this case
+//     alert('[close] Connection died');
+//   }
+// };
+
+// lb_socket.onerror = function(error) {
+//   alert(`[error] ${error.message}`);
+// };
+
+lb_socket = new WebSocket("ws://127.0.0.1:44421");
+
 function add() {
     event.preventDefault(); //stops page from resetting/reloading
     let currentUser = document.getElementById("userId");
