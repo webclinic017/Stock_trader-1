@@ -176,17 +176,13 @@ def get_msg_dict(message):
     query = message_lines[-1]
     return json.loads(query)
 
-def authenticate_user(username, password):
+def authenticate_user(username, password, connection_pool, server, workload_conn, incoming_message):
     # Check username exists
-    user_server = users.get("username")
-    if user_server:
-        auth_token = user_server.sendall(username, password)
-        return auth_token
-    else:
-        return None
+    if username in users:
+        connection_pool.new_connection(server=server, workload_conn=workload_conn, incoming_message=incoming_message)
 
 def isLogin(msg_dict):
-    return msg_dict["Command"] == "login"
+    return msg_dict["Command"] == "LOGIN"
 
 
 if __name__ == "__main__":
@@ -204,14 +200,14 @@ if __name__ == "__main__":
             if (len(incoming_message) > 0):
                 msg_dict = get_msg_dict(incoming_message)
                 if isLogin(msg_dict):
-                    auth_token = authenticate_user(msg_dict["userid"], msg_dict["password"])
-                    workload_conn.sendall(str.encode(str(auth_token)))
+                    # will asynchronously create a new connection to the client connection to relay the server's response
+                    authenticate_user(msg_dict["userid"], msg_dict["password"], connection_pool, server, workload_conn, incoming_message)
                 else:
                     server = set_user_relay(msg_dict["userid"])
                     connection_pool.new_connection(server=server, workload_conn=workload_conn, incoming_message=incoming_message)
     except Exception as e:
         print(f"\033[1;31mLoad_Bal.main:{type(e)} | \033[0;0m", end="")
-        print(f"\033[1;31m{e}\033[0;0m")
+        print(f"\033[1;31m{e.with_traceback()}\033[0;0m")
     finally:
         print("\n\033[1;34m" + "distribution report:\033[0;0m")
         print(users_distribution_report())

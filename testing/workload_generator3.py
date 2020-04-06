@@ -10,6 +10,8 @@ from multiprocessing import Process, Pool, Queue, Pipe
 import threading
 from enum_utils import CommandURLs
 
+WORKLOAD_SESSION_SECRET_TOKEN = "do_not_alter_this_secret_session_token"
+
 # command line usage: "py workload_generator.py --1"
 # Where '--1' is the workload file to use as stated below
 
@@ -70,7 +72,7 @@ def workload_to_user_command_dicts(file_obj):
     client_actions_raw = [line.rstrip().split()[-1].split(",") for line in file_obj]
     for i, action in enumerate(client_actions_raw):
         command = action[0]
-        next_command = {"Command": command}
+        next_command = {"Command": command, "session": WORKLOAD_SESSION_SECRET_TOKEN}
         try:
             if command == "ADD":
                 next_command["userid"] = action[1]
