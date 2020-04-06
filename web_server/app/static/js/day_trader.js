@@ -27,6 +27,7 @@ lb_socket = new WebSocket("ws://127.0.0.1:44421");
 
 function add() {
     event.preventDefault(); //stops page from resetting/reloading
+    // let lb_socket = new WebSocket("wss://127.0.0.1:44421");
     let currentUser = document.getElementById("userId");
     let add_field = document.getElementById("addFunds");
     if (add_field.value.length === 0 || parseFloat(add_field.value) <= 0) {
@@ -43,7 +44,14 @@ function add() {
         userid: currentUser.value,
         amount: add_field.value
     };
-    $.post("addFunds", parcel, function (response) {update_balance(response);}, "json");
+    // $.post("addFunds", parcel, function (response) {update_balance(response);}, "json");
+    // if (true) {
+    //     console.log(parcel.toString());
+    // }
+    lb_socket.send(parcel.toString())
+    lb_socket.onmessage = function(event) {
+        console.log(`[message] Data received from server: ${event.data}`);
+    };
     add_field.value = "";
 }
 
