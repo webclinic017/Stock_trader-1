@@ -176,17 +176,13 @@ def get_msg_dict(message):
     query = message_lines[-1]
     return json.loads(query)
 
-def authenticate_user(username, password):
+def authenticate_user(username, password, connection_pool, server, workload_conn, incoming_message):
     # Check username exists
     if username in users:
-        # TODO: verify password with web server which returns uuid if verified
-        auth_token = uuid4()
-        return auth_token
-    else:
-        return None
+        connection_pool.new_connection(server=server, workload_conn=workload_conn, incoming_message=incoming_message)
 
 def isLogin(msg_dict):
-    return msg_dict["Command"] == "login"
+    return msg_dict["Command"] == "LOGIN"
 
 
 if __name__ == "__main__":
@@ -204,8 +200,8 @@ if __name__ == "__main__":
             if (len(incoming_message) > 0):
                 msg_dict = get_msg_dict(incoming_message)
                 if isLogin(msg_dict):
-                    auth_token = authenticate_user(msg_dict["userid"], msg_dict["password"])
-                    workload_conn.sendall(str.encode(str(auth_token)))
+                    # will asynchronously create a new connection to the client connection to relay the server's response
+                    authenticate_user(msg_dict["userid"], msg_dict["password"], connection_pool, server, workload_conn, incoming_message)
                 else:
                     server = set_user_relay(msg_dict["userid"])
                     connection_pool.new_connection(server=server, workload_conn=workload_conn, incoming_message=incoming_message)

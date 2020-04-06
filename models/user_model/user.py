@@ -1,6 +1,8 @@
 import redis
 import json
 import threading
+import uuid
+
 from heapq import heappop, heappush
 class Resource:
     STOCK_DELTA = "stock_delta"
@@ -16,19 +18,48 @@ class user:
     def __init__(self):
         self.load_env()
         self.r = redis.Redis(host=self.redis_host, port=self.redis_port)
+        self.r.set("workload_session_secret_token", "do_not_alter_this_secret_session_token")
         self.resources = {
             Resource.STOCK_DELTA: {},
             Resource.ADD_FUNDS_DELTA: {},
             Resource.SET_TRIGGER: {},
             Resource.COMMAND_STACK: {}
         }
-
     def load_env(self):
         import os
         from dotenv import load_dotenv
         load_dotenv()
         self.redis_host = os.environ.get("redis_host")
         self.redis_port = int(os.environ.get("redis_port"))
+
+    def authenticate(self, username, password):
+        user = self.get_user(username)
+        if (password == user["password"]):
+            session = str(uuid.uuid4())
+            self.r.hset(username, "session", session)
+            response = {"status": "SUCCESS", "session": session}
+        else:
+            response = {"status": "FAILED", "session": None}
+        return response
+
+    def check_session(self, username, session):
+        user = self.get_user(username)
+        try:
+            if (session == user["session"]):
+                response = {"status": "SUCCESS"}
+            else:
+                workload_session = str(self.r.get("workload_session_secret_token"), encoding="utf-8")
+                if (session == workload_session):
+                    response = {"status": "SUCCESS"}
+                else:
+                    response = {"status": "FAILURE"}
+        except KeyError:
+            workload_session = str(self.r.get("workload_session_secret_token"), encoding="utf-8")
+            if (session == workload_session):
+                response = {"status": "SUCCESS"}
+            else:
+                response = {"status": "FAILURE"}
+        return response
 
     def _lock(self, resource, username):
         mutex = self._get_mutex(resource, username)
@@ -77,8 +108,8 @@ class user:
             sanitized_input = input
         return sanitized_input
 
-    def create_new_user(self, username):
-        empty_user = {"stocks": "{}", "dollars": 0, "cents": 0, "buy_triggers": "{}", "sell_triggers": "{}", "buy_stack": "[]", "sell_stack": "[]"}
+    def create_new_user(self, username, password=""):
+        empty_user = {"stocks": "{}", "dollars": 0, "cents": 0, "buy_triggers": "{}", "sell_triggers": "{}", "buy_stack": "[]", "sell_stack": "[]", "session": "", "password": password}
         success = self.r.hmset(username, empty_user)
         empty_user["username"] = username
         return empty_user

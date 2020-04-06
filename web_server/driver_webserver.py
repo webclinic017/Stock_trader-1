@@ -75,18 +75,38 @@ class ConnectionThread(threading.Thread):
         except OSError as e:
             print(f"\033[1;31mWeb_Srv.run:{e}\033[0;0m")
 
+class ConnectionPool:
+    def __init__(self):
+        self.pool = []
+    def add_connection(self, connection_thread):
+        connection_thread.start()
+        self.pool.append(connection_thread)
+    def number_of_active_connections(self):
+        num = 0
+        for conn in self.pool:
+            if (conn.is_alive()):
+                num = num + 1
+        return num
+    def __repr__(self):
+        string = "---------------\nconnection pool: \n"
+        for conn in self.pool:
+            string = string + "\n" + str(conn.is_alive())
+        return string + "\n---------------\n"
+
 def listen():
     global lb_socks
     global ts_socks
     web_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     web_socket.bind((web_server_host, web_server_port))
     web_socket.listen(1500)
+    connection_pool = ConnectionPool()
     while (True):
         try:
             workload_conn, addr = web_socket.accept()
             lb_socks += 1
             connection_thread = ConnectionThread(workload_conn=workload_conn, addr=addr)
-            connection_thread.start()
+            connection_pool.add_connection(connection_thread)
+            print(f"number of active connections: {connection_pool.number_of_active_connections()}")
         except Exception as e:
             print(f"\033[1;31mWeb_Srv.listen:{type(e)}\033[0;0m")
             print(f"\033[1;31mWeb_Srv.listen{e}\033[0;0m")

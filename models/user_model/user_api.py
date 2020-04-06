@@ -6,6 +6,24 @@ app = Flask(__name__)
 
 user_instance = user()
 
+@app.route("/authenticate", methods=["POST"])
+def authenticate():
+    data = request.json
+    username = data["username"]
+    password = data["password"]
+    response = user_instance.authenticate(username, password)
+    return json.dumps(response)
+
+@app.route("/check_session", methods=["POST"])
+def check_session():
+    data = request.json
+    username = data["username"]
+    session = data["session"]
+    response = user_instance.check_session(username, session)
+    print("CHECK_SESSION")
+    print(response)
+    return json.dumps(response)
+
 @app.route("/current_funds/<string:username>", methods=["GET"])
 def current_funds(username):
     response = user_instance.user_funds(username)
@@ -91,7 +109,8 @@ def add_funds():
 def create_new_user():
     data = request.json
     username = data["username"]
-    response = user_instance.create_new_user(username)
+    password = data["password"]
+    response = user_instance.create_new_user(username, password)
     return json.dumps(response)
 
 @app.route("/set_buy_trigger", methods=["POST"])
