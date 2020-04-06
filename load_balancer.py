@@ -178,9 +178,9 @@ def get_msg_dict(message):
 
 def authenticate_user(username, password):
     # Check username exists
-    if username in users:
-        # TODO: verify password with web server which returns uuid if verified
-        auth_token = uuid4()
+    user_server = users.get("username")
+    if user_server:
+        auth_token = user_server.sendall(username, password)
         return auth_token
     else:
         return None
