@@ -31,6 +31,16 @@ class TransactionServer():
         self.server.listen(1500)
 
     ##### Base Commands #####
+    def authenticate(self, data):
+        username = data["userid"]
+        password = data["password"]
+        return self.cli_data.check_session(username, password)
+
+    def check_session(self, data):
+        username = data["userid"]
+        session = data["session"]
+        return self.cli_data.check_session(username, session)
+
     def add(self, data):
         user = data["userid"]
         AuditLogBuilder("ADD", self._server_name, AuditCommandType.userCommand).build(data).send()
@@ -313,9 +323,18 @@ class TransactionServer():
                 print(f"\033[1;32mTrans-Server:{data}\033[0;0m")
                 if (type(data) == str):
                     data = json.loads(data)
+
+                if (not self.check_session(data)):
+                    conn.send(str.encode(f"FAILED! user is not authenticated for the request | {data}"))
+                    return False
+
                 command = data["Command"]
 
-                if command == "ADD":
+                if command == "LOGIN":
+                    resp = self.authenticate(data)
+                    data["Succeeded"] = resp["status"] == "SUCCESS"
+                    data["session"] = resp["session"]
+                elif command == "ADD":
                     data["Succeeded"] = self.add(data)
                 elif command == "QUOTE":
                     data["Succeeded"] = self.quote(data)

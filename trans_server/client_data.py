@@ -10,17 +10,19 @@ user_db_host = os.environ.get("user_db_host")
 user_db_port = int(os.environ.get("user_db_port"))
 
 class UserUrls:
-		CURRENT_FUNDS = "current_funds"
-		COMMIT_BUY = "commit_buy"
-		COMMIT_SELL = "commit_sell"
-		ADD_FUNDS = "add_funds"
-		CREATE_NEW_USER = "create_new_user"
-		SET_BUY_TRIGGER = "set_buy_trigger"
-		SET_SELL_TRIGGER = "set_sell_trigger"
-		GET_STOCKS_HELD = "get_stocks_held"
-		PUSH_COMMAND = "push_command"
-		POP_COMMAND = "pop_command"
-		CLEAR_OLD_COMMANDS = "clear_old_commands"
+	AUTHENTICATE = "authenticate"
+	CHECK_SESSION = "check_session"
+	CURRENT_FUNDS = "current_funds"
+	COMMIT_BUY = "commit_buy"
+	COMMIT_SELL = "commit_sell"
+	ADD_FUNDS = "add_funds"
+	CREATE_NEW_USER = "create_new_user"
+	SET_BUY_TRIGGER = "set_buy_trigger"
+	SET_SELL_TRIGGER = "set_sell_trigger"
+	GET_STOCKS_HELD = "get_stocks_held"
+	PUSH_COMMAND = "push_command"
+	POP_COMMAND = "pop_command"
+	CLEAR_OLD_COMMANDS = "clear_old_commands"
 
 class ClientData:
 	# Could be extended to load users on init
@@ -31,11 +33,21 @@ class ClientData:
 		self.lock = threading.Lock()
 		self.user_server_url = f"{protocol}://{self.user_db_host}:{self.user_db_port}"
 
+	def authenticate(self, username, password):
+		data = {"username": username, "password": password}
+		response = self.post_to_model(UserUrls.AUTHENTICATE, data)
+		return response
+
+	def check_session(self, username, session):
+		data = {"username": username, "session": session}
+		response = self.post_to_model(UserUrls.CHECK_SESSION, data)
+		return response
+
 	def get_current_funds(self, username):
 		data = requests.get(f"{self.user_server_url}/{UserUrls.CURRENT_FUNDS}/{username}").json()
 		return Currency(data["dollars"]) + Currency(int(data["cents"]) / 100)
 
-	def persist(self, endpoint, data_dict):
+	def post_to_model(self, endpoint, data_dict):
 		return requests.post(f"{self.user_server_url}/{endpoint}", json=data_dict).json()
 
 	def new_user(self, username):
@@ -45,7 +57,7 @@ class ClientData:
 		# sel -> stack of pending sells
 		
 		assert type(username) == str
-		return self.persist(UserUrls.CREATE_NEW_USER, {"username": username})
+		return self.post_to_model(UserUrls.CREATE_NEW_USER, {"username": username})
 
 	def get_user(self, username):
 		assert type(username) == str
@@ -69,14 +81,14 @@ class ClientData:
 		try:
 			assert type(user) == str
 			amount = Currency(amount)
-			self.persist(UserUrls.ADD_FUNDS, {"username": user, "dollars": amount.dollars, "cents": amount.cents})
+			self.post_to_model(UserUrls.ADD_FUNDS, {"username": user, "dollars": amount.dollars, "cents": amount.cents})
 		except KeyError:
 			self.new_user(user)
 
 		return True
 
 	def commit_buy(self, username, stock_symbol, price, buy_amount):
-		return self.persist(
+		return self.post_to_model(
 			UserUrls.COMMIT_BUY, 
 			{
 				"username": username,
@@ -92,7 +104,7 @@ class ClientData:
 		total = price * count
 		stock_price = Currency(price)
 		cost = stock_price * count
-		return self.persist(
+		return self.post_to_model(
 			UserUrls.COMMIT_SELL, 
 			{
 				"username": username,
