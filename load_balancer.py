@@ -62,7 +62,7 @@ class ConnectionThread(threading.Thread):
     def run(self):
         try:
             print("\033[1;34m----\033[0;0m")
-            print(f"\033[1;34mconnecting to {server}\033[0;0m")
+            print(f"\033[1;34mconnecting to {self.server}\033[0;0m")
             self.server_socket = self.server.connect_socket()
             print("\033[1;34msending:\033[0;0m")
             print(f"\033[1;34m{self.message}\033[0;0m")
@@ -73,7 +73,8 @@ class ConnectionThread(threading.Thread):
                 print(f"\033[1;34mreceived response\033[0;0m")
                 # print(response)
                 print("\033[1;34msending back to client...\033[0;0m")
-                self.workload_conn.sendall(response_bytes)
+                # self.workload_conn.sendall(response_bytes)
+                ws.send(self.workload_conn, response_bytes)
                 print("\033[1;34msent!\033[0;0m")
             else:
                 print("\033[1;2;33mno response, closing socket....\033[0;0m")
@@ -175,36 +176,86 @@ def get_msg_dict(message):
     query = message_lines[-1]
     return json.loads(query)
 
-def authenticate_user(username, password, connection_pool, server, workload_conn, incoming_message):
+def authenticate_user(username, connection_pool, workload_conn, incoming_message):
     # Check username exists
-    if username in users:
+    server = users.get(username)
+    if server:
         connection_pool.new_connection(server=server, workload_conn=workload_conn, incoming_message=incoming_message)
+    else:
+        ws.send(workload_conn, "Unknown Username!")
 
 def isLogin(msg_dict):
     return msg_dict["Command"] == "LOGIN"
+
+def on_data_receive(client, data):
+    """Called by the WebSocketServer when data is received."""
+
+    if data == "disconnect":
+        ws.close_client(client)
+    else:
+        # print(f"msg:{data}")
+        msg_dict = get_msg_dict(data)
+        if isLogin(msg_dict):
+            # will asynchronously create a new connection to the client connection to relay the server's response
+            print(f"Login command:{msg_dict}")
+            authenticate_user(msg_dict["userid"], connection_pool, client, data)
+        else:
+            print(f"User command:{msg_dict}")
+            server = set_user_relay(msg_dict["userid"])
+            connection_pool.new_connection(server=server, workload_conn=client, incoming_message=data)
+        # data += '!'
+        # print(data)
+        # ws.send(client, data)
+
+def on_connection_open(client):
+    """Called by the WebSocketServer when a new connection is opened.
+    """
+    ws.send(client, "Welcome to the Load Balancer!")
+
+def on_error(exception):
+    """Called when the server returns an error
+    """
+    raise exception
+
+def on_connection_close(client):
+    """Called by the WebSocketServer when a connection is closed."""
+    ws.send(client, "Closing socket")
+
+def on_server_destruct():
+    """Called immediately prior to the WebSocketServer shutting down."""
+    pass
 
 
 if __name__ == "__main__":
     load_balancer_host = os.environ.get("load_balancer_host")
     load_balancer_port = int(os.environ.get("load_balancer_port"))
     try:
-        workload_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        workload_socket.bind((load_balancer_host, load_balancer_port))
-        workload_socket.listen(1010)
+        # workload_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # workload_socket.bind((load_balancer_host, load_balancer_port))
+        # workload_socket.listen(1010)
+        ws = WebSocketServer(load_balancer_host, load_balancer_port,
+                             on_data_receive=on_data_receive,
+                             on_connection_open=on_connection_open,
+                             on_error=on_error,
+                             on_connection_close=on_connection_close)
         print(f"\033[1;34mload balancer service running on {load_balancer_host}:{load_balancer_port}...\033[0;0m")
         connection_pool = ConnectionPool()
-        while (True):
-            workload_conn, addr = workload_socket.accept()
-            incoming_message = workload_conn.recv(BUFFER_SIZE).decode()
-            print(f"msg:{incoming_message}")
-            if (len(incoming_message) > 0):
-                msg_dict = get_msg_dict(incoming_message)
-                if isLogin(msg_dict):
-                    # will asynchronously create a new connection to the client connection to relay the server's response
-                    authenticate_user(msg_dict["userid"], msg_dict["password"], connection_pool, server, workload_conn, incoming_message)
-                else:
-                    server = set_user_relay(msg_dict["userid"])
-                    connection_pool.new_connection(server=server, workload_conn=workload_conn, incoming_message=incoming_message)
+        ws.serve_forever()
+
+        # while (True):
+        #     workload_conn, addr = workload_socket.accept()
+        #     incoming_message = workload_conn.recv(BUFFER_SIZE).decode()
+        #     print(f"msg:{incoming_message}")
+        #     if (len(incoming_message) > 0):
+        #         msg_dict = get_msg_dict(incoming_message)
+        #         if isLogin(msg_dict):
+        #             # will asynchronously create a new connection to the client connection to relay the server's response
+        #             authenticate_user(msg_dict["userid"], connection_pool, workload_conn, incoming_message)
+        #         else:
+        #             server = set_user_relay(msg_dict["userid"])
+        #             connection_pool.new_connection(server=server, workload_conn=workload_conn, incoming_message=incoming_message)
+
+
     except Exception as e:
         print(f"\033[1;31mLoad_Bal.main:{type(e)} | \033[0;0m", end="")
         print(f"\033[1;31m{e}\033[0;0m")

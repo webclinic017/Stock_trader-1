@@ -4,34 +4,27 @@
 lb_socket = new WebSocket("ws://127.0.0.1:44421");
 
 lb_socket.onopen = function(e) {
-  alert("[open] Connection established");
-  alert("Sending to server");
-  let parcel = {
-        Command: "login",
-        userid: "treese",
-        password: "hardcoded"
-    };
-    // console.log(parcel)
-    // lb_socket.send("{'Command':'login','userid':'treese','password':'hardcoded'}")
-    lb_socket.send(JSON.stringify(parcel))
+  // alert("Connection established");
+  console.log("Connection established")
 };
 
 lb_socket.onmessage = function(event) {
-  alert(`[message] Data received from server: ${event.data}`);
+  // alert(`Data received from server: ${event.data}`);
+  console.log(event.data)
 };
 
 lb_socket.onclose = function(event) {
   if (event.wasClean) {
-    alert(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+      // alert(`Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+      console.log(`Connection closed cleanly, code=${event.code} reason=${event.reason}`)
   } else {
-    // e.g. server process killed or network down
-    // event.code is usually 1006 in this case
-    alert('[close] Connection died');
+      console.log("Connection died")
+      // alert('Connection died');
   }
 };
 
 lb_socket.onerror = function(error) {
-  alert(`[error] ${error.message}`);
+  alert(`${error.message}`);
 };
 
 function login() {
@@ -39,15 +32,11 @@ function login() {
     let username = document.getElementById("username");
     let password = document.getElementById("password");
     let parcel = {
-        Command: "login",
+        Command: "LOGIN",
         userid: username.value,
         password: password.value
     };
-    console.log(parcel.toString())
-    lb_socket.send(parcel.toString())
-    lb_socket.onmessage = function(event) {
-        console.log(`[message] Data received from server: ${event.data}`);
-    };
+    lb_socket.send(JSON.stringify(parcel))
 }
 
 //

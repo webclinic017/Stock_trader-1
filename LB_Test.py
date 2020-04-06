@@ -8,6 +8,7 @@ def on_data_receive(client, data):
         ws.close_client(client)
     else:
         data += '!'
+        print(data)
         ws.send(client, data)
 
 
