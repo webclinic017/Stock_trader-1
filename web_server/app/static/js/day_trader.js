@@ -14,7 +14,7 @@ lb_socket.onmessage = function(event) {
     try {
         response = JSON.parse(event.data);
         response_cmd = response["Command"];
-        console.log(response);
+        // console.log(response);
     }
     catch(error) {
         console.log(event.data);
@@ -24,9 +24,11 @@ lb_socket.onmessage = function(event) {
         case "LOGIN":
             // Check for success before switching over to new page
             if (response["Succeeded"] === true) {
-                // update_username(response["userid"]);
-                session_id = response["session"];
+                // event.preventDefault(); //stops page from resetting/reloading
                 window.location.href = 'day_trader';
+                console.log(response["userid"]);
+                update_username(response["userid"]);
+                session_id = response["session"];
             }
             else {
                 console.log(response["Succeeded"]);
@@ -111,7 +113,7 @@ function login() {
 }
 
 function add() {
-
+    event.preventDefault(); //stops page from resetting/reloading
     let currentUser = document.getElementById("userId");
     let add_field = document.getElementById("addFunds");
     if (add_field.value.length === 0 || parseFloat(add_field.value) <= 0) {
@@ -305,7 +307,8 @@ function update_quote(responseJSON) {
 
 function update_username(name_str) {
     let currentUser = document.getElementById("userId");
-    currentUser.readOnly = false;
+    console.log(currentUser);
+    // currentUser.readOnly = false;
     currentUser.textContent = name_str;
-    currentUser.readOnly = true;
+    // currentUser.readOnly = true;
 }
