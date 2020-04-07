@@ -74,7 +74,7 @@ class ConnectionThread(threading.Thread):
                 # print(response)
                 print("\033[1;34msending back to client...\033[0;0m")
                 # self.workload_conn.sendall(response_bytes)
-                ws.send(self.workload_conn, response_bytes)
+                ws.send(self.workload_conn, response_bytes.decode())
                 print("\033[1;34msent!\033[0;0m")
             else:
                 print("\033[1;2;33mno response, closing socket....\033[0;0m")
@@ -182,7 +182,11 @@ def authenticate_user(username, connection_pool, workload_conn, incoming_message
     if server:
         connection_pool.new_connection(server=server, workload_conn=workload_conn, incoming_message=incoming_message)
     else:
-        ws.send(workload_conn, "Unknown Username!")
+        print(incoming_message)
+        print(f"LB.auth:{incoming_message}")
+        msg = json.loads(incoming_message)
+        msg["Succeeded"] = True
+        ws.send(workload_conn, str(json.dumps(msg)))
 
 def isLogin(msg_dict):
     return msg_dict["Command"] == "LOGIN"

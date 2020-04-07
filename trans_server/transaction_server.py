@@ -37,6 +37,8 @@ class TransactionServer():
         return self.cli_data.check_session(username, password)
 
     def check_session(self, data):
+        print(type(data))
+        print(data)
         username = data["userid"]
         session = data["session"]
         return self.cli_data.check_session(username, session)
